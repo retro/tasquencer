@@ -40,6 +40,15 @@
     "import/no-extraneous-dependencies": "error",
     "import/no-mutable-exports": "error",
     "import/no-unused-modules": "error",
-    "@typescript-eslint/prefer-return-this-type": "off"
+    "@typescript-eslint/prefer-return-this-type": "off",
+    "@typescript-eslint/no-unnecessary-condition": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error", // or "error"
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
   }
 }

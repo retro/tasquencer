@@ -1,4 +1,11 @@
-import * as R from "remeda";
+import {
+  attribute as _,
+  Digraph,
+  Node,
+  Edge,
+  toDot,
+  type NodeAttributesObject,
+} from "ts-graphviz";
 
 class RElement {
   private name: string;
@@ -121,18 +128,6 @@ class RMarking {
         this.markedPlaces.set(netElementName, tokenCount);
       }
     }
-  }
-
-  getID() {
-    return R.pipe(
-      Array.from(this.markedPlaces.entries()),
-      R.sortBy(([place]) => place),
-      R.reduce((acc, [place, marking]) => {
-        acc.push(`${place}:${marking}`);
-        return acc;
-      }, [] as string[]),
-      (arr) => arr.join(",")
-    );
   }
 
   public static fromMarkedPlaces(markedPlaces: Map<string, number>): RMarking {
@@ -338,34 +333,34 @@ function setIntersection<T>(setA: Set<T>, setB: Set<T>): Set<T> {
 class RPlace extends RElement {}
 
 class RTransition extends RElement {
-  private _removeSet = new Set<RPlace>();
+  private removeSet = new Set<RPlace>();
 
   setRemoveSet(removeSetOrPlace: Set<RPlace> | RPlace): void {
     if (removeSetOrPlace instanceof Set) {
-      this._removeSet = new Set([...this._removeSet, ...removeSetOrPlace]);
+      this.removeSet = new Set([...this.removeSet, ...removeSetOrPlace]);
     } else {
-      this._removeSet.add(removeSetOrPlace);
+      this.removeSet.add(removeSetOrPlace);
     }
   }
 
   getRemoveSet(): Set<RPlace> {
-    if (this._removeSet) {
-      return this._removeSet;
+    if (this.removeSet) {
+      return this.removeSet;
     }
     return new Set();
   }
 
   isCancelTransition(): boolean {
-    return this._removeSet.size > 0;
+    return this.removeSet.size > 0;
   }
 }
 
-abstract class YExternalNetElement {
+export abstract class YExternalNetElement {
   private id: string;
   protected name: string;
   private presetFlows = new Map<string, YFlow>();
   private postsetFlows = new Map<string, YFlow>();
-  private _cancelledBySet = new Set<YExternalNetElement>();
+  private cancelledBySet = new Set<YExternalNetElement>();
 
   constructor(id: string) {
     this.id = id;
@@ -461,15 +456,15 @@ abstract class YExternalNetElement {
   }
 
   public getCancelledBySet(): Set<YExternalNetElement> | null {
-    return this._cancelledBySet !== null ? new Set(this._cancelledBySet) : null;
+    return this.cancelledBySet !== null ? new Set(this.cancelledBySet) : null;
   }
 
   public addToCancelledBySet(t: YTask): void {
-    if (t !== null) this._cancelledBySet.add(t);
+    if (t !== null) this.cancelledBySet.add(t);
   }
 
   public removeFromCancelledBySet(t: YTask): void {
-    if (t !== null) this._cancelledBySet.delete(t);
+    if (t !== null) this.cancelledBySet.delete(t);
   }
 }
 
@@ -479,6 +474,7 @@ type MaybeSplitJoinType = undefined | SplitJoinType;
 export class YTask extends YExternalNetElement {
   private splitType: MaybeSplitJoinType;
   private joinType: MaybeSplitJoinType;
+  private removeSet = new Set<YExternalNetElement>();
 
   constructor(
     id: string,
@@ -498,8 +494,12 @@ export class YTask extends YExternalNetElement {
     return this.splitType;
   }
 
+  setRemoveSet(removeSet: Set<YExternalNetElement>) {
+    this.removeSet = removeSet;
+  }
+
   getRemoveSet(): Set<YExternalNetElement> {
-    return new Set<YExternalNetElement>();
+    return this.removeSet;
   }
 }
 
@@ -558,34 +558,29 @@ export class YMarking {
 }
 
 export class E2WFOJNet {
-  private _Transitions: Record<string, RTransition> = {};
-  private _Places: Record<string, RPlace> = {};
-  private _OJ: Record<string, RTransition> = {};
-  private _YOJ: Record<string, YExternalNetElement> = {};
+  private transitions: Record<string, RTransition> = {};
+  private places: Record<string, RPlace> = {};
+  private orJoins: Record<string, RTransition> = {};
+  private yOrJoins: Record<string, YExternalNetElement> = {};
   private yTasks: YTask[];
   private yConditions: YCondition[];
-  private alreadyConsideredMarkings = new Set<string>();
-  private _Conditions = new Set();
+  private alreadyConsideredMarkings = new Set<RMarking>();
+  private conditions = new Set();
 
   constructor(yTasks: YTask[], yConditions: YCondition[], orJoin: YTask) {
     this.yTasks = yTasks;
     this.yConditions = yConditions;
-    this.ConvertToResetNet();
-    this.OJRemove(orJoin);
-    this._OJ = {};
-    this._YOJ = {};
+    this.convertToResetNet();
+    this.orJoinRemove(orJoin);
+    this.orJoins = {};
+    this.yOrJoins = {};
   }
 
-  private ConvertToResetNet(): void {
+  private convertToResetNet(): void {
     for (const nextElement of this.yConditions) {
       const p = new RPlace(nextElement.getID());
-      this._Places[p.getID()] = p;
-      this._Conditions.add(nextElement);
-    }
-
-    for (const nextElement of this.yTasks) {
-      const p = new RPlace("p_" + nextElement.getID());
-      this._Places[p.getID()] = p;
+      this.places[p.getID()] = p;
+      this.conditions.add(nextElement);
     }
 
     const _StartTransitions: Record<string, RTransition> = {};
@@ -593,19 +588,23 @@ export class E2WFOJNet {
 
     for (const next of this.yTasks) {
       const nextElement = next;
+
+      const p = new RPlace("p_" + nextElement.getID());
+      this.places[p.getID()] = p;
+
       if (nextElement.getJoinType() == "and") {
         const t = new RTransition(nextElement.getID() + "_start");
         _StartTransitions[t.getID()] = t;
         const pre = nextElement.getPresetElements();
         for (const preElement of pre) {
           const inflow = new RFlow(
-            this._Places[preElement.getID()] as RPlace,
+            this.places[preElement.getID()] as RPlace,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
-            this._Places["p_" + nextElement.getID()] as RPlace
+            this.places["p_" + nextElement.getID()] as RPlace
           );
           t.setPostset(outflow);
         }
@@ -617,21 +616,21 @@ export class E2WFOJNet {
           );
           _StartTransitions[t.getID()] = t;
           const inflow = new RFlow(
-            this._Places[preElement.getID()] as RPlace,
+            this.places[preElement.getID()] as RPlace,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
-            this._Places["p_" + nextElement.getID()] as RPlace
+            this.places["p_" + nextElement.getID()] as RPlace
           );
           t.setPostset(outflow);
         }
       } else if (nextElement.getJoinType() == "or") {
         const t = new RTransition(nextElement.getID() + "_start");
         _StartTransitions[t.getID()] = t;
-        this._OJ[t.getID()] = t;
-        this._YOJ[nextElement.getID()] = nextElement;
+        this.orJoins[t.getID()] = t;
+        this.yOrJoins[nextElement.getID()] = nextElement;
       }
       if (nextElement.getSplitType() == "and") {
         const t = new RTransition(nextElement.getID() + "_end");
@@ -639,13 +638,13 @@ export class E2WFOJNet {
         const post = nextElement.getPostsetElements();
         for (const postElement of post) {
           const inflow = new RFlow(
-            this._Places["p_" + nextElement.getID()] as RPlace,
+            this.places["p_" + nextElement.getID()] as RPlace,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
-            this._Places[postElement.getID()] as RPlace
+            this.places[postElement.getID()] as RPlace
           );
           t.setPostset(outflow);
         }
@@ -661,13 +660,13 @@ export class E2WFOJNet {
           );
           _EndTransitions[t.getID()] = t;
           const inflow = new RFlow(
-            this._Places["p" + nextElement.getID()] as RPlace,
+            this.places["p_" + nextElement.getID()] as RPlace,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
-            this._Places[postElement.getID()] as RPlace
+            this.places[postElement.getID()] as RPlace
           );
           t.setPostset(outflow);
           const removeSet = new Set(nextElement.getRemoveSet());
@@ -691,7 +690,7 @@ export class E2WFOJNet {
           _EndTransitions[t.getID()] = t;
 
           const inflow = new RFlow(
-            this._Places["p_" + nextElement.getID()] as RPlace,
+            this.places["p_" + nextElement.getID()] as RPlace,
             t
           );
 
@@ -699,7 +698,7 @@ export class E2WFOJNet {
           for (const postElement of x) {
             const outflow = new RFlow(
               t,
-              this._Places[postElement.getID()] as RPlace
+              this.places[postElement.getID()] as RPlace
             );
             t.setPostset(outflow);
           }
@@ -711,8 +710,7 @@ export class E2WFOJNet {
       }
     }
 
-    this._Transitions = {
-      ...this._Transitions,
+    this.transitions = {
       ..._StartTransitions,
       ..._EndTransitions,
     };
@@ -743,13 +741,13 @@ export class E2WFOJNet {
     const removeSetT = new Set(removeSet);
     const removeSetR = new Set<RPlace>();
     removeSet.forEach((c) => {
-      const p = this._Places[c.getID()];
+      const p = this.places[c.getID()];
       if (p !== null && p !== undefined) {
         removeSetR.add(p);
       }
     });
     removeSetT.forEach((t) => {
-      const p = this._Places["p_" + t.getID()];
+      const p = this.places["p_" + t.getID()];
       if (p !== null && p !== undefined) {
         removeSetR.add(p);
       }
@@ -757,26 +755,26 @@ export class E2WFOJNet {
     rt.setRemoveSet(removeSetR);
   }
 
-  private OJRemove(j: YTask): void {
+  private orJoinRemove(j: YTask): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete this._YOJ[j.getID()];
+    delete this.yOrJoins[j.getID()];
 
-    for (const rj of Object.values(this._OJ)) {
+    for (const rj of Object.values(this.orJoins)) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this._Transitions[rj.getID()];
+      delete this.transitions[rj.getID()];
     }
-    for (const otherORJoin of Object.values(this._YOJ)) {
-      const pre = otherORJoin.getPresetElements();
+    for (const otherOrJoin of Object.values(this.yOrJoins)) {
+      const pre = otherOrJoin.getPresetElements();
       for (const preElement of pre) {
         const t = new RTransition(
-          otherORJoin.getID() + "_start^" + preElement.getID()
+          otherOrJoin.getID() + "_start^" + preElement.getID()
         );
-        this._Transitions[t.getID()] = t;
-        const inflow = new RFlow(this._Places[preElement.getID()] as RPlace, t);
+        this.transitions[t.getID()] = t;
+        const inflow = new RFlow(this.places[preElement.getID()] as RPlace, t);
         t.setPreset(inflow);
         const outflow = new RFlow(
           t,
-          this._Places["p" + otherORJoin.getID()] as RPlace
+          this.places["p_" + otherOrJoin.getID()] as RPlace
         );
         t.setPostset(outflow);
       }
@@ -807,11 +805,11 @@ export class E2WFOJNet {
     return preset;
   }
 
-  private Coverable(s: RMarking, t: RMarking): boolean {
-    this.alreadyConsideredMarkings = new Set<string>();
+  private isCoverable(s: RMarking, t: RMarking): boolean {
+    this.alreadyConsideredMarkings = new Set<RMarking>();
     const tSet = new RSetOfMarkings();
     tSet.addMarking(t);
-    const rm = this.FiniteBasisPred(tSet);
+    const rm = this.finiteBasisPred(tSet);
     let result = false;
     for (const x of rm.getMarkings()) {
       if (x.isLessThanOrEqual(s)) {
@@ -819,19 +817,19 @@ export class E2WFOJNet {
         break;
       }
     }
-    this.alreadyConsideredMarkings = new Set<string>();
+    this.alreadyConsideredMarkings = new Set<RMarking>();
     rm.removeAll();
     return result;
   }
 
-  private FiniteBasisPred(I: RSetOfMarkings): RSetOfMarkings {
+  private finiteBasisPred(I: RSetOfMarkings): RSetOfMarkings {
     const K = new RSetOfMarkings();
     const Kn = new RSetOfMarkings();
     const Pred = new RSetOfMarkings();
     K.addAll(I);
     Pred.addAll(K);
     Kn.addAll(this.getMinimalCoveringSet(this.pb(K), Pred));
-    while (!this.IsUpwardEqual(K, Kn)) {
+    while (!this.isUpwardEqual(K, Kn)) {
       K.removeAll();
       K.addAll(Kn);
       Pred.removeAll();
@@ -843,7 +841,7 @@ export class E2WFOJNet {
     return K;
   }
 
-  private IsUpwardEqual(K: RSetOfMarkings, Kn: RSetOfMarkings): boolean {
+  private isUpwardEqual(K: RSetOfMarkings, Kn: RSetOfMarkings): boolean {
     return K.equals(Kn);
   }
 
@@ -858,8 +856,8 @@ export class E2WFOJNet {
     } else {
       const M = value;
       const Z = new RSetOfMarkings();
-      if (!this.alreadyConsideredMarkings.has(M.getID())) {
-        for (const t of Object.values(this._Transitions)) {
+      if (!this.alreadyConsideredMarkings.has(M)) {
+        for (const t of Object.values(this.transitions)) {
           if (this.isBackwardsEnabled(M, t)) {
             const preM = this.getPreviousRMarking(M, t);
 
@@ -868,7 +866,7 @@ export class E2WFOJNet {
             }
           }
         }
-        this.alreadyConsideredMarkings.add(M.getID());
+        this.alreadyConsideredMarkings.add(M);
       }
       return Z;
     }
@@ -896,7 +894,7 @@ export class E2WFOJNet {
     return true;
   }
 
-  getPreviousRMarking(currentM: RMarking, t: RTransition): RMarking {
+  private getPreviousRMarking(currentM: RMarking, t: RTransition): RMarking {
     const premarkedPlaces = new Map(currentM.getMarkedPlaces());
     const postSet = new Set(t.getPostsetElements());
     const preSet = new Set(t.getPresetElements());
@@ -1007,7 +1005,7 @@ export class E2WFOJNet {
     for (const nextElement of YLocations) {
       if (nextElement instanceof YCondition) {
         const condition: YCondition = nextElement;
-        const place: RPlace | undefined = this._Places[condition.getID()];
+        const place: RPlace | undefined = this.places[condition.getID()];
         if (place !== undefined) {
           const placename: string = place.getID();
           let tokenCount = 1;
@@ -1026,7 +1024,7 @@ export class E2WFOJNet {
 
     for (const task of markedTasks) {
       const internalPlace: string = "p_" + task.getID();
-      const place: RPlace | undefined = this._Places[internalPlace];
+      const place: RPlace | undefined = this.places[internalPlace];
       if (place !== undefined) {
         const placename: string = place.getID();
         const tokenCount = 1;
@@ -1035,6 +1033,7 @@ export class E2WFOJNet {
     }
 
     const RM: RMarking = new RMarking(RMap);
+
     const X: Set<YCondition> = orJoin.getPresetElements();
     const newMap = new Map<string, number>();
     const emptyPreSetPlaces = new Set<RPlace>();
@@ -1042,7 +1041,7 @@ export class E2WFOJNet {
 
     for (const preSetCondition of X) {
       const preSetPlace: RPlace | undefined =
-        this._Places[preSetCondition.getID()];
+        this.places[preSetCondition.getID()];
       if (preSetPlace !== undefined) {
         if (YLocations.includes(preSetCondition)) {
           const preSetPlaceName: string = preSetPlace.getID();
@@ -1064,7 +1063,7 @@ export class E2WFOJNet {
     }
 
     for (const M_w of Y.getMarkings()) {
-      const res = this.Coverable(RM, M_w);
+      const res = this.isCoverable(RM, M_w);
       if (res) {
         return false;
       }
@@ -1075,14 +1074,14 @@ export class E2WFOJNet {
   restrictNet(value: YTask | YMarking): void {
     if (value instanceof YTask) {
       const j = value;
-      // All transitions that we are interested in
+
       const restrictedTrans = new Set<RTransition>();
       const restrictedPlaces = new Set<RPlace>();
 
-      const pre = new Set<RPlace>(); // YAWL to reset net conversion
+      const pre = new Set<RPlace>();
       const yPre: Set<YCondition> = j.getPresetElements();
       for (const condition of yPre) {
-        const place: RPlace | undefined = this._Places[condition.getID()];
+        const place: RPlace | undefined = this.places[condition.getID()];
         if (place !== undefined) {
           pre.add(place);
         }
@@ -1112,7 +1111,7 @@ export class E2WFOJNet {
       // Make sure that every condition in M is external
       for (const nextElement of yMarked) {
         if (nextElement instanceof YCondition) {
-          const place = this._Places[nextElement.getID()];
+          const place = this.places[nextElement.getID()];
           if (place !== undefined) {
             markedPlaces.add(place);
           }
@@ -1121,7 +1120,7 @@ export class E2WFOJNet {
         // Need to consider active tasks in a marking
         if (nextElement instanceof YTask) {
           const internalPlace = "p_" + nextElement.getID();
-          const place = this._Places[internalPlace];
+          const place = this.places[internalPlace];
           if (place !== undefined) {
             markedPlaces.add(place);
           }
@@ -1143,7 +1142,7 @@ export class E2WFOJNet {
         setAddAll(restrictedTrans, trans);
         setAddAll(restrictedPlaces, post);
       }
-      const TransToRemove = new Set(Object.values(this._Transitions));
+      const TransToRemove = new Set(Object.values(this.transitions));
       for (const tElement of TransToRemove) {
         const preSet = tElement.getPresetElements();
         if (!setContainsAll(restrictedPlaces, preSet)) {
@@ -1154,16 +1153,16 @@ export class E2WFOJNet {
       this.performRestriction(restrictedTrans, restrictedPlaces);
     }
   }
-  performRestriction(
+  private performRestriction(
     restrictedTrans: Set<RTransition>,
     restrictedPlaces: Set<RPlace>
   ): void {
     const irrelevantTrans = new Set(
-      Object.values(this._Transitions).filter((t) => !restrictedTrans.has(t))
+      Object.values(this.transitions).filter((t) => !restrictedTrans.has(t))
     );
     for (const t of irrelevantTrans) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this._Transitions[t.getID()];
+      delete this.transitions[t.getID()];
     }
     for (const t of restrictedTrans) {
       if (t.isCancelTransition()) {
@@ -1200,11 +1199,11 @@ export class E2WFOJNet {
       }
     }
     const irrelevantPlaces = new Set(
-      Object.values(this._Places).filter((p) => !restrictedPlaces.has(p))
+      Object.values(this.places).filter((p) => !restrictedPlaces.has(p))
     );
     for (const p of irrelevantPlaces) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this._Places[p.getID()];
+      delete this.places[p.getID()];
 
       const pElement = p as RElement;
       const preSetToRemove = new Set(
@@ -1238,6 +1237,49 @@ export class E2WFOJNet {
       }
     }
   }
+  toDot() {
+    const g = new Digraph({ [_.rankdir]: "LR", [_.splines]: "polyline" });
+    const transitionNodes: Record<string, Node> = {};
+    const placeNodes: Record<string, Node> = {};
+
+    Object.values(this.transitions).forEach((transition) => {
+      const node = new Node(transition.getID(), { [_.shape]: "square" });
+      transitionNodes[transition.getID()] = node;
+      g.addNode(node);
+    });
+
+    Object.values(this.places).forEach((place) => {
+      const node = new Node(place.getID(), { [_.shape]: "circle" });
+      placeNodes[place.getID()] = node;
+      g.addNode(node);
+    });
+
+    Object.values(this.transitions).forEach((transition) => {
+      const postset = transition.getPostsetElements();
+      Array.from(postset).forEach((place) => {
+        const transitionNode = transitionNodes[transition.getID()];
+        const placeNode = placeNodes[place.getID()];
+        if (placeNode && transitionNode) {
+          const e = new Edge([transitionNode, placeNode]);
+          g.addEdge(e);
+        }
+      });
+    });
+
+    Object.values(this.places).forEach((place) => {
+      const postset = place.getPostsetElements();
+      Array.from(postset).forEach((transition) => {
+        const placeNode = placeNodes[place.getID()];
+        const transitionNode = transitionNodes[transition.getID()];
+        if (placeNode && transitionNode) {
+          const e = new Edge([placeNode, transitionNode]);
+          g.addEdge(e);
+        }
+      });
+    });
+
+    return toDot(g);
+  }
 }
 
 function assertRElementIsRTransition(
@@ -1248,6 +1290,12 @@ function assertRElementIsRTransition(
   }
 }
 
+/**
+ * http://www.merriampark.com/comb.htm#Source
+ * Ported from Combination Generator
+ * by Michael Gilleland, Merriam Park Software
+ *
+ **/
 class CombinationGenerator {
   private a: number[];
   private n: number;

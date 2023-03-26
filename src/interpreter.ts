@@ -1,7 +1,15 @@
 import * as R from "remeda";
 import invariant from "tiny-invariant";
-import { YTask, YCondition, YFlow, YMarking, E2WFOJNet } from "./e2wfojnet.js";
-import type { Net } from "./types.js";
+import {
+  YExternalNetElement,
+  YTask,
+  YCondition,
+  YFlow,
+  YMarking,
+  E2WFOJNet,
+} from "./e2wfojnet.js";
+import type { CancellationRegion, Net } from "./types.js";
+import { union } from "./util/set.js";
 
 export class Interpreter<Context, BNTasks> {
   private net: Net;
@@ -34,13 +42,7 @@ export class Interpreter<Context, BNTasks> {
     const incomingFlows = this.net.incomingFlows.tasks[taskName];
 
     Array.from(incomingFlows).forEach((condition) => {
-      this.removeMarking(condition);
-
-      if (this.markings[condition] < 1) {
-        for (const task of this.net.flows.conditions[condition].values()) {
-          this.enabledTasks.delete(task);
-        }
-      }
+      this.removeToken(condition);
     });
 
     return this;
@@ -65,7 +67,30 @@ export class Interpreter<Context, BNTasks> {
       default:
         this.produceANDSplitToken(taskName);
     }
+
+    for (const task of this.getPostTasks(taskName)) {
+      this.enableTask(task);
+    }
+
+    const cancellationRegion = this.net.cancellationRegions[taskName];
+
+    if (cancellationRegion) {
+      this.cancelRegion(cancellationRegion);
+    }
+
     return this;
+  }
+
+  cancelRegion(cancellationRegion: CancellationRegion) {
+    cancellationRegion.tasks?.forEach((taskName) => {
+      this.activeTasks.delete(taskName);
+    });
+
+    cancellationRegion.conditions?.forEach((conditionName) => {
+      if (this.getMarking(conditionName) > 0) {
+        this.removeToken(conditionName, true);
+      }
+    });
   }
 
   produceORSplitToken(taskName: string) {
@@ -73,15 +98,13 @@ export class Interpreter<Context, BNTasks> {
 
     for (const [condition, flow] of flows) {
       if (flow.isDefault) {
-        this.addMarking(condition);
-        this.enableTasksForCondition(condition);
+        this.addToken(condition);
       } else {
         const result = flow.predicate
           ? flow.predicate(this.context, this.net)
           : false;
         if (result) {
-          this.addMarking(condition);
-          this.enableTasksForCondition(condition);
+          this.addToken(condition);
         }
       }
     }
@@ -96,16 +119,14 @@ export class Interpreter<Context, BNTasks> {
     );
     for (const [condition, flow] of flows) {
       if (flow.isDefault) {
-        this.addMarking(condition);
-        this.enableTasksForCondition(condition);
+        this.addToken(condition);
         return;
       } else {
         const result = flow.predicate
           ? flow.predicate(this.context, this.net)
           : false;
         if (result) {
-          this.addMarking(condition);
-          this.enableTasksForCondition(condition);
+          this.addToken(condition);
           return;
         }
       }
@@ -114,8 +135,7 @@ export class Interpreter<Context, BNTasks> {
 
   produceANDSplitToken(taskName: string) {
     for (const [condition] of Object.entries(this.net.flows.tasks[taskName])) {
-      this.addMarking(condition);
-      this.enableTasksForCondition(condition);
+      this.addToken(condition);
     }
   }
 
@@ -153,15 +173,21 @@ export class Interpreter<Context, BNTasks> {
     }
   }
 
-  private removeMarking(conditionName: string) {
-    this.markings[conditionName]--;
-    invariant(
-      this.markings[conditionName] >= 0,
-      `Condition ${conditionName} doesn't have enough tokens to proceed.`
-    );
+  private removeToken(conditionName: string, removeAllTokens = false) {
+    const newTokenCount = removeAllTokens
+      ? 0
+      : Math.max((this.markings[conditionName] ?? 0) - 1, 0);
+
+    this.markings[conditionName] = newTokenCount;
+
+    if (newTokenCount < 1) {
+      for (const task of this.net.flows.conditions[conditionName].values()) {
+        this.enabledTasks.delete(task);
+      }
+    }
   }
 
-  private addMarking(conditionName: string) {
+  private addToken(conditionName: string) {
     this.markings[conditionName] = (this.markings[conditionName] ?? 0) + 1;
   }
 
@@ -223,8 +249,29 @@ export class Interpreter<Context, BNTasks> {
       }
     );
 
-    const enabledYTasks = Array.from(this.getEnabledTasks()).map(
-      (taskName) => yTasks[taskName]
+    Object.entries(this.net.cancellationRegions).forEach(
+      ([taskName, cancellationRegion]) => {
+        const yTask = yTasks[taskName];
+
+        if (yTask) {
+          const removeSet = new Set<YExternalNetElement>();
+          cancellationRegion.tasks?.forEach(([canceledTaskName]) => {
+            const canceledTask = yTasks[canceledTaskName];
+            if (canceledTask) {
+              removeSet.add(canceledTask);
+              canceledTask.addToCancelledBySet(yTask);
+            }
+          });
+          cancellationRegion.conditions?.forEach(([canceledConditionName]) => {
+            const canceledCondition = yTasks[canceledConditionName];
+            if (canceledCondition) {
+              removeSet.add(canceledCondition);
+              canceledCondition.addToCancelledBySet(yTask);
+            }
+          });
+          yTask.setRemoveSet(removeSet);
+        }
+      }
     );
 
     const activeYTasks = Array.from(this.getActiveTasks()).map(
@@ -235,13 +282,7 @@ export class Interpreter<Context, BNTasks> {
       (conditionName) => yConditions[conditionName]
     );
 
-    //console.log([...enabledYTasks, ...activeYTasks, ...enabledYConditions]);
-
-    const yMarking = new YMarking([
-      //...enabledYTasks,
-      ...activeYTasks,
-      ...enabledYConditions,
-    ]);
+    const yMarking = new YMarking([...activeYTasks, ...enabledYConditions]);
 
     const orJoinYTask = yTasks[orJoinTaskName];
 
@@ -268,6 +309,7 @@ export class Interpreter<Context, BNTasks> {
       },
       0
     );
+
     return markedConditionCount === 1;
   }
 
@@ -286,6 +328,19 @@ export class Interpreter<Context, BNTasks> {
       },
       {} as Record<string, number>
     );
+  }
+
+  getPostTasks(taskName: string) {
+    const postConditions = Object.keys(this.net.flows.tasks[taskName]);
+    const postTasks = R.reduce(
+      postConditions,
+      (acc, condition) => {
+        const conditionPostTasks = this.net.flows.conditions[condition];
+        return union(acc, conditionPostTasks);
+      },
+      new Set<string>()
+    );
+    return postTasks;
   }
 
   getEnabledTasks() {

@@ -199,13 +199,14 @@ export class Builder<
 
   addCancellationRegion<
     TN extends BNTasks,
-    NS extends (Exclude<BNTasks, TN> | BNConditions)[]
+    TNS extends Exclude<BNTasks, TN>[],
+    CNS extends BNConditions[]
   >(
     taskName: TN & NotExtends<BNCancellationRegions, TN> & string,
-    namesToCancel: NS
+    toCancel: { tasks?: TNS; conditions?: CNS }
   ) {
     const newCancellationRegions = R.merge(this.net.cancellationRegions, {
-      [taskName]: namesToCancel,
+      [taskName]: toCancel,
     });
 
     return this.copyWithExtendedNet<

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { Builder } from "../builder.js";
+import { Builder } from "../index.js";
 
 it("can run simple net with and-split and and-join", () => {
   const builder = new Builder<null>();
@@ -25,52 +25,48 @@ it("can run simple net with and-split and and-join", () => {
   interpreter.start();
 
   interpreter.activateTask("scan_goods");
-  expect(interpreter.getMarkings()).toMatchObject({});
-  expect(interpreter.getActiveTasks()).toMatchObject(new Set(["scan_goods"]));
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getMarkings()).toEqual({});
+  expect(interpreter.getActiveTasks()).toEqual(new Set(["scan_goods"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("scan_goods");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["pay"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["pay"]));
 
   interpreter.activateTask("pay");
-  expect(interpreter.getActiveTasks()).toMatchObject(new Set(["pay"]));
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getActiveTasks()).toEqual(new Set(["pay"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("pay");
-  expect(interpreter.getEnabledTasks()).toMatchObject(
+  expect(interpreter.getEnabledTasks()).toEqual(
     new Set(["pack_goods", "issue_receipt"])
   );
 
   interpreter.activateTask("pack_goods");
-  expect(interpreter.getActiveTasks()).toMatchObject(new Set(["pack_goods"]));
-  expect(interpreter.getEnabledTasks()).toMatchObject(
-    new Set(["issue_receipt"])
-  );
+  expect(interpreter.getActiveTasks()).toEqual(new Set(["pack_goods"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["issue_receipt"]));
 
   interpreter.activateTask("issue_receipt");
-  expect(interpreter.getActiveTasks()).toMatchObject(
+  expect(interpreter.getActiveTasks()).toEqual(
     new Set(["pack_goods", "issue_receipt"])
   );
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("pack_goods");
-  expect(interpreter.getActiveTasks()).toMatchObject(
-    new Set(["issue_receipt"])
-  );
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getActiveTasks()).toEqual(new Set(["issue_receipt"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("issue_receipt");
-  expect(interpreter.getActiveTasks()).toMatchObject(new Set());
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["check_goods"]));
+  expect(interpreter.getActiveTasks()).toEqual(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["check_goods"]));
 
   interpreter.activateTask("check_goods");
-  expect(interpreter.getActiveTasks()).toMatchObject(new Set(["check_goods"]));
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getActiveTasks()).toEqual(new Set(["check_goods"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("check_goods");
-  expect(interpreter.getActiveTasks()).toMatchObject(new Set());
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
-  expect(interpreter.getMarkings()).toMatchObject({ end: 1 });
+  expect(interpreter.getActiveTasks()).toEqual(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
+  expect(interpreter.getMarkings()).toEqual({ end: 1 });
 });
 
 it("supports deferred choice pattern", () => {
@@ -93,17 +89,15 @@ it("supports deferred choice pattern", () => {
   const interpreter = net.buildInterpreter(null);
 
   interpreter.start();
-  expect(interpreter.getMarkings()).toMatchObject({ start: 1 });
-  expect(interpreter.getEnabledTasks()).toMatchObject(
-    new Set(["task_1", "task_2"])
-  );
+  expect(interpreter.getMarkings()).toEqual({ start: 1 });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["task_1", "task_2"]));
 
   interpreter.activateTask("task_1").completeTask("task_1");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["task_1a"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["task_1a"]));
 
   interpreter.activateTask("task_1a").completeTask("task_1a");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
-  expect(interpreter.getMarkings()).toMatchObject({ end: 1 });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
+  expect(interpreter.getMarkings()).toEqual({ end: 1 });
 });
 
 it("supports xor join", () => {
@@ -131,17 +125,15 @@ it("supports xor join", () => {
   const interpreter = net.buildInterpreter(null);
 
   interpreter.start();
-  expect(interpreter.getEnabledTasks()).toMatchObject(
-    new Set(["initial_task"])
-  );
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["initial_task"]));
 
   interpreter.activateTask("initial_task").completeTask("initial_task");
-  expect(interpreter.getEnabledTasks()).toMatchObject(
+  expect(interpreter.getEnabledTasks()).toEqual(
     new Set(["task_a", "task_b", "task_c"])
   );
 
   interpreter.activateTask("task_b").completeTask("task_b");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["finish_task"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["finish_task"]));
 });
 
 it("supports interleaved parallel routing pattern", () => {
@@ -179,39 +171,35 @@ it("supports interleaved parallel routing pattern", () => {
 
   interpreter.start();
   interpreter.activateTask("initial_task").completeTask("initial_task");
-  expect(interpreter.getEnabledTasks()).toMatchObject(
-    new Set(["task_a", "task_c"])
-  );
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["task_a", "task_c"]));
 
   interpreter.activateTask("task_a");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("task_a");
-  expect(interpreter.getEnabledTasks()).toMatchObject(
-    new Set(["task_c", "task_b"])
-  );
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["task_c", "task_b"]));
 
   interpreter.activateTask("task_b");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("task_b");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["task_c"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["task_c"]));
 
   interpreter.activateTask("task_c");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("task_c");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["task_d"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["task_d"]));
 
   interpreter.activateTask("task_d");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
 
   interpreter.completeTask("task_d");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set(["finish_task"]));
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["finish_task"]));
 
   interpreter.activateTask("finish_task").completeTask("finish_task");
-  expect(interpreter.getEnabledTasks()).toMatchObject(new Set());
-  expect(interpreter.getMarkings()).toMatchObject({ end: 1 });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set());
+  expect(interpreter.getMarkings()).toEqual({ end: 1, mutex: 1 });
 });
 
 it("can handle xor join", () => {
@@ -248,19 +236,19 @@ it("can handle xor join", () => {
 
   interpreter1.start().activateTask("A").completeTask("A");
 
-  expect(interpreter1.getEnabledTasks()).toMatchObject(new Set(["B"]));
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["B"]));
 
   const interpreter2 = net.buildInterpreter({ foo: "C" });
 
   interpreter2.start().activateTask("A").completeTask("A");
 
-  expect(interpreter2.getEnabledTasks()).toMatchObject(new Set(["C"]));
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["C"]));
 
   const interpreter3 = net.buildInterpreter({ foo: "not a match" });
 
   interpreter3.start().activateTask("A").completeTask("A");
 
-  expect(interpreter3.getEnabledTasks()).toMatchObject(new Set(["D"]));
+  expect(interpreter3.getEnabledTasks()).toEqual(new Set(["D"]));
 });
 
 it("can run a net with or-split and or-join", () => {
@@ -304,20 +292,20 @@ it("can run a net with or-split and or-join", () => {
   interpreter1.start();
 
   interpreter1.activateTask("register").completeTask("register");
-  expect(interpreter1.getEnabledTasks()).toMatchObject(
+  expect(interpreter1.getEnabledTasks()).toEqual(
     new Set(["book_flight", "book_hotel", "book_car"])
   );
 
   interpreter1.activateTask("book_flight").completeTask("book_flight");
-  expect(interpreter1.getEnabledTasks()).toMatchObject(
+  expect(interpreter1.getEnabledTasks()).toEqual(
     new Set(["book_hotel", "book_car"])
   );
 
   interpreter1.activateTask("book_hotel").completeTask("book_hotel");
-  expect(interpreter1.getEnabledTasks()).toMatchObject(new Set(["book_car"]));
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["book_car"]));
 
   interpreter1.activateTask("book_car").completeTask("book_car");
-  expect(interpreter1.getEnabledTasks()).toMatchObject(new Set(["pay"]));
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["pay"]));
 
   const interpreter2 = net.buildInterpreter({
     shouldBookCar: false,
@@ -328,15 +316,15 @@ it("can run a net with or-split and or-join", () => {
   interpreter2.start();
 
   interpreter2.activateTask("register").completeTask("register");
-  expect(interpreter2.getEnabledTasks()).toMatchObject(
+  expect(interpreter2.getEnabledTasks()).toEqual(
     new Set(["book_flight", "book_hotel"])
   );
 
   interpreter2.activateTask("book_flight").completeTask("book_flight");
-  expect(interpreter2.getEnabledTasks()).toMatchObject(new Set(["book_hotel"]));
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["book_hotel"]));
 
   interpreter2.activateTask("book_hotel").completeTask("book_hotel");
-  expect(interpreter2.getEnabledTasks()).toMatchObject(new Set(["pay"]));
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["pay"]));
 
   const interpreter3 = net.buildInterpreter({
     shouldBookCar: false,
@@ -347,8 +335,276 @@ it("can run a net with or-split and or-join", () => {
   interpreter3.start();
 
   interpreter3.activateTask("register").completeTask("register");
-  expect(interpreter3.getEnabledTasks()).toMatchObject(new Set(["book_hotel"]));
+  expect(interpreter3.getEnabledTasks()).toEqual(new Set(["book_hotel"]));
 
   interpreter3.activateTask("book_hotel").completeTask("book_hotel");
-  expect(interpreter3.getEnabledTasks()).toMatchObject(new Set(["pay"]));
+  expect(interpreter3.getEnabledTasks()).toEqual(new Set(["pay"]));
+});
+
+it("can run a net with multiple or-splits (1)", () => {
+  const builder = new Builder<{
+    isTaskDEnabled: boolean;
+  }>();
+
+  const net = builder
+    .addStartCondition("start")
+    .addEndCondition("end")
+    .addTask("A", { splitType: "and" })
+    .addTask("B", {})
+    .addTask("C", { splitType: "or" })
+    .addTask("D", {})
+    .addTask("E", { joinType: "or" })
+    .addTask("F", { joinType: "or" })
+    .connectConditionToTask("start", "A")
+    .connectTaskToTask("A", "C")
+    .connectTaskToTask("A", "B")
+    .connectTaskToTask("B", "F")
+    .connectTaskToTask("C", "E", { isDefault: true })
+    .connectTaskToTask("C", "D", {
+      order: 1,
+      predicate: ({ isTaskDEnabled }) => isTaskDEnabled,
+    })
+    .connectTaskToTask("D", "E")
+    .connectTaskToTask("E", "F")
+    .connectTaskToCondition("F", "end");
+
+  const interpreter1 = net.buildInterpreter({
+    isTaskDEnabled: true,
+  });
+
+  interpreter1.start();
+
+  interpreter1.activateTask("A").completeTask("A");
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["C", "B"]));
+
+  interpreter1.activateTask("B").completeTask("B");
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["C"]));
+
+  interpreter1.activateTask("C").completeTask("C");
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["D"]));
+
+  interpreter1.activateTask("D").completeTask("D");
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["E"]));
+
+  interpreter1.activateTask("E").completeTask("E");
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["F"]));
+
+  const interpreter2 = net.buildInterpreter({
+    isTaskDEnabled: false,
+  });
+
+  interpreter2.start();
+
+  interpreter2.activateTask("A").completeTask("A");
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["C", "B"]));
+
+  interpreter2.activateTask("B").completeTask("B");
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["C"]));
+
+  interpreter2.activateTask("C").completeTask("C");
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["E"]));
+
+  interpreter2.activateTask("E").completeTask("E");
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["F"]));
+});
+
+it("can run a net with multiple or-splits (1)", () => {
+  const builder = new Builder<{ bToCEnabled: boolean }>();
+
+  const net = builder
+    .addStartCondition("start")
+    .addEndCondition("end")
+    .addTask("A", { splitType: "and" })
+    .addTask("B", { splitType: "xor" })
+    .addTask("C", { joinType: "or" })
+    .addTask("D", { joinType: "or" })
+    .connectConditionToTask("start", "A")
+    .connectTaskToTask("A", "B")
+    .connectTaskToTask("A", "C")
+    .connectTaskToTask("B", "C", {
+      order: 1,
+      predicate: ({ bToCEnabled }) => bToCEnabled,
+    })
+    .connectTaskToTask("B", "D", { isDefault: true })
+    .connectTaskToTask("C", "D")
+    .connectTaskToCondition("D", "end");
+
+  const interpreter1 = net.buildInterpreter({ bToCEnabled: true });
+
+  interpreter1.start();
+
+  interpreter1.activateTask("A").completeTask("A");
+  expect(interpreter1.getMarkings()).toEqual({
+    "implicit:A->B": 1,
+    "implicit:A->C": 1,
+  });
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["B"]));
+
+  interpreter1.activateTask("B").completeTask("B");
+  expect(interpreter1.getMarkings()).toEqual({
+    "implicit:A->C": 1,
+    "implicit:B->C": 1,
+  });
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["C"]));
+
+  interpreter1.activateTask("C").completeTask("C");
+  expect(interpreter1.getMarkings()).toEqual({
+    "implicit:C->D": 1,
+  });
+  expect(interpreter1.getEnabledTasks()).toEqual(new Set(["D"]));
+
+  const interpreter2 = net.buildInterpreter({ bToCEnabled: false });
+
+  interpreter2.start();
+
+  interpreter2.activateTask("A").completeTask("A");
+  expect(interpreter2.getMarkings()).toEqual({
+    "implicit:A->B": 1,
+    "implicit:A->C": 1,
+  });
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["B"]));
+
+  interpreter2.activateTask("B").completeTask("B");
+  expect(interpreter2.getMarkings()).toEqual({
+    "implicit:A->C": 1,
+    "implicit:B->D": 1,
+  });
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["C"]));
+
+  interpreter2.activateTask("C").completeTask("C");
+  expect(interpreter2.getMarkings()).toEqual({
+    "implicit:C->D": 1,
+    "implicit:B->D": 1,
+  });
+  expect(interpreter2.getEnabledTasks()).toEqual(new Set(["D"]));
+});
+
+it("can interpret nets with or-joins and cancellation regions (1)", () => {
+  const builder = new Builder<null>();
+
+  const net = builder
+    .addStartCondition("start")
+    .addEndCondition("end")
+    .addTask("A", { splitType: "and" })
+    .addTask("B", { joinType: "xor", splitType: "and" })
+    .addTask("C", {})
+    .addTask("D", {})
+    .addTask("E", {})
+    .addTask("F", { joinType: "and" })
+    .addTask("G", { joinType: "or" })
+    .addCondition("bToB")
+    .addCondition("bToDAndE")
+    .connectConditionToTask("start", "A")
+    .connectTaskToTask("A", "B")
+    .connectTaskToTask("A", "C")
+    .connectTaskToCondition("B", "bToB")
+    .connectConditionToTask("bToB", "B")
+    .connectTaskToCondition("B", "bToDAndE")
+    .connectConditionToTask("bToDAndE", "D")
+    .connectConditionToTask("bToDAndE", "E")
+    .connectTaskToTask("C", "G")
+    .connectTaskToTask("D", "F")
+    .connectTaskToTask("E", "F")
+    .connectTaskToTask("F", "G")
+    .connectTaskToCondition("G", "end")
+    .addCancellationRegion("D", { conditions: ["bToB"] });
+
+  const interpreter = net.buildInterpreter(null);
+
+  interpreter.start();
+
+  interpreter.activateTask("A").completeTask("A");
+  expect(interpreter.getMarkings()).toEqual({
+    "implicit:A->C": 1,
+    "implicit:A->B": 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["B", "C"]));
+
+  interpreter.activateTask("C").completeTask("C");
+  expect(interpreter.getMarkings()).toEqual({
+    "implicit:C->G": 1,
+    "implicit:A->B": 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["B"]));
+
+  interpreter.activateTask("B").completeTask("B");
+  expect(interpreter.getMarkings()).toEqual({
+    "implicit:C->G": 1,
+    bToB: 1,
+    bToDAndE: 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["D", "E", "B"]));
+
+  interpreter.activateTask("E").completeTask("E");
+  expect(interpreter.getMarkings()).toEqual({
+    bToB: 1,
+    "implicit:C->G": 1,
+    "implicit:E->F": 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["B"]));
+
+  interpreter.activateTask("B").completeTask("B");
+  expect(interpreter.getMarkings()).toEqual({
+    bToB: 1,
+    bToDAndE: 1,
+    "implicit:C->G": 1,
+    "implicit:E->F": 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["B", "D", "E"]));
+
+  interpreter.activateTask("D").completeTask("D");
+  expect(interpreter.getMarkings()).toEqual({
+    "implicit:D->F": 1,
+    "implicit:C->G": 1,
+    "implicit:E->F": 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["F"]));
+
+  interpreter.activateTask("F").completeTask("F");
+  expect(interpreter.getMarkings()).toEqual({
+    "implicit:C->G": 1,
+    "implicit:F->G": 1,
+  });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["G"]));
+});
+
+it("can interpret nets with or-joins and cancellation regions (2)", () => {
+  const builder = new Builder<null>();
+
+  const net = builder
+    .addStartCondition("start")
+    .addEndCondition("end")
+    .addTask("A", {})
+    .addTask("B", {})
+    .addTask("C", {})
+    .addTask("D", { splitType: "and" })
+    .addTask("E", { joinType: "or" })
+    .addCondition("c1")
+    .addCondition("c2")
+    .addCondition("c3")
+    .connectConditionToTask("start", "A")
+    .connectTaskToCondition("A", "c1")
+    .connectConditionToTask("c1", "B")
+    .connectTaskToCondition("B", "c2")
+    .connectConditionToTask("c2", "C")
+    .connectConditionToTask("c2", "E")
+    .connectTaskToCondition("C", "c3")
+    .connectConditionToTask("c3", "D")
+    .connectConditionToTask("c3", "E")
+    .connectTaskToCondition("D", "c1")
+    .connectTaskToCondition("D", "c2")
+    .connectTaskToCondition("E", "end")
+    .addCancellationRegion("C", { tasks: ["B"], conditions: ["c1", "c2"] });
+
+  const interpreter = net.buildInterpreter(null);
+
+  interpreter.start();
+
+  interpreter.activateTask("A").completeTask("A");
+  expect(interpreter.getMarkings()).toEqual({ c1: 1 });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["B"]));
+
+  interpreter.activateTask("B").completeTask("B");
+  expect(interpreter.getMarkings()).toEqual({ c2: 1 });
+  expect(interpreter.getEnabledTasks()).toEqual(new Set(["C", "E"]));
 });

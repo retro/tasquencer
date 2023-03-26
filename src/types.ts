@@ -24,7 +24,10 @@ export interface Task {
   joinType?: JoinType;
 }
 
-export type CancellationRegion = string[];
+export interface CancellationRegion {
+  tasks?: string[];
+  conditions?: string[];
+}
 
 export type RemoveIndex<T> = {
   [K in keyof T as string extends K

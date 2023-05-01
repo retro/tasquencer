@@ -568,7 +568,7 @@ it("can interpret nets with or-joins and cancellation regions (1)", () => {
   expect(interpreter.getEnabledTasks()).toEqual(new Set(["G"]));
 });
 
-it("can interpret nets with or-joins and cancellation regions (2)", () => {
+it("can interpret nets with loops, or-joins and cancellation regions", () => {
   const builder = new Builder<null>();
 
   const net = builder

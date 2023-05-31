@@ -1,29 +1,28 @@
-import * as R from "remeda";
+import * as R from 'remeda';
 import {
-  attribute as _,
   Digraph,
-  Node,
   Edge,
-  toDot,
+  Node,
   type NodeAttributesObject,
-} from "ts-graphviz";
+  attribute as _,
+  toDot,
+} from 'ts-graphviz';
 
-import { Interpreter } from "./interpreter.js";
-
+import { Interpreter } from './interpreter.js';
 import type {
   BuilderNet,
   Condition,
+  DefaultFlow,
+  Flow,
+  FlowProps,
   FlowType,
+  ImplicitConditionName,
+  Net,
   NotExtends,
+  PredicateFlow,
   Task,
   XOR,
-  FlowProps,
-  PredicateFlow,
-  DefaultFlow,
-  ImplicitConditionName,
-  Flow,
-  Net,
-} from "./types.js";
+} from './types.js';
 
 export class Builder<
   Context,
@@ -55,7 +54,7 @@ export class Builder<
 
   private addConditionUnsafe<T>(
     conditionName: string,
-    props?: Omit<Condition, "name">
+    props?: Omit<Condition, 'name'>
   ): T {
     const condition: Condition = { name: conditionName, ...props };
     const newConditions = R.merge(this.net.conditions, {
@@ -81,7 +80,7 @@ export class Builder<
   ) {
     const flows = this.net.flows;
 
-    if (type === "condition->task") {
+    if (type === 'condition->task') {
       const flowsFromConditions = flows.conditions;
       const flowsFromCondition = flowsFromConditions[from];
 
@@ -176,8 +175,8 @@ export class Builder<
 
   addTask<
     TN extends string,
-    P extends Omit<Task, "name">,
-    X extends P["splitType"] extends "or" | "xor" ? TN : never
+    P extends Omit<Task, 'name'>,
+    X extends P['splitType'] extends 'or' | 'xor' ? TN : never
   >(taskName: TN & NotExtends<BNTasks | BNConditions, TN>, props: P) {
     const task: Task = { name: taskName, ...props };
     const newTasks = R.merge(this.net.tasks, {
@@ -226,13 +225,13 @@ export class Builder<
     conditionNameFrom: CN & string,
     taskNameTo: TN & string
   ) {
-    return this.connectUnsafe(conditionNameFrom, taskNameTo, "condition->task");
+    return this.connectUnsafe(conditionNameFrom, taskNameTo, 'condition->task');
   }
 
   connectTaskToCondition<
     TN extends BNTasks,
     CN extends BNConditions,
-    S extends BNTasksWithOrXorSplit extends "or" | "xor" ? true : false,
+    S extends BNTasksWithOrXorSplit extends 'or' | 'xor' ? true : false,
     P extends S extends true
       ? XOR<FlowProps<PredicateFlow<Context>>, FlowProps<DefaultFlow>>
       : FlowProps<Flow>
@@ -244,7 +243,7 @@ export class Builder<
     return this.connectUnsafe(
       taskNameFrom,
       conditionNameTo,
-      "task->condition",
+      'task->condition',
       args[0]
     );
   }
@@ -278,32 +277,32 @@ export class Builder<
       .connectUnsafe(
         taskNameFrom,
         implicitConditionName,
-        "task->condition",
+        'task->condition',
         args[0]
       )
-      .connectUnsafe(implicitConditionName, taskNameTo, "condition->task");
+      .connectUnsafe(implicitConditionName, taskNameTo, 'condition->task');
   }
   toDot() {
-    const g = new Digraph({ [_.rankdir]: "LR", [_.splines]: "polyline" });
+    const g = new Digraph({ [_.rankdir]: 'LR', [_.splines]: 'polyline' });
     const conditionNodes: Record<string, Node> = {};
     const taskNodes: Record<string, Node> = {};
     Object.values(this.net.tasks).forEach((task) => {
       const join =
-        task.joinType === "and"
-          ? "⍄"
-          : task.joinType === "xor"
-          ? "⍃"
-          : task.joinType === "or"
-          ? "⌺"
-          : "";
+        task.joinType === 'and'
+          ? '⍄'
+          : task.joinType === 'xor'
+          ? '⍃'
+          : task.joinType === 'or'
+          ? '⌺'
+          : '';
       const split =
-        task.splitType === "and"
-          ? "⍃"
-          : task.splitType === "xor"
-          ? "⍄"
-          : task.splitType === "or"
-          ? "⌺"
-          : "";
+        task.splitType === 'and'
+          ? '⍃'
+          : task.splitType === 'xor'
+          ? '⍄'
+          : task.splitType === 'or'
+          ? '⌺'
+          : '';
       const label = [
         '<table border="1" cellborder="0" cellspacing="0" cellpadding="4"><tr>',
       ];
@@ -314,12 +313,12 @@ export class Builder<
       if (split.length) {
         label.push(`<td>${split}</td>`);
       }
-      label.push("</tr></table>");
+      label.push('</tr></table>');
 
       const node = new Node(task.name, {
-        [_.shape]: "plaintext",
+        [_.shape]: 'plaintext',
         [_.margin]: 0,
-        [_.label]: `<${label.join("")}>`,
+        [_.label]: `<${label.join('')}>`,
       });
       taskNodes[task.name] = node;
       g.addNode(node);
@@ -328,19 +327,19 @@ export class Builder<
       if (!condition.isImplicit) {
         const label =
           condition.name === this.net.startCondition
-            ? "▶"
+            ? '▶'
             : condition.name === this.net.endCondition
-            ? "■"
-            : "";
+            ? '■'
+            : '';
         const props: NodeAttributesObject = {
           [_.label]: label,
-          [_.shape]: "circle",
+          [_.shape]: 'circle',
           [_.width]: 0.5,
           [_.height]: 0.5,
           [_.fixedsize]: true,
         };
 
-        if (label === "■") {
+        if (label === '■') {
           props[_.fontsize] = 26;
         }
 
@@ -381,8 +380,8 @@ export class Builder<
     );
     return toDot(g);
   }
-  buildInterpreter(context: Context) {
-    const incomingFlows: Net["incomingFlows"] = { tasks: {}, conditions: {} };
+  toNet() {
+    const incomingFlows: Net['incomingFlows'] = { tasks: {}, conditions: {} };
 
     Object.entries(this.net.flows.tasks).forEach(([task, flows]) => {
       Object.entries(flows).forEach(([condition]) => {
@@ -400,10 +399,9 @@ export class Builder<
         incomingFlows.tasks[task] = incoming;
       }
     });
-
-    return new Interpreter<Context, BNTasks>(
-      { ...this.net, incomingFlows } as Net,
-      context
-    );
+    return { ...this.net, incomingFlows } as Net;
+  }
+  buildInterpreter(context: Context) {
+    return new Interpreter<Context, BNTasks>(this.toNet(), context);
   }
 }

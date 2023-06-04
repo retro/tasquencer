@@ -63,6 +63,21 @@ const INITIAL_INTERPRETER_STATE = Data.struct({
 });
 
 type InterpreterState = typeof INITIAL_INTERPRETER_STATE;
+interface JSInterpreterState {
+  markings: Record<string, number>;
+  enabledTasks: Set<string>;
+  activeTasks: Set<string>;
+}
+
+function JSInterpreterStateToInterpreterState(
+  jsState: JSInterpreterState
+): InterpreterState {
+  return Data.struct({
+    markings: HashMap.fromIterable(Object.entries(jsState.markings)),
+    enabledTasks: HashSet.fromIterable(jsState.enabledTasks),
+    activeTasks: HashSet.fromIterable(jsState.activeTasks),
+  });
+}
 
 const isTaskEnabled = dual(2, (state: InterpreterState, taskName: string) =>
   HashSet.has(state.enabledTasks, taskName)
@@ -164,9 +179,14 @@ const removeToken = dual(
 
     const newMarking = removeAllTokens ? 0 : marking - 1;
 
-    const newState = Struct.evolve(state, {
-      markings: HashMap.set(condition, newMarking),
-    });
+    const newState =
+      newMarking > 0
+        ? Struct.evolve(state, {
+            markings: HashMap.set(condition, newMarking),
+          })
+        : Struct.evolve(state, {
+            markings: HashMap.remove(condition),
+          });
 
     if (newMarking < 1) {
       return Array.from(net.flows.conditions[condition].values()).reduce(
@@ -464,7 +484,6 @@ const enablePostTasks = dual(
   (state: InterpreterState, net: Net, taskName: string) => {
     const postTasks = getPostTasks(net, taskName);
     return HashSet.reduce(postTasks, state, (state, postTaskName) => {
-      console.log(isJoinSatisfied(state, net, postTaskName));
       if (isJoinSatisfied(state, net, postTaskName)) {
         return Struct.evolve(state, {
           enabledTasks: HashSet.add(postTaskName),
@@ -475,7 +494,7 @@ const enablePostTasks = dual(
   }
 );
 
-class Interpreter {
+export class Interpreter {
   constructor(
     private net: Net,
     private stateRef: Ref.Ref<InterpreterState>,
@@ -507,6 +526,19 @@ class Interpreter {
       Effect.map(() => this)
     );
   }
+
+  resume(state: InterpreterState) {
+    return pipe(
+      Effect.succeed(this.stateRef),
+      Effect.flatMap((stateRef) => Ref.set(stateRef, state)),
+      Effect.map(() => this)
+    );
+  }
+
+  resumeFromJSState(state: JSInterpreterState) {
+    return this.resume(JSInterpreterStateToInterpreterState(state));
+  }
+
   activateTask(taskName: string) {
     return pipe(
       this.getState(),
@@ -570,6 +602,18 @@ class Interpreter {
   }
   getState() {
     return Ref.get(this.stateRef);
+  }
+  getJSState() {
+    return pipe(
+      this.getState(),
+      Effect.map((state) => {
+        return {
+          markings: Object.fromEntries(state.markings),
+          enabledTasks: new Set(state.enabledTasks),
+          activeTasks: new Set(state.activeTasks),
+        };
+      })
+    );
   }
 }
 

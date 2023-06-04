@@ -28,15 +28,7 @@
     }
   },
   "rules": {
-    "import/order": [
-      "error",
-      {
-        "alphabetize": {
-          "order": "asc",
-          "caseInsensitive": true
-        }
-      }
-    ],
+    "import/order": "off",
     "import/no-extraneous-dependencies": "error",
     "import/no-mutable-exports": "error",
     "import/no-unused-modules": "error",

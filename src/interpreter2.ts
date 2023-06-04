@@ -11,6 +11,7 @@ import * as Layer from '@effect/io/Layer';
 import * as Ref from '@effect/io/Ref';
 import * as R from 'remeda';
 
+import { WNet } from './WNet.js';
 import {
   isJoinSatisfied,
   isTaskActivated,
@@ -79,22 +80,16 @@ function JSInterpreterStateToInterpreterState(
 export class Interpreter {
   constructor(
     private net: Net,
+    private wNet: WNet,
     private stateManager: StateManager,
     private onStart: Option.Option<onStart>,
     private onActivate: Option.Option<onActivate>,
     private onComplete: Option.Option<onComplete>
   ) {}
   start() {
-    const startCondition = this.net.startCondition;
-
     return pipe(
       Effect.succeed(this.stateManager),
-      Effect.tap((stateManager) =>
-        stateManager.incrementConditionMarking(startCondition)
-      ),
-      Effect.tap((stateManager) =>
-        stateManager.enableTasksForCondition(startCondition)
-      ),
+      Effect.tap(() => this.wNet.startCondition.incrementMarking()),
       Effect.flatMap((stateManager) => stateManager.getState()),
       Effect.tap((state) =>
         Option.match(
@@ -126,11 +121,7 @@ export class Interpreter {
       Effect.ifEffect(
         pipe(
           Effect.succeed(this.stateManager),
-          Effect.tap((stateManager) => stateManager.disableTask(taskName)),
-          Effect.tap((stateManager) => stateManager.activateTask(taskName)),
-          Effect.tap((stateManager) =>
-            stateManager.consumeTokensFromIncomingFlows(taskName)
-          ),
+          Effect.tap(() => this.wNet.tasks[taskName].activate()),
           Effect.flatMap((stateManager) => stateManager.getState()),
           Effect.tap((state) =>
             Option.match(
@@ -152,14 +143,7 @@ export class Interpreter {
       Effect.ifEffect(
         pipe(
           Effect.succeed(this.stateManager),
-          Effect.tap((stateManager) => stateManager.deactivateTask(taskName)),
-          Effect.tap((stateManager) =>
-            stateManager.produceTokensInOutgoingFlows(taskName)
-          ),
-          Effect.tap((stateManager) => stateManager.enablePostTasks(taskName)),
-          Effect.tap((stateManager) =>
-            stateManager.cancelTaskCancellationRegion(taskName)
-          ),
+          Effect.tap(() => this.wNet.tasks[taskName].complete()),
           Effect.flatMap((stateManager) => stateManager.getState()),
           Effect.tap((state) =>
             Option.match(
@@ -199,6 +183,8 @@ export function makeInterpreter(net: Net) {
 
     const stateManager = new Memory(net, stateRef);
 
+    const wNet = new WNet(stateManager, net);
+
     const onStartCb = yield* $(Effect.serviceOption(onStart));
     const onActivateCb = yield* $(Effect.serviceOption(onActivate));
     const onCompleteCb = yield* $(Effect.serviceOption(onComplete));
@@ -206,6 +192,7 @@ export function makeInterpreter(net: Net) {
 
     return new Interpreter(
       net,
+      wNet,
       stateManager,
       onStartCb,
       onActivateCb,

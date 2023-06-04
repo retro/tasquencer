@@ -1,3 +1,7 @@
+import * as Equal from '@effect/data/Equal';
+import * as HashMap from '@effect/data/HashMap';
+import * as HashSet from '@effect/data/HashSet';
+
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & object;
@@ -15,7 +19,7 @@ export interface Condition {
   isImplicit?: boolean;
 }
 
-export type SplitType = "and" | "or" | "xor";
+export type SplitType = 'and' | 'or' | 'xor';
 export type JoinType = SplitType;
 
 export interface Task {
@@ -51,7 +55,7 @@ export type KnownIdentity<T> = T extends object
     }
   : T;
 
-export type FlowType = "task->condition" | "condition->task";
+export type FlowType = 'task->condition' | 'condition->task';
 
 export interface Flow {
   predicate?: (context: unknown, net: BuilderNet) => boolean;
@@ -68,7 +72,7 @@ export interface DefaultFlow {
   isDefault: true;
 }
 
-export type FlowProps<T> = Omit<T, "from" | "to" | "type">;
+export type FlowProps<T> = Omit<T, 'from' | 'to' | 'type'>;
 
 export interface BuilderNet {
   startCondition?: string;
@@ -97,3 +101,10 @@ export type ImplicitConditionName<
 > = `implicit:${N1}->${N2}`;
 
 export type NotExtends<NS, N> = N extends NS ? never : N;
+
+export type InterpreterState = Readonly<{
+  markings: HashMap.HashMap<string, number>;
+  enabledTasks: HashSet.HashSet<string>;
+  activeTasks: HashSet.HashSet<string>;
+}> &
+  Equal.Equal;

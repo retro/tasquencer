@@ -1,6 +1,6 @@
 import * as Effect from '@effect/io/Effect';
 
-import { InterpreterState } from '../types.js';
+import { InterpreterState, WTaskState } from '../types.js';
 
 export interface StateManager {
   incrementConditionMarking(
@@ -15,7 +15,9 @@ export interface StateManager {
   enableTask(taskName: string): Effect.Effect<never, never, void>;
   disableTask(taskName: string): Effect.Effect<never, never, void>;
   activateTask(taskName: string): Effect.Effect<never, never, void>;
-  deactivateTask(taskName: string): Effect.Effect<never, never, void>;
+  cancelTask(taskName: string): Effect.Effect<never, never, void>;
+  completeTask(taskName: string): Effect.Effect<never, never, void>;
+  getTaskState(taskName: string): Effect.Effect<never, never, WTaskState>;
 
   getState(): Effect.Effect<never, never, InterpreterState>;
   resume(state: InterpreterState): Effect.Effect<never, never, void>;

@@ -5,22 +5,22 @@ import * as Effect from '@effect/io/Effect';
 import { WCondition } from './WCondition.js';
 import { WNet } from './WNet.js';
 import { StateManager } from './state-manager/types.js';
-import type { Flow, JoinType, SplitType, Task } from './types.js';
-
-export type WTaskState =
-  | 'disabled'
-  | 'enabled'
-  | 'activated'
-  | 'completed'
-  | 'cancelled';
+import type { Flow, JoinType, SplitType, Task, WTaskState } from './types.js';
 
 const VALID_STATE_TRANSITIONS = {
   disabled: new Set(['enabled']),
-  enabled: new Set(['activated', 'disabled']),
-  activated: new Set(['completed', 'cancelled']),
+  enabled: new Set(['active', 'disabled']),
+  active: new Set(['completed', 'cancelled']),
   completed: new Set(['enabled']),
   cancelled: new Set(['enabled']),
 };
+
+function isValidTransition(
+  from: WTaskState,
+  to: WTaskState
+): to is keyof typeof VALID_STATE_TRANSITIONS {
+  return VALID_STATE_TRANSITIONS[from].has(to);
+}
 
 export class WTask {
   readonly stateManager: StateManager;
@@ -58,22 +58,16 @@ export class WTask {
     this.cancellationRegion.conditions[condition.name] = condition;
   }
 
-  getState(): WTaskState {
-    const state = Effect.runSync(this.stateManager.getState());
-    if (HashSet.has(state.activeTasks, this.name)) {
-      return 'activated';
-    } else if (HashSet.has(state.enabledTasks, this.name)) {
-      return 'enabled';
-    }
-    return 'disabled';
+  getState() {
+    return this.stateManager.getTaskState(this.name);
   }
 
   enable() {
-    const validTransitions = VALID_STATE_TRANSITIONS[this.getState()];
     const self = this;
 
     return Effect.gen(function* ($) {
-      if (validTransitions.has('enabled')) {
+      const state = yield* $(self.getState());
+      if (isValidTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
           yield* $(self.stateManager.enableTask(self.name));
@@ -83,43 +77,49 @@ export class WTask {
   }
 
   disable() {
-    const validTransitions = VALID_STATE_TRANSITIONS[this.getState()];
-    if (validTransitions.has('disabled')) {
-      return this.stateManager.disableTask(this.name);
-    }
-    return Effect.unit();
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getState());
+      if (isValidTransition(state, 'disabled')) {
+        yield* $(self.stateManager.disableTask(self.name));
+      }
+    });
   }
 
   activate() {
-    const validTransitions = VALID_STATE_TRANSITIONS[this.getState()];
-    if (validTransitions.has('activated')) {
-      return pipe(
-        Effect.succeed(this),
-        Effect.tap((task) => task.stateManager.disableTask(task.name)),
-        Effect.tap((task) => task.stateManager.activateTask(task.name)),
-        Effect.tap((task) => {
-          const preSet = Object.values(task.preSet);
-          const updates = preSet.map((condition) =>
-            condition.decrementMarking()
-          );
-          return Effect.allParDiscard(updates);
-        })
-      );
-    }
-    return Effect.unit();
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getState());
+      if (isValidTransition(state, 'active')) {
+        yield* $(self.stateManager.activateTask(self.name));
+
+        const preSet = Object.values(self.preSet);
+        const updates = preSet.map((condition) => condition.decrementMarking());
+        yield* $(Effect.allParDiscard(updates));
+      }
+    });
   }
 
   complete() {
-    const validTransitions = VALID_STATE_TRANSITIONS[this.getState()];
-    if (validTransitions.has('completed')) {
-      return pipe(
-        Effect.succeed(this),
-        Effect.tap((task) => task.stateManager.deactivateTask(task.name)),
-        Effect.tap((task) => task.cancelCancellationRegion()),
-        Effect.tap((task) => task.produceTokensInOutgoingFlows())
-      );
-    }
-    return Effect.unit();
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getState());
+      if (isValidTransition(state, 'completed')) {
+        yield* $(self.stateManager.completeTask(self.name));
+        yield* $(self.cancelCancellationRegion());
+        yield* $(self.produceTokensInOutgoingFlows());
+      }
+    });
+  }
+
+  cancel() {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getState());
+      if (isValidTransition(state, 'cancelled')) {
+        yield* $(self.stateManager.cancelTask(self.name));
+      }
+    });
   }
 
   cancelCancellationRegion() {
@@ -131,14 +131,6 @@ export class WTask {
     ).map((c) => c.cancel());
 
     return Effect.allParDiscard([...taskUpdates, ...conditionUpdates]);
-  }
-
-  cancel() {
-    const validTransitions = VALID_STATE_TRANSITIONS[this.getState()];
-    if (validTransitions.has('cancelled')) {
-      return this.stateManager.deactivateTask(this.name);
-    }
-    return Effect.unit();
   }
 
   private produceTokensInOutgoingFlows() {
@@ -221,6 +213,7 @@ export class WTask {
       const markings = yield* $(
         Effect.allPar(Object.values(self.preSet).map((c) => c.getMarking()))
       );
+
       return markings.filter((m) => m > 0).length === markings.length
         ? true
         : false;

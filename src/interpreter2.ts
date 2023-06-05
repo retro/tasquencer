@@ -17,7 +17,7 @@ import {
   isTaskActivated,
   isTaskEnabled,
 } from './interpreter/predicates.js';
-import { Memory } from './state-manager/memory.js';
+import { Memory, createMemory } from './state-manager/memory.js';
 import { StateManager } from './state-manager/types.js';
 import type { CancellationRegion, InterpreterState, Net } from './types.js';
 
@@ -79,7 +79,6 @@ function JSInterpreterStateToInterpreterState(
 
 export class Interpreter {
   constructor(
-    private net: Net,
     private wNet: WNet,
     private stateManager: StateManager,
     private onStart: Option.Option<onStart>,
@@ -177,11 +176,7 @@ export class Interpreter {
 
 export function makeInterpreter(net: Net) {
   return Effect.gen(function* ($) {
-    const stateRef = yield* $(
-      Ref.make<InterpreterState>(INITIAL_INTERPRETER_STATE)
-    );
-
-    const stateManager = new Memory(net, stateRef);
+    const stateManager = yield* $(createMemory());
 
     const wNet = new WNet(stateManager, net);
 
@@ -191,7 +186,6 @@ export function makeInterpreter(net: Net) {
     /*const onCancelCb = yield* $(Effect.serviceOption(onCancel));*/
 
     return new Interpreter(
-      net,
       wNet,
       stateManager,
       onStartCb,

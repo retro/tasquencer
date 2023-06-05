@@ -108,3 +108,10 @@ export type InterpreterState = Readonly<{
   activeTasks: HashSet.HashSet<string>;
 }> &
   Equal.Equal;
+
+export type WTaskState =
+  | 'disabled'
+  | 'enabled'
+  | 'active'
+  | 'completed'
+  | 'cancelled';

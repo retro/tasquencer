@@ -1,6 +1,5 @@
 import * as Equal from '@effect/data/Equal';
 import * as HashMap from '@effect/data/HashMap';
-import * as HashSet from '@effect/data/HashSet';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];

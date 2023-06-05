@@ -1,7 +1,6 @@
 import * as Data from '@effect/data/Data';
 import { pipe } from '@effect/data/Function';
 import * as HashMap from '@effect/data/HashMap';
-import * as HashSet from '@effect/data/HashSet';
 import * as Effect from '@effect/io/Effect';
 import { expect, it } from 'vitest';
 
@@ -16,7 +15,7 @@ interface JSInterpreterState {
   tasks: Record<string, WTaskState>;
 }
 
-function toInterpreterState(jsState: JSInterpreterState): InterpreterState {
+function _toInterpreterState(jsState: JSInterpreterState): InterpreterState {
   return Data.struct({
     markings: HashMap.fromIterable<string, number>(
       Object.entries(jsState.markings)

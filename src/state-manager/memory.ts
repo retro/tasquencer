@@ -1,5 +1,4 @@
 import * as Data from '@effect/data/Data';
-import * as Equal from '@effect/data/Equal';
 import { pipe } from '@effect/data/Function';
 import * as HashMap from '@effect/data/HashMap';
 import * as Option from '@effect/data/Option';
@@ -47,7 +46,7 @@ export class Memory implements StateManager {
     return Ref.update(this.stateRef, (state) => {
       return Struct.evolve(state, {
         markings: HashMap.remove(condition),
-      }) as InitialState;
+      }) as InterpreterState;
     });
   }
   getConditionMarking(condition: string) {

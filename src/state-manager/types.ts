@@ -1,3 +1,4 @@
+import * as Context from '@effect/data/Context';
 import * as Effect from '@effect/io/Effect';
 
 import { InterpreterState, WTaskState } from '../types.js';
@@ -20,5 +21,6 @@ export interface StateManager {
   getTaskState(taskName: string): Effect.Effect<never, never, WTaskState>;
 
   getState(): Effect.Effect<never, never, InterpreterState>;
-  resume(state: InterpreterState): Effect.Effect<never, never, void>;
 }
+
+export const StateManager = Context.Tag<StateManager>();

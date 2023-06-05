@@ -1,5 +1,4 @@
-import { dual, identity, pipe } from '@effect/data/Function';
-import * as HashSet from '@effect/data/HashSet';
+import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import { WCondition } from './WCondition.js';
@@ -120,6 +119,21 @@ export class WTask {
         yield* $(self.stateManager.cancelTask(self.name));
       }
     });
+  }
+
+  isEnabled() {
+    return this.isStateEqualTo('enabled');
+  }
+
+  isActive() {
+    return this.isStateEqualTo('active');
+  }
+
+  isStateEqualTo(state: WTaskState) {
+    return pipe(
+      this.getState(),
+      Effect.map((s) => s === state)
+    );
   }
 
   cancelCancellationRegion() {

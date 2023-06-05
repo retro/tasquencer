@@ -104,8 +104,7 @@ export type NotExtends<NS, N> = N extends NS ? never : N;
 
 export type InterpreterState = Readonly<{
   markings: HashMap.HashMap<string, number>;
-  enabledTasks: HashSet.HashSet<string>;
-  activeTasks: HashSet.HashSet<string>;
+  tasks: HashMap.HashMap<string, WTaskState>;
 }> &
   Equal.Equal;
 

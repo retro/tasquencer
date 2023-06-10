@@ -1,10 +1,16 @@
 import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
-import { WCondition } from './WCondition.js';
-import { WNet } from './WNet.js';
-import { StateManager } from './state-manager/types.js';
-import type { Flow, JoinType, SplitType, Task, WTaskState } from './types.js';
+import { Condition } from './Condition.js';
+import { Workflow } from './Workflow.js';
+import { StateManager } from './stateManager/types.js';
+import type {
+  Flow,
+  JoinType,
+  SplitType,
+  TaskNode,
+  WTaskState,
+} from './types.js';
 
 const VALID_STATE_TRANSITIONS = {
   disabled: new Set(['enabled']),
@@ -21,44 +27,44 @@ function isValidTransition(
   return VALID_STATE_TRANSITIONS[from].has(to);
 }
 
-export class WTask {
+export class Task {
   readonly stateManager: StateManager;
-  readonly net: WNet;
-  readonly preSet: Record<string, WCondition> = {};
-  readonly postSet: Record<string, WCondition> = {};
+  readonly workflow: Workflow;
+  readonly preSet: Record<string, Condition> = {};
+  readonly postSet: Record<string, Condition> = {};
   readonly incomingFlows: Record<string, Flow> = {};
   readonly outgoingFlows: Record<string, Flow> = {};
   readonly cancellationRegion: {
-    tasks: Record<string, WTask>;
-    conditions: Record<string, WCondition>;
+    tasks: Record<string, Task>;
+    conditions: Record<string, Condition>;
   } = { tasks: {}, conditions: {} };
   readonly name: string;
   readonly splitType: SplitType | undefined;
   readonly joinType: JoinType | undefined;
 
-  constructor(stateManager: StateManager, net: WNet, task: Task) {
+  constructor(stateManager: StateManager, workflow: Workflow, task: TaskNode) {
     this.stateManager = stateManager;
-    this.net = net;
+    this.workflow = workflow;
     this.name = task.name;
     this.splitType = task.splitType;
     this.joinType = task.joinType;
   }
-  addIncomingFlow(condition: WCondition) {
+  addIncomingFlow(condition: Condition) {
     this.preSet[condition.name] = condition;
   }
-  addOutgoingFlow(condition: WCondition, flow: Flow) {
+  addOutgoingFlow(condition: Condition, flow: Flow) {
     this.postSet[condition.name] = condition;
     this.outgoingFlows[condition.name] = flow;
   }
-  addTaskToCancellationRegion(task: WTask) {
+  addTaskToCancellationRegion(task: Task) {
     this.cancellationRegion.tasks[task.name] = task;
   }
-  addConditionToCancellationRegion(condition: WCondition) {
+  addConditionToCancellationRegion(condition: Condition) {
     this.cancellationRegion.conditions[condition.name] = condition;
   }
 
   getState() {
-    return this.stateManager.getTaskState(this.name);
+    return this.stateManager.getTaskState(this);
   }
 
   enable() {
@@ -69,7 +75,7 @@ export class WTask {
       if (isValidTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
-          yield* $(self.stateManager.enableTask(self.name));
+          yield* $(self.stateManager.enableTask(self));
         }
       }
     });
@@ -80,7 +86,7 @@ export class WTask {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'disabled')) {
-        yield* $(self.stateManager.disableTask(self.name));
+        yield* $(self.stateManager.disableTask(self));
       }
     });
   }
@@ -90,7 +96,7 @@ export class WTask {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'active')) {
-        yield* $(self.stateManager.activateTask(self.name));
+        yield* $(self.stateManager.activateTask(self));
 
         const preSet = Object.values(self.preSet);
         const updates = preSet.map((condition) => condition.decrementMarking());
@@ -104,7 +110,7 @@ export class WTask {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'completed')) {
-        yield* $(self.stateManager.completeTask(self.name));
+        yield* $(self.stateManager.completeTask(self));
         yield* $(self.cancelCancellationRegion());
         yield* $(self.produceTokensInOutgoingFlows());
       }
@@ -116,7 +122,7 @@ export class WTask {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'cancelled')) {
-        yield* $(self.stateManager.cancelTask(self.name));
+        yield* $(self.stateManager.cancelTask(self));
       }
     });
   }
@@ -163,7 +169,9 @@ export class WTask {
     const updates = Object.entries(flows).map(([condition, flow]) => {
       if (flow.isDefault) {
         return this.postSet[condition].incrementMarking();
-      } else if (flow.predicate ? flow.predicate(null, this.net.net) : false) {
+      } else if (
+        flow.predicate ? flow.predicate(null, this.workflow.net) : false
+      ) {
         return this.postSet[condition].incrementMarking();
       }
       return Effect.unit();
@@ -182,7 +190,9 @@ export class WTask {
     for (const [condition, flow] of sortedFlows) {
       if (flow.isDefault) {
         return this.postSet[condition].incrementMarking();
-      } else if (flow.predicate ? flow.predicate(null, this.net.net) : false) {
+      } else if (
+        flow.predicate ? flow.predicate(null, this.workflow.net) : false
+      ) {
         return this.postSet[condition].incrementMarking();
       }
     }

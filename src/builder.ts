@@ -11,7 +11,7 @@ import {
 import { Interpreter } from './interpreter.js';
 import type {
   BuilderNet,
-  Condition,
+  ConditionNode,
   DefaultFlow,
   Flow,
   FlowProps,
@@ -20,7 +20,7 @@ import type {
   Net,
   NotExtends,
   PredicateFlow,
-  Task,
+  TaskNode,
   XOR,
 } from './types.js';
 
@@ -54,9 +54,9 @@ export class Builder<
 
   private addConditionUnsafe<T>(
     conditionName: string,
-    props?: Omit<Condition, 'name'>
+    props?: Omit<ConditionNode, 'name'>
   ): T {
-    const condition: Condition = { name: conditionName, ...props };
+    const condition: ConditionNode = { name: conditionName, ...props };
     const newConditions = R.merge(this.net.conditions, {
       [conditionName]: condition,
     });
@@ -175,10 +175,10 @@ export class Builder<
 
   addTask<
     TN extends string,
-    P extends Omit<Task, 'name'>,
+    P extends Omit<TaskNode, 'name'>,
     X extends P['splitType'] extends 'or' | 'xor' ? TN : never
   >(taskName: TN & NotExtends<BNTasks | BNConditions, TN>, props: P) {
-    const task: Task = { name: taskName, ...props };
+    const task: TaskNode = { name: taskName, ...props };
     const newTasks = R.merge(this.net.tasks, {
       [taskName]: task,
     });

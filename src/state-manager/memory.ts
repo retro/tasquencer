@@ -6,6 +6,8 @@ import * as Struct from '@effect/data/Struct';
 import * as Effect from '@effect/io/Effect';
 import * as Ref from '@effect/io/Ref';
 
+import type { Condition } from '../Condition.js';
+import type { Task } from '../Task.js';
 import { InterpreterState, WTaskState } from '../types.js';
 import { StateManager } from './types.js';
 
@@ -17,10 +19,10 @@ const INITIAL_STATE: InterpreterState = Data.struct({
 export class Memory implements StateManager {
   constructor(private readonly stateRef: Ref.Ref<InterpreterState>) {}
 
-  incrementConditionMarking(condition: string) {
+  incrementConditionMarking(condition: Condition) {
     return Ref.update(this.stateRef, (state) =>
       Struct.evolve(state, {
-        markings: HashMap.modifyAt(condition, (marking) =>
+        markings: HashMap.modifyAt(condition.name, (marking) =>
           Option.sum(
             Option.orElse(marking, () => Option.some(0)),
             Option.some(1)
@@ -29,10 +31,10 @@ export class Memory implements StateManager {
       })
     );
   }
-  decrementConditionMarking(condition: string) {
+  decrementConditionMarking(condition: Condition) {
     return Ref.update(this.stateRef, (state) =>
       Struct.evolve(state, {
-        markings: HashMap.modifyAt(condition, (marking) =>
+        markings: HashMap.modifyAt(condition.name, (marking) =>
           pipe(
             marking,
             Option.map((marking) => marking - 1),
@@ -42,57 +44,57 @@ export class Memory implements StateManager {
       })
     );
   }
-  emptyConditionMarking(condition: string) {
+  emptyConditionMarking(condition: Condition) {
     return Ref.update(this.stateRef, (state) => {
       return Struct.evolve(state, {
-        markings: HashMap.remove(condition),
+        markings: HashMap.remove(condition.name),
       }) as InterpreterState;
     });
   }
-  getConditionMarking(condition: string) {
+  getConditionMarking(condition: Condition) {
     return pipe(
       Ref.get(this.stateRef),
       Effect.map((state) =>
         pipe(
           state.markings,
-          HashMap.get(condition),
+          HashMap.get(condition.name),
           Option.getOrElse(() => 0)
         )
       )
     );
   }
 
-  updateTaskState(taskName: string, state: WTaskState) {
+  updateTaskState(task: Task, state: WTaskState) {
     return Ref.update(
       this.stateRef,
       Struct.evolve({
-        tasks: HashMap.set(taskName, state),
+        tasks: HashMap.set(task.name, state),
       })
     );
   }
 
-  enableTask(taskName: string) {
-    return this.updateTaskState(taskName, 'enabled');
+  enableTask(task: Task) {
+    return this.updateTaskState(task, 'enabled');
   }
-  disableTask(taskName: string) {
-    return this.updateTaskState(taskName, 'disabled');
+  disableTask(task: Task) {
+    return this.updateTaskState(task, 'disabled');
   }
-  activateTask(taskName: string) {
-    return this.updateTaskState(taskName, 'active');
+  activateTask(task: Task) {
+    return this.updateTaskState(task, 'active');
   }
-  completeTask(taskName: string) {
-    return this.updateTaskState(taskName, 'completed');
+  completeTask(task: Task) {
+    return this.updateTaskState(task, 'completed');
   }
-  cancelTask(taskName: string) {
-    return this.updateTaskState(taskName, 'cancelled');
+  cancelTask(task: Task) {
+    return this.updateTaskState(task, 'cancelled');
   }
-  getTaskState(taskName: string) {
+  getTaskState(task: Task) {
     return pipe(
       Ref.get(this.stateRef),
       Effect.map((state) =>
         pipe(
           state.tasks,
-          HashMap.get(taskName),
+          HashMap.get(task.name),
           Option.getOrElse(() => 'disabled' as WTaskState)
         )
       )

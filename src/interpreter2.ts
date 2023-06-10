@@ -1,9 +1,8 @@
 import * as Data from '@effect/data/Data';
-import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
-import { WNet } from './WNet.js';
-import { StateManager } from './state-manager/types.js';
+import { Workflow } from './Workflow.js';
+import { StateManager } from './stateManager/types.js';
 import type { Net } from './types.js';
 
 /*export type onStart = (
@@ -41,54 +40,61 @@ const TaskNotActivatedError = Data.tagged<TaskNotActivatedError>(
 );
 
 export class Interpreter {
-  constructor(private wNet: WNet, private stateManager: StateManager) {}
+  constructor(private workflow: Workflow, private stateManager: StateManager) {}
   start() {
-    return pipe(
-      Effect.succeed(this.stateManager),
-      Effect.tap(() => this.wNet.startCondition.incrementMarking()),
-      Effect.flatMap((stateManager) => stateManager.getState()),
-      Effect.map(() => this)
-    );
+    const { workflow, stateManager } = this;
+    return Effect.gen(function* ($) {
+      const id = yield* $(stateManager.initializeWorkflow());
+      yield* $(workflow.initialize(id));
+      const startCondition = yield* $(workflow.getStartCondition());
+      yield* $(startCondition.incrementMarking());
+    });
+  }
+  resume(workflowId: string) {
+    const { workflow } = this;
+    return Effect.gen(function* ($) {
+      yield* $(workflow.resume(workflowId));
+    });
   }
 
   activateTask(taskName: string) {
-    return pipe(
-      this.wNet.tasks[taskName].isEnabled(),
-      Effect.ifEffect(
-        pipe(
-          Effect.succeed(this.stateManager),
-          Effect.tap(() => this.wNet.tasks[taskName].activate()),
-          Effect.flatMap((stateManager) => stateManager.getState()),
-          Effect.map(() => this)
-        ),
-        Effect.fail(TaskNotEnabledError())
-      )
-    );
+    const { workflow } = this;
+    return Effect.gen(function* ($) {
+      const task = yield* $(workflow.getTask(taskName));
+      const isEnabled = yield* $(task.isEnabled());
+      if (isEnabled) {
+        yield* $(task.activate());
+      } else {
+        yield* $(Effect.fail(TaskNotEnabledError()));
+      }
+    });
   }
   completeTask(taskName: string) {
-    return pipe(
-      this.wNet.tasks[taskName].isActive(),
-      Effect.ifEffect(
-        pipe(
-          Effect.succeed(this.stateManager),
-          Effect.tap(() => this.wNet.tasks[taskName].complete()),
-          Effect.flatMap((stateManager) => stateManager.getState()),
-          Effect.map(() => this)
-        ),
-        Effect.fail(TaskNotActivatedError())
-      )
-    );
+    const { workflow } = this;
+    return Effect.gen(function* ($) {
+      const task = yield* $(workflow.getTask(taskName));
+      const isActive = yield* $(task.isActive());
+      if (isActive) {
+        yield* $(task.complete());
+      } else {
+        yield* $(Effect.fail(TaskNotActivatedError()));
+      }
+    });
   }
   getState() {
-    return this.stateManager.getState();
+    const { workflow, stateManager } = this;
+    return Effect.gen(function* ($) {
+      const workflowID = yield* $(workflow.getID());
+      return yield* $(stateManager.getWorkflowState(workflowID));
+    });
   }
 }
 
 export function makeInterpreter(net: Net) {
   return Effect.gen(function* ($) {
     const stateManager = yield* $(StateManager);
-    const wNet = new WNet(stateManager, net);
+    const workflow = new Workflow(stateManager, net);
 
-    return new Interpreter(wNet, stateManager);
+    return new Interpreter(workflow, stateManager);
   });
 }

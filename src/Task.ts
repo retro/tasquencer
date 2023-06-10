@@ -15,9 +15,9 @@ import type {
 const VALID_STATE_TRANSITIONS = {
   disabled: new Set(['enabled']),
   enabled: new Set(['active', 'disabled']),
-  active: new Set(['completed', 'cancelled']),
+  active: new Set(['completed', 'canceled']),
   completed: new Set(['enabled']),
-  cancelled: new Set(['enabled']),
+  canceled: new Set(['enabled']),
 };
 
 function isValidTransition(
@@ -28,7 +28,6 @@ function isValidTransition(
 }
 
 export class Task {
-  readonly stateManager: StateManager;
   readonly workflow: Workflow;
   readonly preSet: Record<string, Condition> = {};
   readonly postSet: Record<string, Condition> = {};
@@ -42,8 +41,7 @@ export class Task {
   readonly splitType: SplitType | undefined;
   readonly joinType: JoinType | undefined;
 
-  constructor(stateManager: StateManager, workflow: Workflow, task: TaskNode) {
-    this.stateManager = stateManager;
+  constructor(workflow: Workflow, task: TaskNode) {
     this.workflow = workflow;
     this.name = task.name;
     this.splitType = task.splitType;
@@ -64,7 +62,11 @@ export class Task {
   }
 
   getState() {
-    return this.stateManager.getTaskState(this);
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(StateManager);
+      return yield* $(stateManager.getTaskState(self));
+    });
   }
 
   enable() {
@@ -72,10 +74,12 @@ export class Task {
 
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
+      const stateManager = yield* $(StateManager);
+
       if (isValidTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
-          yield* $(self.stateManager.enableTask(self));
+          yield* $(stateManager.enableTask(self));
         }
       }
     });
@@ -84,9 +88,10 @@ export class Task {
   disable() {
     const self = this;
     return Effect.gen(function* ($) {
+      const stateManager = yield* $(StateManager);
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'disabled')) {
-        yield* $(self.stateManager.disableTask(self));
+        yield* $(stateManager.disableTask(self));
       }
     });
   }
@@ -94,9 +99,10 @@ export class Task {
   activate() {
     const self = this;
     return Effect.gen(function* ($) {
+      const stateManager = yield* $(StateManager);
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'active')) {
-        yield* $(self.stateManager.activateTask(self));
+        yield* $(stateManager.activateTask(self));
 
         const preSet = Object.values(self.preSet);
         const updates = preSet.map((condition) => condition.decrementMarking());
@@ -109,8 +115,9 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
+      const stateManager = yield* $(StateManager);
       if (isValidTransition(state, 'completed')) {
-        yield* $(self.stateManager.completeTask(self));
+        yield* $(stateManager.completeTask(self));
         yield* $(self.cancelCancellationRegion());
         yield* $(self.produceTokensInOutgoingFlows());
       }
@@ -121,8 +128,9 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTransition(state, 'cancelled')) {
-        yield* $(self.stateManager.cancelTask(self));
+      const stateManager = yield* $(StateManager);
+      if (isValidTransition(state, 'canceled')) {
+        yield* $(stateManager.cancelTask(self));
       }
     });
   }

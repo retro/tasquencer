@@ -173,7 +173,6 @@ export class Memory implements StateManager {
       );
 
       return yield* $(
-        // TODO: validate that workflow exists
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const workflow = draft[workflowID]!;
@@ -194,8 +193,6 @@ export class Memory implements StateManager {
       );
 
       return yield* $(
-        // TODO: validate that workflow exists
-        // TODO: validate that condition exists and has positive marking
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const workflow = draft[workflowID]!;
@@ -215,7 +212,6 @@ export class Memory implements StateManager {
       );
 
       return yield* $(
-        // TODO: validate that workflow exists
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const workflow = draft[workflowID]!;
@@ -274,7 +270,7 @@ export class Memory implements StateManager {
     return this.updateTaskState(task, 'completed');
   }
   cancelTask(task: Task) {
-    return this.updateTaskState(task, 'cancelled');
+    return this.updateTaskState(task, 'canceled');
   }
   getTaskState(task: Task) {
     const { storeRef } = this;

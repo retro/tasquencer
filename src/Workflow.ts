@@ -27,23 +27,21 @@ export const WorkflowNotInitialized = Data.tagged<WorkflowNotInitialized>(
 
 export class Workflow {
   net: Net;
-  readonly stateManager: StateManager;
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};
   readonly startCondition: Condition;
   readonly endCondition: Condition;
   private id: string | null = null;
 
-  constructor(stateManager: StateManager, net: Net) {
+  constructor(net: Net) {
     this.net = net;
-    this.stateManager = stateManager;
 
     Object.values(net.tasks).forEach((task) => {
-      const wTask = new Task(stateManager, this, task);
+      const wTask = new Task(this, task);
       this.tasks[wTask.name] = wTask;
     });
     Object.values(net.conditions).forEach((condition) => {
-      const wCondition = new Condition(stateManager, this, condition);
+      const wCondition = new Condition(this, condition);
       this.conditions[wCondition.name] = wCondition;
     });
 
@@ -91,6 +89,7 @@ export class Workflow {
       }
     );
   }
+
   initialize(id: string) {
     this.id = id;
     return Effect.unit();

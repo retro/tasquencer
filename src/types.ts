@@ -103,4 +103,4 @@ export type WTaskState =
   | 'enabled'
   | 'active'
   | 'completed'
-  | 'cancelled';
+  | 'canceled';

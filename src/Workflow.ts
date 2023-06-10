@@ -47,22 +47,28 @@ export class Workflow {
       this.conditions[wCondition.name] = wCondition;
     });
 
-    this.startCondition = this.conditions[net.startCondition];
-    this.endCondition = this.conditions[net.endCondition];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.startCondition = this.conditions[net.startCondition]!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.endCondition = this.conditions[net.endCondition]!;
 
     Object.entries(net.flows.tasks).forEach(([taskName, flows]) => {
-      const wTask = this.tasks[taskName];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const wTask = this.tasks[taskName]!;
       Object.entries(flows).forEach(([conditionName, flow]) => {
-        const wCondition = this.conditions[conditionName];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const wCondition = this.conditions[conditionName]!;
         wTask.addOutgoingFlow(wCondition, flow);
         wCondition.addIncomingFlow(wTask);
       });
     });
 
     Object.entries(net.flows.conditions).forEach(([conditionName, flows]) => {
-      const wCondition = this.conditions[conditionName];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const wCondition = this.conditions[conditionName]!;
       flows.forEach((flow) => {
-        const wTask = this.tasks[flow];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const wTask = this.tasks[flow]!;
         wCondition.addOutgoingFlow(wTask);
         wTask.addIncomingFlow(wCondition);
       });
@@ -70,14 +76,17 @@ export class Workflow {
 
     Object.entries(net.cancellationRegions).forEach(
       ([task, cancellationRegion]) => {
-        const wTask = this.tasks[task];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const wTask = this.tasks[task]!;
 
         cancellationRegion.tasks?.forEach((task) => {
-          wTask.addTaskToCancellationRegion(this.tasks[task]);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          wTask.addTaskToCancellationRegion(this.tasks[task]!);
         });
 
         cancellationRegion.conditions?.forEach((condition) => {
-          wTask.addConditionToCancellationRegion(this.conditions[condition]);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          wTask.addConditionToCancellationRegion(this.conditions[condition]!);
         });
       }
     );
@@ -91,18 +100,20 @@ export class Workflow {
     return Effect.unit();
   }
   getStartCondition() {
-    if (this.startCondition) {
-      return Effect.succeed(this.startCondition);
+    const startCondition = this.startCondition;
+    if (startCondition) {
+      return Effect.succeed(startCondition);
     }
     return Effect.fail(StartConditionDoesNotExist());
   }
   getTask(name: string) {
-    if (this.tasks[name]) {
-      return Effect.succeed(this.tasks[name]);
+    const task = this.tasks[name];
+    if (task) {
+      return Effect.succeed(task);
     }
     return Effect.fail(TaskDoesNotExist());
   }
-  getID = () => {
+  getId = () => {
     if (this.id) {
       return Effect.succeed(this.id);
     }

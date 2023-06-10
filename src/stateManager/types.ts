@@ -18,11 +18,13 @@ export interface WorkflowItem {
 }
 
 export interface ConditionItem {
+  id: string;
   name: string;
   marking: number;
 }
 
 export interface TaskItem {
+  id: string;
   name: string;
   state: WTaskState;
 }
@@ -68,3 +70,9 @@ export interface StateManager {
 }
 
 export const StateManager = Context.Tag<StateManager>();
+export interface IdGenerator {
+  next(
+    type: 'workflow' | 'task' | 'condition'
+  ): Effect.Effect<never, never, string>;
+}
+export const IdGenerator = Context.Tag<IdGenerator>();

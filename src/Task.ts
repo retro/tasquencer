@@ -168,11 +168,13 @@ export class Task {
     const flows = this.outgoingFlows;
     const updates = Object.entries(flows).map(([condition, flow]) => {
       if (flow.isDefault) {
-        return this.postSet[condition].incrementMarking();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.postSet[condition]!.incrementMarking();
       } else if (
         flow.predicate ? flow.predicate(null, this.workflow.net) : false
       ) {
-        return this.postSet[condition].incrementMarking();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.postSet[condition]!.incrementMarking();
       }
       return Effect.unit();
     });
@@ -189,11 +191,13 @@ export class Task {
 
     for (const [condition, flow] of sortedFlows) {
       if (flow.isDefault) {
-        return this.postSet[condition].incrementMarking();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.postSet[condition]!.incrementMarking();
       } else if (
         flow.predicate ? flow.predicate(null, this.workflow.net) : false
       ) {
-        return this.postSet[condition].incrementMarking();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.postSet[condition]!.incrementMarking();
       }
     }
     return Effect.unit();
@@ -201,7 +205,8 @@ export class Task {
 
   private produceAndSplitTokensInOutgoingFlows() {
     const updates = Object.entries(this.outgoingFlows).map(([condition]) => {
-      return this.postSet[condition].incrementMarking();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this.postSet[condition]!.incrementMarking();
     });
     return Effect.allParDiscard(updates);
   }

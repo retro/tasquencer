@@ -84,7 +84,7 @@ export class Interpreter {
   getState() {
     const { workflow, stateManager } = this;
     return Effect.gen(function* ($) {
-      const workflowID = yield* $(workflow.getID());
+      const workflowID = yield* $(workflow.getId());
       return yield* $(stateManager.getWorkflowState(workflowID));
     });
   }

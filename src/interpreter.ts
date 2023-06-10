@@ -1,15 +1,16 @@
-import * as R from "remeda";
-import invariant from "tiny-invariant";
+/*import * as R from 'remeda';
+import invariant from 'tiny-invariant';
+
 import {
-  YExternalNetElement,
-  YTask,
+  E2WFOJNet,
   YCondition,
+  YExternalNetElement,
   YFlow,
   YMarking,
-  E2WFOJNet,
-} from "./e2wfojnet.js";
-import type { CancellationRegion, Net } from "./types.js";
-import { union } from "./util/set.js";
+  YTask,
+} from './e2wfojnet.js';
+import type { CancellationRegion, Net } from './types.js';
+import { union } from './util/set.js';
 
 export class Interpreter<Context, BNTasks> {
   private net: Net;
@@ -58,10 +59,10 @@ export class Interpreter<Context, BNTasks> {
 
     this.activeTasks.delete(taskName);
     switch (task.splitType) {
-      case "or":
+      case 'or':
         this.produceORSplitToken(taskName);
         break;
-      case "xor":
+      case 'xor':
         this.produceXORSplitToken(taskName);
         break;
       default:
@@ -162,11 +163,11 @@ export class Interpreter<Context, BNTasks> {
     const task = this.net.tasks[taskName];
     const incomingFlows = Array.from(this.net.incomingFlows.tasks[taskName]);
     switch (task.joinType) {
-      case "and":
+      case 'and':
         return this.isANDJoinSatisfied(incomingFlows);
-      case "xor":
+      case 'xor':
         return this.isXORJoinSatisfied(incomingFlows);
-      case "or":
+      case 'or':
         return this.isORJoinSatisfied(taskName);
       default:
         return this.getMarking(incomingFlows[0]) > 0;
@@ -205,8 +206,8 @@ export class Interpreter<Context, BNTasks> {
       (acc, [taskName, task]) => {
         acc[taskName] = new YTask(
           taskName,
-          task.joinType ?? "and",
-          task.splitType ?? "and"
+          task.joinType ?? 'and',
+          task.splitType ?? 'and'
         );
         return acc;
       },
@@ -351,3 +352,4 @@ export class Interpreter<Context, BNTasks> {
     return new Set(this.activeTasks);
   }
 }
+*/

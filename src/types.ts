@@ -1,3 +1,5 @@
+import { AnyTaskBuilder } from './builder/task.js';
+
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & object;
@@ -15,7 +17,8 @@ export interface ConditionNode {
   isImplicit?: boolean;
 }
 
-export type SplitType = 'and' | 'or' | 'xor';
+type JoinSplitType = 'and' | 'or' | 'xor';
+export type SplitType = JoinSplitType;
 export type JoinType = SplitType;
 
 export interface TaskNode {
@@ -74,7 +77,7 @@ export interface BuilderNet {
   startCondition?: string;
   endCondition?: string;
   conditions: Record<string, ConditionNode>;
-  tasks: Record<string, TaskNode>;
+  tasks: Record<string, AnyTaskBuilder>;
   cancellationRegions: Record<string, CancellationRegion>;
   flows: {
     tasks: Record<string, Record<string, Flow>>;

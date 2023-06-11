@@ -1,152 +1,217 @@
 import * as Effect from '@effect/io/Effect';
-import { ArgumentsType } from 'vitest';
 
-import { JoinType, SplitType } from './types.js';
+import * as AB from './builder/activity.js';
+import * as TB from './builder/task.js';
+import type {
+  BuilderNet,
+  ConditionNode,
+  DefaultFlow,
+  Flow,
+  FlowProps,
+  FlowType,
+  ImplicitConditionName,
+  NotExtends,
+  PredicateFlow,
+  XOR,
+} from './types.js';
 
-export type Prettify<T> = {
-  [K in keyof T]: T[K];
-} & object;
+export class WorkflowBuilder<
+  Context extends object,
+  BNTasks = never,
+  BNConditions = never,
+  BNCancellationRegions = never,
+  BNTasksWithOrXorSplit = never
+> {
+  net: BuilderNet;
 
-interface OnCallbacks {
-  onDisabled: (...args: any[]) => any;
-  onEnabled: (...args: any[]) => any;
-  onActivated: (...args: any[]) => any;
-  onCompleted: (...args: any[]) => any;
-  onCanceled: (...args: any[]) => any;
-}
+  constructor() {
+    const net: BuilderNet = {
+      conditions: {},
+      tasks: {},
+      cancellationRegions: {},
+      flows: { tasks: {}, conditions: {} },
+    };
 
-class TaskBuilder<TC extends object, O extends OnCallbacks> {
-  private joinType: JoinType | undefined;
-  private splitType: SplitType | undefined;
-  private Constructor: typeof Task | undefined;
-  private onCallbacks: O = {} as O;
-
-  constructor(params?: {
-    joinType?: JoinType;
-    splitType?: SplitType;
-    Constructor?: typeof Task;
-  }) {
-    this.joinType = params?.joinType;
-    this.splitType = params?.splitType;
-    this.Constructor = params?.Constructor;
+    this.net = net;
   }
 
-  initializeCallbacks() {
-    return this.onDisabled((_context) => Effect.unit())
-      .onEnabled((_context) => Effect.unit())
-      .onActivated((_context) => Effect.unit())
-      .onCompleted((_context) => Effect.unit())
-      .onCanceled((_context) => Effect.unit());
-  }
+  private addConditionUnsafe(
+    conditionName: string,
+    props?: Omit<ConditionNode, 'name'>
+  ) {
+    const condition: ConditionNode = { name: conditionName, ...props };
+    this.net.conditions[conditionName] = condition;
+    this.net.flows.conditions[conditionName] = new Set<string>();
 
-  onDisabled<C extends object, R extends Effect.Effect<any, any, any>>(
-    callback: (context: C) => R
-  ): TaskBuilder<
-    TC & C,
-    Omit<O, 'onDisabled'> & {
-      onDisabled: typeof callback;
-    }
-  > {
-    this.onCallbacks.onDisabled = callback;
     return this;
   }
 
-  onEnabled<C extends object, R extends Effect.Effect<any, any, any>>(
-    callback: (context: C) => R
-  ): TaskBuilder<
-    TC & C,
-    Omit<O, 'onEnabled'> & {
-      onEnabled: typeof callback;
+  private connectUnsafe(
+    from: string,
+    to: string,
+    type: FlowType,
+    props?: object
+  ) {
+    const flows = this.net.flows;
+
+    if (type === 'condition->task') {
+      const flowsFromConditions = flows.conditions;
+      const flowsFromCondition = flowsFromConditions[from] ?? new Set<string>();
+      flowsFromCondition.add(to);
+      this.net.flows.conditions[from] = flowsFromCondition;
+    } else if (type === 'task->condition') {
+      const flowsFromTasks = flows.tasks;
+      const flowsFromTask = flowsFromTasks[from] ?? {};
+      flowsFromTask[to] = props ?? {};
+      this.net.flows.tasks[from] = flowsFromTask;
     }
-  > {
-    this.onCallbacks.onEnabled = callback;
     return this;
   }
 
-  onActivated<C extends object, P, R extends Effect.Effect<any, any, any>>(
-    callback: (context: C, payload: P) => R
-  ): TaskBuilder<
-    TC & C,
-    Omit<O, 'onActivated'> & {
-      onActivated: typeof callback;
-    }
+  addCondition<CN extends string>(
+    conditionName: CN & NotExtends<BNTasks | BNConditions, CN>
+  ): WorkflowBuilder<
+    Context,
+    BNTasks,
+    BNConditions | CN,
+    BNCancellationRegions,
+    BNTasksWithOrXorSplit
   > {
-    this.onCallbacks.onActivated = callback;
-    return this;
+    return this.addConditionUnsafe(conditionName);
   }
 
-  onCompleted<
-    C extends object,
-    P extends unknown[] & { length: 0 | 1 },
-    R extends Effect.Effect<any, any, any>
+  addStartCondition<CN extends string>(
+    conditionName: CN & NotExtends<BNTasks | BNConditions, CN>
+  ): WorkflowBuilder<
+    Context,
+    BNTasks,
+    BNConditions | CN,
+    BNCancellationRegions,
+    BNTasksWithOrXorSplit
+  > {
+    this.net.startCondition = conditionName;
+    return this.addConditionUnsafe(conditionName);
+  }
+
+  addEndCondition<CN extends string>(
+    conditionName: CN & NotExtends<BNTasks | BNConditions, CN>
+  ): WorkflowBuilder<
+    Context,
+    BNTasks,
+    BNConditions | CN,
+    BNCancellationRegions,
+    BNTasksWithOrXorSplit
+  > {
+    this.net.endCondition = conditionName;
+    return this.addConditionUnsafe(conditionName);
+  }
+
+  addTask<
+    TN extends string,
+    T extends TB.AnyTaskBuilder,
+    X extends TB.TaskBuilderSplitType<T> extends 'or' | 'xor' ? TN : never
   >(
-    callback: (context: C, ...payload: P) => R
-  ): TaskBuilder<
-    TC & C,
-    Omit<O, 'onCompleted'> & {
-      onCompleted: P['length'] extends 1
-        ? (context: C, payload: P[0]) => R
-        : (context: C) => R;
-    }
+    taskName: TN & NotExtends<BNTasks | BNConditions, TN>,
+    task: T
+  ): WorkflowBuilder<
+    Context & TB.TaskBuilderContext<T>,
+    BNTasks | TN,
+    BNConditions,
+    BNCancellationRegions,
+    BNTasksWithOrXorSplit | X
   > {
-    this.onCallbacks.onCompleted = callback;
+    this.net.tasks[taskName] = task;
+
     return this;
   }
 
-  onCanceled<C extends object, R extends Effect.Effect<any, any, any>>(
-    callback: (context: C) => R
-  ): TaskBuilder<
-    TC & C,
-    Omit<O, 'onCanceled'> & {
-      onCanceled: typeof callback;
-    }
+  addCancellationRegion<
+    TN extends BNTasks,
+    TNS extends Exclude<BNTasks, TN>[],
+    CNS extends BNConditions[]
+  >(
+    taskName: TN & NotExtends<BNCancellationRegions, TN> & string,
+    toCancel: { tasks?: TNS & string[]; conditions?: CNS & string[] }
+  ): WorkflowBuilder<
+    Context,
+    BNTasks | TN,
+    BNConditions,
+    BNCancellationRegions | TN,
+    BNTasksWithOrXorSplit
   > {
-    this.onCallbacks.onCanceled = callback;
+    this.net.cancellationRegions[taskName] = toCancel;
     return this;
   }
 
-  build<C extends TC>(context: C) {
-    const TaskConstructor = this.Constructor ?? Task;
-    return new TaskConstructor<
-      Prettify<C>,
-      {
-        [K in keyof O]: O[K];
-      }
-    >(context, this.onCallbacks);
+  connectConditionToTask<CN extends BNConditions, TN extends BNTasks>(
+    conditionNameFrom: CN & string,
+    taskNameTo: TN & string
+  ) {
+    return this.connectUnsafe(conditionNameFrom, taskNameTo, 'condition->task');
+  }
+
+  connectTaskToCondition<
+    TN extends BNTasks,
+    CN extends BNConditions,
+    S extends BNTasksWithOrXorSplit extends 'or' | 'xor' ? true : false,
+    P extends S extends true
+      ? XOR<FlowProps<PredicateFlow<Context>>, FlowProps<DefaultFlow>>
+      : FlowProps<Flow>
+  >(
+    taskNameFrom: TN & string,
+    conditionNameTo: CN & string,
+    ...args: S extends true ? [P] : [P?]
+  ) {
+    return this.connectUnsafe(
+      taskNameFrom,
+      conditionNameTo,
+      'task->condition',
+      args[0]
+    );
+  }
+
+  connectTaskToTask<
+    TN1 extends BNTasks,
+    TN2 extends BNTasks,
+    S extends TN1 extends BNTasksWithOrXorSplit ? true : false,
+    P extends S extends true
+      ? XOR<FlowProps<PredicateFlow<Context>>, FlowProps<DefaultFlow>>
+      : FlowProps<Flow>
+  >(
+    taskNameFrom: TN1 & string,
+    taskNameTo: TN2 & string,
+    ...args: S extends true ? [P] : [P?]
+  ): WorkflowBuilder<
+    Context,
+    BNTasks,
+    BNConditions | ImplicitConditionName<TN1 & string, TN2 & string>,
+    BNCancellationRegions,
+    BNTasksWithOrXorSplit
+  > {
+    const implicitConditionName: ImplicitConditionName<
+      TN1 & string,
+      TN2 & string
+    > = `implicit:${taskNameFrom}->${taskNameTo}`;
+
+    return this.addConditionUnsafe(implicitConditionName, { isImplicit: true })
+      .connectUnsafe(
+        taskNameFrom,
+        implicitConditionName,
+        'task->condition',
+        args[0]
+      )
+      .connectUnsafe(implicitConditionName, taskNameTo, 'condition->task');
   }
 }
 
-function task(params?: { joinType?: JoinType; splitType?: SplitType }) {
-  return new TaskBuilder(params).initializeCallbacks();
+export function workflow<C extends object>() {
+  return new WorkflowBuilder<C>();
 }
 
-class Task<C, O extends OnCallbacks> {
-  constructor(private readonly context: C, private readonly onCallbacks: O) {}
-  activate(
-    payload: ArgumentsType<O['onActivated']>[1]
-  ): ReturnType<O['onActivated']> {
-    return this.onCallbacks.onActivated(this.context, payload);
-  }
-  complete(
-    ...args: ArgumentsType<O['onCompleted']>['length'] extends 1
-      ? []
-      : [ArgumentsType<O['onCompleted']>[1]]
-  ): ReturnType<O['onCompleted']> {
-    const payload = args[0];
-    return this.onCallbacks.onCompleted(this.context, payload);
-  }
-}
-
-const t = task()
-  .onActivated((_context, foo: string) => {
-    return Effect.succeed(foo);
+const t = TB.task({ splitType: 'or' }).onComplete(
+  AB.onComplete<{ tenantId: string }>().before(() => {
+    return Effect.succeed(1);
   })
-  .onCompleted((_context, foo: string) => {
-    return Effect.succeed(foo);
-  });
+);
 
-const tt = t.build({ foo: 'bar' }).complete('A');
-
-function a(foo: string, bar: string) {}
-
-type B = ArgumentsType<typeof a>['length'] extends 1 ? string : never;
+const w = workflow<{ userId: string }>().addTask('task1', t);

@@ -44,14 +44,23 @@ export type AnyTaskBuilder = TaskBuilder<
   SplitType | undefined
 >;
 
+interface ActivityOutput {
+  onDisable: any;
+  onEnable: any;
+  onActivate: any;
+  onComplete: any;
+  onCancel: any;
+}
+
 export class TaskBuilder<
   C extends object,
   TA extends TaskActivities,
   JT extends JoinType | undefined,
-  ST extends SplitType | undefined
+  ST extends SplitType | undefined,
+  AO extends ActivityOutput = ActivityOutput
 > {
-  private joinType: JoinType | undefined;
-  private splitType: SplitType | undefined;
+  readonly joinType: JoinType | undefined;
+  readonly splitType: SplitType | undefined;
   private Constructor: typeof Task | undefined;
   private activities: TA = {} as TA;
 
@@ -74,39 +83,90 @@ export class TaskBuilder<
   }
 
   onDisable<A extends Activity.OnDisableActivity>(
-    activity: A
-  ): TaskBuilder<C & Activity.ActivityUserContext<A>, TA, JT, ST> {
-    this.activities.onDisable = activity;
+    input: A | ((onDisable: typeof Activity.onDisable) => A)
+  ): TaskBuilder<
+    C & Activity.ActivityUserContext<A>,
+    TA,
+    JT,
+    ST,
+    AO & { onDisable: Activity.ActivityOutput<A> }
+  > {
+    if (input instanceof Activity.ActivityBuilder) {
+      this.activities.onDisable = input;
+    } else {
+      this.activities.onDisable = input(Activity.onDisable);
+    }
     return this;
   }
 
   onEnable<A extends Activity.OnEnableActivity>(
-    activity: A
-  ): TaskBuilder<C & Activity.ActivityUserContext<A>, TA, JT, ST> {
-    this.activities.onEnable = activity;
+    input: A | ((onEnable: typeof Activity.onEnable) => A)
+  ): TaskBuilder<
+    C & Activity.ActivityUserContext<A>,
+    TA,
+    JT,
+    ST,
+    AO & { onEnable: Activity.ActivityOutput<A> }
+  > {
+    if (input instanceof Activity.ActivityBuilder) {
+      this.activities.onEnable = input;
+    } else {
+      this.activities.onEnable = input(Activity.onEnable);
+    }
     return this;
   }
 
   onActivate<A extends Activity.OnActivateActivity>(
-    activity: A
-  ): TaskBuilder<C & Activity.ActivityUserContext<A>, TA, JT, ST> {
-    this.activities.onActivate = activity;
+    input: A | ((onActivate: typeof Activity.onActivate) => A)
+  ): TaskBuilder<
+    C & Activity.ActivityUserContext<A>,
+    TA,
+    JT,
+    ST,
+    AO & { onActivate: Activity.ActivityOutput<A> }
+  > {
+    if (input instanceof Activity.ActivityBuilder) {
+      this.activities.onActivate = input;
+    } else {
+      this.activities.onActivate = input(Activity.onActivate);
+    }
     return this;
   }
 
   onComplete<A extends Activity.OnCompleteActivity>(
-    activity: A
-  ): TaskBuilder<C & Activity.ActivityUserContext<A>, TA, JT, ST> {
-    this.activities.onComplete = activity;
+    input: A | ((onComplete: typeof Activity.onComplete) => A)
+  ): TaskBuilder<
+    C & Activity.ActivityUserContext<A>,
+    TA,
+    JT,
+    ST,
+    AO & { onComplete: Activity.ActivityOutput<A> }
+  > {
+    if (input instanceof Activity.ActivityBuilder) {
+      this.activities.onComplete = input;
+    } else {
+      this.activities.onComplete = input(Activity.onComplete);
+    }
     return this;
   }
 
   onCancel<A extends Activity.OnCancelActivity>(
-    activity: A
-  ): TaskBuilder<C & Activity.ActivityUserContext<A>, TA, JT, ST> {
-    this.activities.onCancel = activity;
+    input: A | ((onCancel: typeof Activity.onCancel) => A)
+  ): TaskBuilder<
+    C & Activity.ActivityUserContext<A>,
+    TA,
+    JT,
+    ST,
+    AO & { onCancel: Activity.ActivityOutput<A> }
+  > {
+    if (input instanceof Activity.ActivityBuilder) {
+      this.activities.onCancel = input;
+    } else {
+      this.activities.onCancel = input(Activity.onCancel);
+    }
     return this;
   }
+
   build(name: string) {
     const TaskConstructor = this.Constructor ?? Task;
     return new TaskConstructor(name);

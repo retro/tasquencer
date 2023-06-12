@@ -1,3 +1,5 @@
+import * as Effect from '@effect/io/Effect';
+
 import { AnyTaskBuilder } from './builder/task.js';
 
 export type Prettify<T> = {
@@ -64,7 +66,7 @@ export interface Flow {
 
 export interface PredicateFlow<Context> {
   order: number;
-  predicate: (context: Context, net: BuilderNet) => boolean;
+  predicate: (context: Context) => Effect.Effect<any, any, boolean>;
 }
 
 export interface DefaultFlow {

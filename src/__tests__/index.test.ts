@@ -1,8 +1,39 @@
 import { expect, it } from 'vitest';
 
+import * as B from '../builder2.js';
+import * as TB from '../builder/task.js';
 import { Builder } from '../index.js';
 
 it('', () => {
+  const net = B.workflow()
+    .startCondition('start')
+    .endCondition('end')
+    .task('A', TB.task({ splitType: 'xor' }))
+    .task('B', TB.task())
+    .task('C', TB.task())
+    .task('D', TB.task())
+    .flowCondition('start', (to) => to.task('A'));
+  /*.connectConditionToTask('start', 'A')
+  .connectTaskToTask('A', 'B', {
+    order: 1,
+    predicate: ({ predicate1 }: { predicate1: string }) => {
+      return Effect.succeed(predicate1 === 'B');
+    },
+  })
+  .connectTaskToTask('A', 'C', {
+    order: 2,
+    predicate: ({ predicate2 }: { predicate2: number }) => {
+      return Effect.succeed(predicate2 === 1);
+    },
+  })
+  .connectTaskToTask('A', 'D', {
+    isDefault: true,
+  })
+  .connectTaskToCondition('B', 'end')
+  .connectTaskToCondition('C', 'end')
+  .connectTaskToCondition('D', 'end');*/
+
+  console.log(net.net.newFlows.conditions);
   expect(true).toBe(true);
 });
 

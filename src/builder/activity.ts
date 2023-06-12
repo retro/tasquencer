@@ -4,7 +4,7 @@ import { WTaskState } from '../types.js';
 
 type ActivityTypeWithInput = 'activate' | 'complete';
 type ActivityTypeWithoutInput = 'disable' | 'enable' | 'cancel';
-type ActivityType = ActivityTypeWithInput | ActivityTypeWithoutInput;
+export type ActivityType = ActivityTypeWithInput | ActivityTypeWithoutInput;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyEffect = Effect.Effect<any, any, any>;
 
@@ -64,7 +64,7 @@ export type ActivityUserContext<T> = T extends ActivityBuilder<
 type SuccessReturnType<T extends (...args: any[]) => AnyEffect> =
   Effect.Effect.Success<ReturnType<T>>;
 
-class ActivityBuilder<
+export class ActivityBuilder<
   AT extends ActivityType,
   C extends object, // User context
   PI, // Procedure input
@@ -133,45 +133,22 @@ function makeActivityBuilder<AT extends ActivityType>(activityType: AT) {
   };
 }
 
-export type OnDisableActivity = ActivityBuilder<
-  'disable',
-  object,
+type MakeActivityBuilderType<
+  T extends ActivityType,
+  C extends object
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any
->;
+> = ActivityBuilder<T, C, any, any, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OnEnableActivity = ActivityBuilder<'enable', object, any, any, any>;
-
-export type OnActivateActivity = ActivityBuilder<
-  'activate',
-  object,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any
->;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OnCompleteActivity = ActivityBuilder<
-  'complete',
-  object,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any
->;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OnCancelActivity = ActivityBuilder<'cancel', object, any, any, any>;
+export type OnDisableActivity<C extends object = object> =
+  MakeActivityBuilderType<'disable', C>;
+export type OnEnableActivity<C extends object = object> =
+  MakeActivityBuilderType<'enable', C>;
+export type OnActivateActivity<C extends object = object> =
+  MakeActivityBuilderType<'activate', C>;
+export type OnCompleteActivity<C extends object = object> =
+  MakeActivityBuilderType<'complete', C>;
+export type OnCancelActivity<C extends object = object> =
+  MakeActivityBuilderType<'cancel', C>;
 
 const onDisable = makeActivityBuilder('disable');
 const onEnable = makeActivityBuilder('enable');

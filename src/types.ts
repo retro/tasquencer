@@ -1,6 +1,6 @@
 import * as Effect from '@effect/io/Effect';
 
-import { AnyTaskBuilder } from './builder/task.js';
+import { AnyTaskBuilder } from './builder/TaskBuilder.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];

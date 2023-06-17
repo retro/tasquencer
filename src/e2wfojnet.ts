@@ -1,11 +1,4 @@
-import {
-  attribute as _,
-  Digraph,
-  Node,
-  Edge,
-  toDot,
-  type NodeAttributesObject,
-} from "ts-graphviz";
+import { Digraph, Edge, Node, attribute as _, toDot } from 'ts-graphviz';
 
 class RElement {
   private name: string;
@@ -231,7 +224,7 @@ class RMarking {
   }
 
   debugMarking(msg: string): void {
-    let printM = msg + ":";
+    let printM = msg + ':';
     const mPlaces = Array.from(this.markedPlaces.entries());
     for (const [key, value] of mPlaces) {
       printM += `${key}(${value})\t`;
@@ -468,7 +461,7 @@ export abstract class YExternalNetElement {
   }
 }
 
-type SplitJoinType = "and" | "or" | "xor";
+type SplitJoinType = 'and' | 'or' | 'xor';
 type MaybeSplitJoinType = undefined | SplitJoinType;
 
 export class YTask extends YExternalNetElement {
@@ -589,11 +582,11 @@ export class E2WFOJNet {
     for (const next of this.yTasks) {
       const nextElement = next;
 
-      const p = new RPlace("p_" + nextElement.getID());
+      const p = new RPlace('p_' + nextElement.getID());
       this.places[p.getID()] = p;
 
-      if (nextElement.getJoinType() == "and") {
-        const t = new RTransition(nextElement.getID() + "_start");
+      if (nextElement.getJoinType() == 'and') {
+        const t = new RTransition(nextElement.getID() + '_start');
         _StartTransitions[t.getID()] = t;
         const pre = nextElement.getPresetElements();
         for (const preElement of pre) {
@@ -604,15 +597,15 @@ export class E2WFOJNet {
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
-            this.places["p_" + nextElement.getID()] as RPlace
+            this.places['p_' + nextElement.getID()] as RPlace
           );
           t.setPostset(outflow);
         }
-      } else if (nextElement.getJoinType() == "xor") {
+      } else if (nextElement.getJoinType() == 'xor') {
         const pre = nextElement.getPresetElements();
         for (const preElement of pre) {
           const t = new RTransition(
-            nextElement.getID() + "_start^" + preElement.getID()
+            nextElement.getID() + '_start^' + preElement.getID()
           );
           _StartTransitions[t.getID()] = t;
           const inflow = new RFlow(
@@ -622,23 +615,23 @@ export class E2WFOJNet {
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
-            this.places["p_" + nextElement.getID()] as RPlace
+            this.places['p_' + nextElement.getID()] as RPlace
           );
           t.setPostset(outflow);
         }
-      } else if (nextElement.getJoinType() == "or") {
-        const t = new RTransition(nextElement.getID() + "_start");
+      } else if (nextElement.getJoinType() == 'or') {
+        const t = new RTransition(nextElement.getID() + '_start');
         _StartTransitions[t.getID()] = t;
         this.orJoins[t.getID()] = t;
         this.yOrJoins[nextElement.getID()] = nextElement;
       }
-      if (nextElement.getSplitType() == "and") {
-        const t = new RTransition(nextElement.getID() + "_end");
+      if (nextElement.getSplitType() == 'and') {
+        const t = new RTransition(nextElement.getID() + '_end');
         _EndTransitions[t.getID()] = t;
         const post = nextElement.getPostsetElements();
         for (const postElement of post) {
           const inflow = new RFlow(
-            this.places["p_" + nextElement.getID()] as RPlace,
+            this.places['p_' + nextElement.getID()] as RPlace,
             t
           );
           t.setPreset(inflow);
@@ -652,15 +645,15 @@ export class E2WFOJNet {
         if (!setIsEmpty(removeSet)) {
           this.addCancelSet(t, removeSet);
         }
-      } else if (nextElement.getSplitType() == "xor") {
+      } else if (nextElement.getSplitType() == 'xor') {
         const post = nextElement.getPostsetElements();
         for (const postElement of post) {
           const t = new RTransition(
-            nextElement.getID() + "_end^" + postElement.getID()
+            nextElement.getID() + '_end^' + postElement.getID()
           );
           _EndTransitions[t.getID()] = t;
           const inflow = new RFlow(
-            this.places["p_" + nextElement.getID()] as RPlace,
+            this.places['p_' + nextElement.getID()] as RPlace,
             t
           );
           t.setPreset(inflow);
@@ -674,7 +667,7 @@ export class E2WFOJNet {
             this.addCancelSet(t, removeSet);
           }
         }
-      } else if (nextElement.getSplitType() == "or") {
+      } else if (nextElement.getSplitType() == 'or') {
         const xSubSet = new Set<Set<YExternalNetElement>>();
         const post = nextElement.getPostsetElements();
         for (let i = 1; i <= post.size; i++) {
@@ -682,15 +675,15 @@ export class E2WFOJNet {
           setAddAll(xSubSet, subSet);
         }
         for (const x of xSubSet) {
-          let tid = "";
+          let tid = '';
           for (const postElement of x) {
-            tid += postElement.getID() + " ";
+            tid += postElement.getID() + ' ';
           }
-          const t = new RTransition(nextElement.getID() + "_end^{" + tid + "}");
+          const t = new RTransition(nextElement.getID() + '_end^{' + tid + '}');
           _EndTransitions[t.getID()] = t;
 
           const inflow = new RFlow(
-            this.places["p_" + nextElement.getID()] as RPlace,
+            this.places['p_' + nextElement.getID()] as RPlace,
             t
           );
 
@@ -727,7 +720,8 @@ export class E2WFOJNet {
       const combsubSet = new Set<YExternalNetElement>();
       const indices = x.getNext();
       for (const i of indices) {
-        combsubSet.add(elements[i]);
+        const element = elements[i];
+        element && combsubSet.add(element);
       }
       subSets.add(combsubSet);
     }
@@ -747,7 +741,7 @@ export class E2WFOJNet {
       }
     });
     removeSetT.forEach((t) => {
-      const p = this.places["p_" + t.getID()];
+      const p = this.places['p_' + t.getID()];
       if (p !== null && p !== undefined) {
         removeSetR.add(p);
       }
@@ -767,14 +761,14 @@ export class E2WFOJNet {
       const pre = otherOrJoin.getPresetElements();
       for (const preElement of pre) {
         const t = new RTransition(
-          otherOrJoin.getID() + "_start^" + preElement.getID()
+          otherOrJoin.getID() + '_start^' + preElement.getID()
         );
         this.transitions[t.getID()] = t;
         const inflow = new RFlow(this.places[preElement.getID()] as RPlace, t);
         t.setPreset(inflow);
         const outflow = new RFlow(
           t,
-          this.places["p_" + otherOrJoin.getID()] as RPlace
+          this.places['p_' + otherOrJoin.getID()] as RPlace
         );
         t.setPostset(outflow);
       }
@@ -1023,7 +1017,7 @@ export class E2WFOJNet {
     }
 
     for (const task of markedTasks) {
-      const internalPlace: string = "p_" + task.getID();
+      const internalPlace: string = 'p_' + task.getID();
       const place: RPlace | undefined = this.places[internalPlace];
       if (place !== undefined) {
         const placename: string = place.getID();
@@ -1119,7 +1113,7 @@ export class E2WFOJNet {
 
         // Need to consider active tasks in a marking
         if (nextElement instanceof YTask) {
-          const internalPlace = "p_" + nextElement.getID();
+          const internalPlace = 'p_' + nextElement.getID();
           const place = this.places[internalPlace];
           if (place !== undefined) {
             markedPlaces.add(place);
@@ -1238,18 +1232,18 @@ export class E2WFOJNet {
     }
   }
   toDot() {
-    const g = new Digraph({ [_.rankdir]: "LR", [_.splines]: "polyline" });
+    const g = new Digraph({ [_.rankdir]: 'LR', [_.splines]: 'polyline' });
     const transitionNodes: Record<string, Node> = {};
     const placeNodes: Record<string, Node> = {};
 
     Object.values(this.transitions).forEach((transition) => {
-      const node = new Node(transition.getID(), { [_.shape]: "square" });
+      const node = new Node(transition.getID(), { [_.shape]: 'square' });
       transitionNodes[transition.getID()] = node;
       g.addNode(node);
     });
 
     Object.values(this.places).forEach((place) => {
-      const node = new Node(place.getID(), { [_.shape]: "circle" });
+      const node = new Node(place.getID(), { [_.shape]: 'circle' });
       placeNodes[place.getID()] = node;
       g.addNode(node);
     });
@@ -1286,7 +1280,7 @@ function assertRElementIsRTransition(
   value: unknown
 ): asserts value is RTransition {
   if (!(value instanceof RTransition)) {
-    throw new Error("Value is not RTransition");
+    throw new Error('Value is not RTransition');
   }
 }
 
@@ -1305,10 +1299,10 @@ class CombinationGenerator {
 
   constructor(n: number, r: number) {
     if (r > n) {
-      throw new Error("Invalid input");
+      throw new Error('Invalid input');
     }
     if (n < 1) {
-      throw new Error("Invalid input");
+      throw new Error('Invalid input');
     }
     this.n = n;
     this.r = r;
@@ -1356,9 +1350,9 @@ class CombinationGenerator {
     while (this.a[i] === this.n - this.r + i) {
       i--;
     }
-    this.a[i] = this.a[i] + 1;
+    this.a[i] = this.a[i] ?? 0 + 1;
     for (let j = i + 1; j < this.r; j++) {
-      this.a[j] = this.a[i] + j - i;
+      this.a[j] = this.a[i] ?? 0 + j - i;
     }
 
     this.numLeft = this.numLeft - BigInt(1);

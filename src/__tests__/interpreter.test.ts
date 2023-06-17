@@ -1,6 +1,7 @@
 import * as Effect from '@effect/io/Effect';
 import { expect, it } from 'vitest';
 
+import { task, workflow } from '../builder.js';
 import { Builder } from '../index.js';
 import { makeInterpreter } from '../interpreter2.js';
 import { createMemory } from '../stateManager/memory.js';
@@ -21,6 +22,21 @@ function makeIdGenerator(): IdGenerator {
 }
 
 it('can run simple net with and-split and and-join', () => {
+  const net1 = workflow()
+    .startCondition('start')
+    .task('scan_goods')
+    .task('pay', (t) => t.withSplitType('and'))
+    .task('pack_goods')
+    .task('issue_receipt')
+    .task('check_goods', (t) => t.withJoinType('and'))
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('scan_goods'))
+    .connectTask('scan_goods', (to) => to.task('pay'))
+    .connectTask('pay', (to) => to.task('pack_goods').task('issue_receipt'))
+    .connectTask('pack_goods', (to) => to.task('check_goods'))
+    .connectTask('issue_receipt', (to) => to.task('check_goods'))
+    .connectTask('check_goods', (to) => to.condition('end'));
+
   const builder = new Builder<null>();
   const net = builder
     .addStartCondition('start')

@@ -1,18 +1,18 @@
 import { expect, it } from 'vitest';
 
-import * as B from '../builder2.js';
-import * as TB from '../builder/task.js';
+import * as TB from '../builder/TaskBuilder.js';
+import * as B from '../builder/WorkflowBuilder.js';
 import { Builder } from '../index.js';
 
 it('', () => {
   const net = B.workflow()
     .startCondition('start')
     .endCondition('end')
-    .task('A', TB.task({ splitType: 'xor' }))
+    .task('A', TB.task().withSplitType('xor'))
     .task('B', TB.task())
     .task('C', TB.task())
     .task('D', TB.task())
-    .flowCondition('start', (to) => to.task('A'));
+    .connectCondition('start', (to) => to.task('A'));
   /*.connectConditionToTask('start', 'A')
   .connectTaskToTask('A', 'B', {
     order: 1,

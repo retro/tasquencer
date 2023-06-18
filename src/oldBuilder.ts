@@ -22,7 +22,7 @@ import type {
   PredicateFlow,
   TaskNode,
   XOR,
-} from './types.js';
+} from './oldTypes.js';
 
 export class Builder<
   Context,

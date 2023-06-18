@@ -19,7 +19,7 @@ export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
 
 export class ConditionFlowBuilder<BNTasks> {
   private readonly from: string;
-  private readonly to: Set<BNTasks> = new Set<BNTasks>();
+  readonly to = new Set<BNTasks>();
   constructor(from: string) {
     this.from = from;
   }
@@ -31,17 +31,17 @@ export class ConditionFlowBuilder<BNTasks> {
 
 export class TaskFlowBuilder<BNConditions, BNTasks> {
   private readonly from: string;
-  private readonly toConditions: Set<BNConditions> = new Set<BNConditions>();
-  private readonly toTasks: Set<BNTasks> = new Set<BNTasks>();
+  readonly toConditions: Record<string, object> = {};
+  readonly toTasks: Record<string, object> = {};
   constructor(from: string) {
     this.from = from;
   }
-  task(taskName: BNTasks) {
-    this.toTasks.add(taskName);
+  task(taskName: BNTasks & string) {
+    this.toTasks[taskName] = {};
     return this;
   }
-  condition(conditionName: BNConditions) {
-    this.toConditions.add(conditionName);
+  condition(conditionName: BNConditions & string) {
+    this.toConditions[conditionName] = {};
     return this;
   }
 }
@@ -53,16 +53,16 @@ export class OrXorTaskFlowBuilder<
   Context extends object = object
 > {
   private order = 0;
-  private readonly from: string;
-  private readonly toConditions: Record<
+  readonly from: string;
+  readonly toConditions: Record<
     string,
     { order: number; predicate: AnyFlowPredicate }
   > = {};
-  private readonly toTasks: Record<
+  readonly toTasks: Record<
     string,
     { order: number; predicate: AnyFlowPredicate }
   > = {};
-  private toDefault?: { type: 'task' | 'condition'; name: string };
+  toDefault?: { type: 'task' | 'condition'; name: string };
   constructor(from: string) {
     this.from = from;
   }

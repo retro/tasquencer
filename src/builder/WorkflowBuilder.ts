@@ -1,8 +1,7 @@
 import type {
-  BuilderNet,
   ConditionNode,
   NotExtends,
-  SplitType,
+  WorkflowBuilderDefinition,
 } from '../types.js';
 import {
   ConditionFlowBuilder,
@@ -32,47 +31,20 @@ export class WorkflowBuilder<
   BNConnectedTasks = never,
   BNConnectedConditions = never
 > {
-  net: BuilderNet & {
-    newFlows: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      conditions: Record<string, ConditionFlowBuilder<any>>;
-      tasks: Record<
-        string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        TaskFlowBuilder<any, any> | OrXorTaskFlowBuilder<any, any>
-      >;
-    };
-  };
+  definition: WorkflowBuilderDefinition;
 
   constructor() {
-    const net: BuilderNet & {
-      newFlows: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        conditions: Record<string, ConditionFlowBuilder<any>>;
-        tasks: Record<
-          string,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          TaskFlowBuilder<any, any> | OrXorTaskFlowBuilder<any, any>
-        >;
-      };
-    } = {
+    this.definition = {
       conditions: {},
       tasks: {},
       cancellationRegions: {},
-      flows: { tasks: {}, conditions: {} },
-      newFlows: { conditions: {}, tasks: {} },
+      flows: { conditions: {}, tasks: {} },
     };
-
-    this.net = net;
   }
 
-  private addConditionUnsafe(
-    conditionName: string,
-    props?: Omit<ConditionNode, 'name'>
-  ) {
-    const condition: ConditionNode = { name: conditionName, ...props };
-    this.net.conditions[conditionName] = condition;
-    this.net.flows.conditions[conditionName] = new Set<string>();
+  private addConditionUnsafe(conditionName: string, props?: ConditionNode) {
+    const condition: ConditionNode = props ?? {};
+    this.definition.conditions[conditionName] = condition;
 
     return this;
   }
@@ -102,7 +74,7 @@ export class WorkflowBuilder<
     BNConnectedTasks,
     BNConnectedConditions
   > {
-    this.net.startCondition = conditionName;
+    this.definition.startCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
   }
 
@@ -117,7 +89,7 @@ export class WorkflowBuilder<
     BNConnectedTasks,
     BNConnectedConditions
   > {
-    this.net.endCondition = conditionName;
+    this.definition.endCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
   }
 
@@ -177,11 +149,11 @@ export class WorkflowBuilder<
     input?: TB.AnyTaskBuilder | ((t: TB.AnyTaskBuilder) => TB.AnyTaskBuilder)
   ) {
     if (!input) {
-      this.net.tasks[taskName] = TB.task<Context>();
+      this.definition.tasks[taskName] = TB.task<Context>();
     } else if (input instanceof TB.TaskBuilder) {
-      this.net.tasks[taskName] = input;
+      this.definition.tasks[taskName] = input;
     } else {
-      this.net.tasks[taskName] = input(TB.task<Context>());
+      this.definition.tasks[taskName] = input(TB.task<Context>());
     }
 
     return this;
@@ -203,7 +175,7 @@ export class WorkflowBuilder<
     BNConnectedTasks,
     BNConnectedConditions
   > {
-    this.net.cancellationRegions[taskName] = toCancel;
+    this.definition.cancellationRegions[taskName] = toCancel;
     return this;
   }
 
@@ -221,7 +193,7 @@ export class WorkflowBuilder<
     BNConnectedTasks,
     BNConnectedConditions | CN
   > {
-    this.net.newFlows.conditions[conditionName] = builder(
+    this.definition.flows.conditions[conditionName] = builder(
       new ConditionFlowBuilder(conditionName)
     );
     return this;
@@ -262,17 +234,17 @@ export class WorkflowBuilder<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   connectTask(taskName: string, builder: (...any: any[]) => any) {
     if (
-      this.net.tasks[taskName]?.splitType === 'or' ||
-      this.net.tasks[taskName]?.splitType === 'xor'
+      this.definition.tasks[taskName]?.splitType === 'or' ||
+      this.definition.tasks[taskName]?.splitType === 'xor'
     ) {
       const flow = new OrXorTaskFlowBuilder<BNConditions, BNTasks>(taskName);
       const result: OrXorTaskFlowBuilder<BNConditions, BNTasks, true, Context> =
         builder(flow);
-      this.net.newFlows.tasks[taskName] = result;
+      this.definition.flows.tasks[taskName] = result;
     } else {
       const flow = new TaskFlowBuilder<BNConditions, BNTasks>(taskName);
       const result: TaskFlowBuilder<BNConditions, BNTasks> = builder(flow);
-      this.net.newFlows.tasks[taskName] = result;
+      this.definition.flows.tasks[taskName] = result;
     }
     return this;
   }

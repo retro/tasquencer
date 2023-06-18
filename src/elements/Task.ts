@@ -1,16 +1,12 @@
 import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
+import { type AnyTaskBuilder } from '../builder/TaskBuilder.js';
+import { StateManager } from '../stateManager/types.js';
+import type { JoinType, SplitType, TaskState } from '../types.js';
 import { Condition } from './Condition.js';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
-import { StateManager } from './stateManager/types.js';
-import type {
-  Flow,
-  JoinType,
-  SplitType,
-  TaskNode,
-  WTaskState,
-} from './types.js';
 
 const VALID_STATE_TRANSITIONS = {
   disabled: new Set(['enabled']),
@@ -21,8 +17,8 @@ const VALID_STATE_TRANSITIONS = {
 };
 
 function isValidTransition(
-  from: WTaskState,
-  to: WTaskState
+  from: TaskState,
+  to: TaskState
 ): to is keyof typeof VALID_STATE_TRANSITIONS {
   return VALID_STATE_TRANSITIONS[from].has(to);
 }
@@ -31,28 +27,37 @@ export class Task {
   readonly workflow: Workflow;
   readonly preSet: Record<string, Condition> = {};
   readonly postSet: Record<string, Condition> = {};
-  readonly incomingFlows: Record<string, Flow> = {};
-  readonly outgoingFlows: Record<string, Flow> = {};
+  readonly incomingFlows = new Set<ConditionToTaskFlow>();
+  readonly outgoingFlows = new Set<TaskToConditionFlow>();
   readonly cancellationRegion: {
     tasks: Record<string, Task>;
     conditions: Record<string, Condition>;
   } = { tasks: {}, conditions: {} };
+  readonly id: string;
   readonly name: string;
   readonly splitType: SplitType | undefined;
   readonly joinType: JoinType | undefined;
 
-  constructor(workflow: Workflow, task: TaskNode) {
+  constructor(
+    id: string,
+    name: string,
+    task: AnyTaskBuilder,
+    workflow: Workflow
+  ) {
+    this.id = id;
+    this.name = name;
     this.workflow = workflow;
-    this.name = task.name;
+
     this.splitType = task.splitType;
     this.joinType = task.joinType;
   }
-  addIncomingFlow(condition: Condition) {
-    this.preSet[condition.name] = condition;
+  addIncomingFlow(flow: ConditionToTaskFlow) {
+    this.incomingFlows.add(flow);
+    this.preSet[flow.priorElement.name] = flow.priorElement;
   }
-  addOutgoingFlow(condition: Condition, flow: Flow) {
-    this.postSet[condition.name] = condition;
-    this.outgoingFlows[condition.name] = flow;
+  addOutgoingFlow(flow: TaskToConditionFlow) {
+    this.outgoingFlows.add(flow);
+    this.postSet[flow.nextElement.name] = flow.nextElement;
   }
   addTaskToCancellationRegion(task: Task) {
     this.cancellationRegion.tasks[task.name] = task;
@@ -143,7 +148,7 @@ export class Task {
     return this.isStateEqualTo('active');
   }
 
-  isStateEqualTo(state: WTaskState) {
+  isStateEqualTo(state: TaskState) {
     return pipe(
       this.getState(),
       Effect.map((s) => s === state)
@@ -178,9 +183,7 @@ export class Task {
       if (flow.isDefault) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.postSet[condition]!.incrementMarking();
-      } else if (
-        flow.predicate ? flow.predicate(null, this.workflow.net) : false
-      ) {
+      } else if (flow.predicate ? flow.predicate(null) : false) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.postSet[condition]!.incrementMarking();
       }
@@ -191,30 +194,26 @@ export class Task {
 
   private produceXorSplitTokensInOutgoingFlows() {
     const flows = this.outgoingFlows;
-    const sortedFlows = Object.entries(flows).sort(([, flowA], [, flowB]) => {
-      const a = flowA.order ?? Infinity;
-      const b = flowB.order ?? Infinity;
-      return a > b ? 1 : a < b ? -1 : 0;
+    const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
+      return flowA.order > flowB.order ? 1 : flowA.order < flowB.order ? -1 : 0;
     });
 
-    for (const [condition, flow] of sortedFlows) {
+    for (const flow of sortedFlows) {
       if (flow.isDefault) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[condition]!.incrementMarking();
-      } else if (
-        flow.predicate ? flow.predicate(null, this.workflow.net) : false
-      ) {
+        return flow.nextElement.incrementMarking();
+      } else if (flow.predicate ? flow.predicate(null) : false) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[condition]!.incrementMarking();
+        return flow.nextElement.incrementMarking();
       }
     }
     return Effect.unit();
   }
 
   private produceAndSplitTokensInOutgoingFlows() {
-    const updates = Object.entries(this.outgoingFlows).map(([condition]) => {
+    const updates = Array.from(this.outgoingFlows).map((flow) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.postSet[condition]!.incrementMarking();
+      return flow.nextElement.incrementMarking();
     });
     return Effect.allParDiscard(updates);
   }
@@ -238,7 +237,11 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const markings = yield* $(
-        Effect.allPar(Object.values(self.preSet).map((c) => c.getMarking()))
+        Effect.allPar(
+          Array.from(self.incomingFlows).map((flow) =>
+            flow.priorElement.getMarking()
+          )
+        )
       );
       return markings.filter((m) => m > 0).length === 1 ? true : false;
     });
@@ -248,7 +251,11 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const markings = yield* $(
-        Effect.allPar(Object.values(self.preSet).map((c) => c.getMarking()))
+        Effect.allPar(
+          Array.from(self.incomingFlows).map((flow) =>
+            flow.priorElement.getMarking()
+          )
+        )
       );
 
       return markings.filter((m) => m > 0).length === markings.length

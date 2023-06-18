@@ -1,6 +1,6 @@
 import * as Effect from '@effect/io/Effect';
 
-import { WTaskState } from '../types.js';
+import { TaskState } from '../types.js';
 
 type ActivityTypeWithInput = 'activate' | 'complete';
 type ActivityTypeWithoutInput = 'disable' | 'enable' | 'cancel';
@@ -11,7 +11,7 @@ type AnyEffect = Effect.Effect<any, any, any>;
 interface DefaultActivityContext {
   getTaskId: () => Effect.Effect<never, never, string>;
   getWorkflowId: () => Effect.Effect<never, never, string>;
-  getTaskState: () => Effect.Effect<never, never, WTaskState>;
+  getTaskState: () => Effect.Effect<never, never, TaskState>;
 }
 interface ActivityContext {
   disable: DefaultActivityContext;

@@ -3,8 +3,6 @@ import * as Effect from '@effect/io/Effect';
 
 import { Condition } from './Condition.js';
 import { Task } from './Task.js';
-import { StateManager } from './stateManager/types.js';
-import type { Net } from './types.js';
 
 export interface TaskDoesNotExist extends Data.Case {
   readonly _tag: 'TaskDoesNotExist';
@@ -25,15 +23,23 @@ export const WorkflowNotInitialized = Data.tagged<WorkflowNotInitialized>(
   'WorkflowNotInitialized'
 );
 
+export interface ConditionDoesNotExist extends Data.Case {
+  readonly _tag: 'ConditionDoesNotExist';
+}
+export const ConditionDoesNotExist = Data.tagged<ConditionDoesNotExist>(
+  'ConditionDoesNotExist'
+);
+
 export class Workflow {
-  net: Net;
+  //net: Net;
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};
-  readonly startCondition: Condition;
-  readonly endCondition: Condition;
-  private id: string | null = null;
+  private startCondition?: Condition;
+  private endCondition?: Condition;
 
-  constructor(net: Net) {
+  constructor(readonly id: string) {}
+
+  /*constructor1(net: Net) {
     this.net = net;
 
     Object.values(net.tasks).forEach((task) => {
@@ -88,14 +94,36 @@ export class Workflow {
         });
       }
     );
+  }*/
+
+  addTask(task: Task) {
+    this.tasks[task.name] = task;
   }
 
-  initialize(id: string) {
-    this.id = id;
+  addCondition(condition: Condition) {
+    this.conditions[condition.name] = condition;
+  }
+
+  setStartCondition(conditionName: string) {
+    if (this.conditions[conditionName]) {
+      this.startCondition = this.conditions[conditionName];
+      return Effect.succeed(this.startCondition);
+    }
+    return Effect.fail(ConditionDoesNotExist());
+  }
+
+  setEndCondition(conditionName: string) {
+    if (this.conditions[conditionName]) {
+      this.endCondition = this.conditions[conditionName];
+      return Effect.succeed(this.endCondition);
+    }
+    return Effect.fail(ConditionDoesNotExist());
+  }
+
+  initialize() {
     return Effect.unit();
   }
-  resume(id: string) {
-    this.id = id;
+  resume() {
     return Effect.unit();
   }
   getStartCondition() {
@@ -104,6 +132,13 @@ export class Workflow {
       return Effect.succeed(startCondition);
     }
     return Effect.fail(StartConditionDoesNotExist());
+  }
+  getCondition(name: string) {
+    const condition = this.conditions[name];
+    if (condition) {
+      return Effect.succeed(condition);
+    }
+    return Effect.fail(ConditionDoesNotExist());
   }
   getTask(name: string) {
     const task = this.tasks[name];

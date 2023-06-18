@@ -1,14 +1,14 @@
 import * as Context from '@effect/data/Context';
 import * as Effect from '@effect/io/Effect';
 
-import type { Condition } from '../Condition.js';
-import type { Task } from '../Task.js';
-import { WorkflowNotInitialized } from '../Workflow.js';
-import { WTaskState } from '../types.js';
+import type { Condition } from '../elements/Condition.js';
+import type { Task } from '../elements/Task.js';
+import { WorkflowNotInitialized } from '../elements/Workflow.js';
+import { TaskState } from '../types.js';
 
 export interface JSInterpreterState {
   markings: Record<string, number>;
-  tasks: Record<string, WTaskState>;
+  tasks: Record<string, TaskState>;
 }
 
 export type WorkflowState = Record<string, WorkflowItem>;
@@ -26,11 +26,11 @@ export interface ConditionItem {
 export interface TaskItem {
   id: string;
   name: string;
-  state: WTaskState;
+  state: TaskState;
 }
 
 export interface StateManager {
-  initializeWorkflow(): Effect.Effect<never, never, string>;
+  initializeWorkflow(id: string): Effect.Effect<never, never, void>;
 
   incrementConditionMarking<E>(
     condition: Condition
@@ -62,7 +62,7 @@ export interface StateManager {
   ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
   getTaskState<E>(
     task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, WTaskState>;
+  ): Effect.Effect<never, E | WorkflowNotInitialized, TaskState>;
 
   getWorkflowState<E>(
     workflowID: string

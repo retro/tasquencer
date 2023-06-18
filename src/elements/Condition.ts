@@ -1,28 +1,41 @@
 import * as Effect from '@effect/io/Effect';
 
+import { StateManager } from '../stateManager/types.js';
+import { ConditionNode } from '../types.js';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Task } from './Task.js';
 import { Workflow } from './Workflow.js';
-import { StateManager } from './stateManager/types.js';
-import { ConditionNode } from './types.js';
 
 export class Condition {
-  readonly workflow: Workflow;
+  readonly incomingFlows = new Set<TaskToConditionFlow>();
+  readonly outgoingFlows = new Set<ConditionToTaskFlow>();
   readonly preSet: Record<string, Task> = {};
   readonly postSet: Record<string, Task> = {};
-
+  readonly id: string;
   readonly name: string;
+  readonly isImplicit: boolean = false;
+  readonly workflow: Workflow;
 
-  constructor(workflow: Workflow, condition: ConditionNode) {
+  constructor(
+    id: string,
+    name: string,
+    conditionNode: ConditionNode,
+    workflow: Workflow
+  ) {
+    this.id = id;
+    this.name = name;
+    this.isImplicit = conditionNode.isImplicit ?? false;
     this.workflow = workflow;
-    this.name = condition.name;
   }
 
-  addIncomingFlow(task: Task) {
-    this.preSet[task.name] = task;
+  addIncomingFlow(flow: TaskToConditionFlow) {
+    this.incomingFlows.add(flow);
+    this.preSet[flow.priorElement.name] = flow.priorElement;
   }
 
-  addOutgoingFlow(task: Task) {
-    this.postSet[task.name] = task;
+  addOutgoingFlow(flow: ConditionToTaskFlow) {
+    this.outgoingFlows.add(flow);
+    this.postSet[flow.nextElement.name] = flow.nextElement;
   }
 
   incrementMarking() {

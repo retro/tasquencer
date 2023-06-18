@@ -2,10 +2,10 @@ import * as Effect from '@effect/io/Effect';
 import * as Ref from '@effect/io/Ref';
 import { type Draft, create } from 'mutative';
 
-import type { Condition } from '../Condition.js';
-import type { Task } from '../Task.js';
-import { WorkflowNotInitialized } from '../Workflow.js';
-import { WTaskState } from '../types.js';
+import type { Condition } from '../elements/Condition.js';
+import type { Task } from '../elements/Task.js';
+import { WorkflowNotInitialized } from '../elements/Workflow.js';
+import { TaskState } from '../types.js';
 import {
   type ConditionItem,
   IdGenerator,
@@ -150,16 +150,14 @@ export class Memory implements StateManager {
     private readonly idGenerator: IdGenerator
   ) {}
 
-  initializeWorkflow() {
-    const { storeRef, idGenerator } = this;
+  initializeWorkflow(id: string) {
+    const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const id = yield* $(idGenerator.next('workflow'));
       yield* $(
         updateStoreRef(storeRef, (draft) => {
           draft[id] = getInitialWorkflowState();
         })
       );
-      return id;
     });
   }
 
@@ -238,7 +236,7 @@ export class Memory implements StateManager {
     });
   }
 
-  updateTaskState(task: Task, taskState: WTaskState) {
+  updateTaskState(task: Task, taskState: TaskState) {
     const { storeRef, idGenerator } = this;
     return Effect.gen(function* ($) {
       const workflowID = yield* $(task.workflow.getId());

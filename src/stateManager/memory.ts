@@ -99,7 +99,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowState(storeRef, condition.workflow);
+      yield* $(getWorkflowState(storeRef, condition.workflow));
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -118,7 +118,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowState(storeRef, condition.workflow);
+      yield* $(getWorkflowState(storeRef, condition.workflow));
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -137,7 +137,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowState(storeRef, condition.workflow);
+      yield* $(getWorkflowState(storeRef, condition.workflow));
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -165,7 +165,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowState(storeRef, task.workflow);
+      yield* $(getWorkflowState(storeRef, task.workflow));
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {

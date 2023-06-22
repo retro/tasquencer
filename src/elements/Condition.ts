@@ -1,6 +1,5 @@
 import * as Effect from '@effect/io/Effect';
 
-import { StateManager } from '../stateManager/types.js';
 import { ConditionNode } from '../types.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Task } from './Task.js';
@@ -41,8 +40,7 @@ export class Condition {
   incrementMarking() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
-      yield* $(stateManager.incrementConditionMarking(self));
+      yield* $(self.workflow.stateManager.incrementConditionMarking(self));
       yield* $(self.enableTasks());
     });
   }
@@ -50,8 +48,7 @@ export class Condition {
   decrementMarking() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
-      yield* $(stateManager.decrementConditionMarking(self));
+      yield* $(self.workflow.stateManager.decrementConditionMarking(self));
       yield* $(self.disableTasks());
     });
   }
@@ -74,8 +71,7 @@ export class Condition {
   cancel() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
-      yield* $(stateManager.emptyConditionMarking(self));
+      yield* $(self.workflow.stateManager.emptyConditionMarking(self));
       yield* $(self.cancelTasks());
     });
   }
@@ -83,8 +79,7 @@ export class Condition {
   getMarking() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
-      return yield* $(stateManager.getConditionMarking(self));
+      return yield* $(self.workflow.stateManager.getConditionMarking(self));
     });
   }
 }

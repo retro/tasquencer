@@ -2,7 +2,6 @@ import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import { type AnyTaskBuilder } from '../builder/TaskBuilder.js';
-import { StateManager } from '../stateManager/types.js';
 import type { JoinType, SplitType, TaskState } from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
@@ -69,8 +68,7 @@ export class Task {
   getState() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
-      return yield* $(stateManager.getTaskState(self));
+      return yield* $(self.workflow.stateManager.getTaskState(self));
     });
   }
 
@@ -79,12 +77,11 @@ export class Task {
 
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      const stateManager = yield* $(StateManager);
 
       if (isValidTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
-          yield* $(stateManager.enableTask(self));
+          yield* $(self.workflow.stateManager.enableTask(self));
         }
       }
     });
@@ -93,10 +90,9 @@ export class Task {
   disable() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'disabled')) {
-        yield* $(stateManager.disableTask(self));
+        yield* $(self.workflow.stateManager.disableTask(self));
       }
     });
   }
@@ -104,10 +100,9 @@ export class Task {
   activate() {
     const self = this;
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'active')) {
-        yield* $(stateManager.activateTask(self));
+        yield* $(self.workflow.stateManager.activateTask(self));
 
         const preSet = Object.values(self.preSet);
         const updates = preSet.map((condition) => condition.decrementMarking());
@@ -120,9 +115,8 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      const stateManager = yield* $(StateManager);
       if (isValidTransition(state, 'completed')) {
-        yield* $(stateManager.completeTask(self));
+        yield* $(self.workflow.stateManager.completeTask(self));
         yield* $(self.cancelCancellationRegion());
         yield* $(self.produceTokensInOutgoingFlows());
       }
@@ -133,9 +127,8 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      const stateManager = yield* $(StateManager);
       if (isValidTransition(state, 'canceled')) {
-        yield* $(stateManager.cancelTask(self));
+        yield* $(self.workflow.stateManager.cancelTask(self));
       }
     });
   }
@@ -179,13 +172,13 @@ export class Task {
 
   private produceOrSplitTokensInOutgoingFlows() {
     const flows = this.outgoingFlows;
-    const updates = Object.entries(flows).map(([condition, flow]) => {
+    const updates = Object.entries(flows).map(([conditionName, flow]) => {
       if (flow.isDefault) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[condition]!.incrementMarking();
+        return this.postSet[conditionName]!.incrementMarking();
       } else if (flow.predicate ? flow.predicate(null) : false) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[condition]!.incrementMarking();
+        return this.postSet[conditionName]!.incrementMarking();
       }
       return Effect.unit();
     });

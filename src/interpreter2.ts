@@ -51,57 +51,44 @@ export class Interpreter {
     private context: object
   ) {}
   start() {
-    const { workflow, stateManager } = this;
-    return pipe(
-      Effect.gen(function* ($) {
-        yield* $(stateManager.initializeWorkflow(workflow));
-        yield* $(workflow.initialize());
-        const startCondition = yield* $(workflow.getStartCondition());
-        yield* $(startCondition.incrementMarking());
-      }),
-      Effect.provideService(StateManager, this.stateManager)
-    );
+    const { workflow } = this;
+    return Effect.gen(function* ($) {
+      yield* $(workflow.initialize());
+      const startCondition = yield* $(workflow.getStartCondition());
+      yield* $(startCondition.incrementMarking());
+    });
   }
   resume() {
     const { workflow } = this;
-    return pipe(
-      Effect.gen(function* ($) {
-        yield* $(workflow.resume());
-      }),
-      Effect.provideService(StateManager, this.stateManager)
-    );
+    return Effect.gen(function* ($) {
+      yield* $(workflow.resume());
+    });
   }
 
   activateTask(taskName: string) {
     const { workflow } = this;
-    return pipe(
-      Effect.gen(function* ($) {
-        const task = yield* $(workflow.getTask(taskName));
-        const isEnabled = yield* $(task.isEnabled());
-        if (isEnabled) {
-          yield* $(task.activate());
-        } else {
-          yield* $(Effect.fail(TaskNotEnabledError()));
-        }
-      }),
-      Effect.provideService(StateManager, this.stateManager)
-    );
+    return Effect.gen(function* ($) {
+      const task = yield* $(workflow.getTask(taskName));
+      const isEnabled = yield* $(task.isEnabled());
+      if (isEnabled) {
+        yield* $(task.activate());
+      } else {
+        yield* $(Effect.fail(TaskNotEnabledError()));
+      }
+    });
   }
 
   completeTask(taskName: string) {
     const { workflow } = this;
-    return pipe(
-      Effect.gen(function* ($) {
-        const task = yield* $(workflow.getTask(taskName));
-        const isActive = yield* $(task.isActive());
-        if (isActive) {
-          yield* $(task.complete());
-        } else {
-          yield* $(Effect.fail(TaskNotActivatedError()));
-        }
-      }),
-      Effect.provideService(StateManager, this.stateManager)
-    );
+    return Effect.gen(function* ($) {
+      const task = yield* $(workflow.getTask(taskName));
+      const isActive = yield* $(task.isActive());
+      if (isActive) {
+        yield* $(task.complete());
+      } else {
+        yield* $(Effect.fail(TaskNotActivatedError()));
+      }
+    });
   }
 
   getState() {
@@ -124,7 +111,10 @@ export function make<
     const stateManager = yield* $(StateManager);
     const idGenerator = yield* $(IdGenerator);
 
-    const workflow = new Workflow(yield* $(idGenerator.next('workflow')));
+    const workflow = new Workflow(
+      yield* $(idGenerator.next('workflow')),
+      stateManager
+    );
 
     for (const [taskName, taskBuilder] of Object.entries(
       workflowBuilder.definition.tasks

@@ -1,6 +1,7 @@
 import * as Data from '@effect/data/Data';
 import * as Effect from '@effect/io/Effect';
 
+import { StateManager } from '../stateManager/types.js';
 import { Condition } from './Condition.js';
 import { Task } from './Task.js';
 
@@ -37,7 +38,7 @@ export class Workflow {
   private startCondition?: Condition;
   private endCondition?: Condition;
 
-  constructor(readonly id: string) {}
+  constructor(readonly id: string, readonly stateManager: StateManager) {}
 
   /*constructor1(net: Net) {
     this.net = net;
@@ -121,7 +122,7 @@ export class Workflow {
   }
 
   initialize() {
-    return Effect.unit();
+    return this.stateManager.initializeWorkflow(this);
   }
   resume() {
     return Effect.unit();

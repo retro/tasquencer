@@ -50,6 +50,20 @@ export type TaskBuilderSplitType<T> = T extends TaskBuilder<
   ? ST
   : never;
 
+export type TaskBuilderActivityOutputs<T> = T extends TaskBuilder<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  infer AO
+>
+  ? AO
+  : never;
+
 export type AnyTaskBuilder<C extends object = object> = TaskBuilder<
   C,
   TaskActivities,
@@ -64,17 +78,11 @@ export type InitializedTaskBuilder<C extends object = object> = TaskBuilder<
   undefined
 >;
 
-interface ActivityOutput {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onDisable: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onEnable: any;
+export interface ActivityOutput {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onActivate: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onComplete: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onCancel: any;
 }
 
 export class TaskBuilder<
@@ -122,7 +130,7 @@ export class TaskBuilder<
       | ((
           onDisable: AB.OnDisableActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO & { onDisable: AB.ActivityOutput<A> }> {
+  ): TaskBuilder<C, TA, JT, ST, AO> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onDisable = input;
     } else {
@@ -137,7 +145,7 @@ export class TaskBuilder<
       | ((
           onEnable: AB.OnEnableActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO & { onEnable: AB.ActivityOutput<A> }> {
+  ): TaskBuilder<C, TA, JT, ST, AO> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onEnable = input;
     } else {
@@ -147,12 +155,34 @@ export class TaskBuilder<
   }
 
   onActivate<A extends AB.OnActivateActivity<C>>(
+    input: A
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    Omit<AO, 'onActivate'> & { onActivate: AB.ActivityOutput<A> }
+  >;
+
+  onActivate<
+    A extends (onActivate: AB.OnActivateActivity<C>) => AB.OnActivateActivity<C>
+  >(
+    input: A
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    Omit<AO, 'onActivate'> & { onActivate: AB.ActivityOutput<ReturnType<A>> }
+  >;
+
+  onActivate<A extends AB.OnActivateActivity<C>>(
     input:
       | (A & ActivityBuilderWithValidContext<C, A>)
       | ((
           onActivate: AB.OnActivateActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO & { onActivate: AB.ActivityOutput<A> }> {
+  ): TaskBuilder<C, TA, JT, ST, AO> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onActivate = input;
     } else {
@@ -162,12 +192,34 @@ export class TaskBuilder<
   }
 
   onComplete<A extends AB.OnCompleteActivity<C>>(
+    input: A
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    Omit<AO, 'onComplete'> & { onComplete: AB.ActivityOutput<A> }
+  >;
+
+  onComplete<
+    A extends (onComplete: AB.OnCompleteActivity<C>) => AB.OnCompleteActivity<C>
+  >(
+    input: A
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    Omit<AO, 'onComplete'> & { onComplete: AB.ActivityOutput<ReturnType<A>> }
+  >;
+
+  onComplete<A extends AB.OnCompleteActivity<C>>(
     input:
       | (A & ActivityBuilderWithValidContext<C, A>)
       | ((
           onComplete: AB.OnCompleteActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO & { onComplete: AB.ActivityOutput<A> }> {
+  ): TaskBuilder<C, TA, JT, ST, AO> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onComplete = input;
     } else {
@@ -182,7 +234,7 @@ export class TaskBuilder<
       | ((
           onCancel: AB.OnCancelActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO & { onCancel: AB.ActivityOutput<A> }> {
+  ): TaskBuilder<C, TA, JT, ST, AO> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onCancel = input;
     } else {

@@ -21,15 +21,39 @@ type IsXorOrOrJoinSplit<T> = T extends never
   ? true
   : never;
 
+export type WorkflowTasksActivitiesOutputs<T> = T extends WorkflowBuilder<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  infer O
+>
+  ? O
+  : never;
+
 // TODO: implement invariant checking
 export class WorkflowBuilder<
-  Context extends object,
-  BNTasks = never,
-  BNConditions = never,
-  BNCancellationRegions = never,
-  BNTasksWithOrXorSplit = never,
-  BNConnectedTasks = never,
-  BNConnectedConditions = never
+  WBContext extends object,
+  WBTasks = never,
+  WBConditions = never,
+  WBCancellationRegions = never,
+  WBTasksWithOrXorSplit = never,
+  WBConnectedTasks = never,
+  WBConnectedConditions = never,
+  WBTasksActivitiesOutputs extends Record<string, TB.ActivityOutput> = Record<
+    string,
+    TB.ActivityOutput
+  >
 > {
   definition: WorkflowBuilderDefinition;
 
@@ -50,44 +74,47 @@ export class WorkflowBuilder<
   }
 
   condition<CN extends string>(
-    conditionName: CN & NotExtends<BNTasks | BNConditions, CN>
+    conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
-    Context,
-    BNTasks,
-    BNConditions | CN,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks,
+    WBConditions | CN,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs
   > {
     return this.addConditionUnsafe(conditionName);
   }
 
   startCondition<CN extends string>(
-    conditionName: CN & NotExtends<BNTasks | BNConditions, CN>
+    conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
-    Context,
-    BNTasks,
-    BNConditions | CN,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks,
+    WBConditions | CN,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs
   > {
     this.definition.startCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
   }
 
   endCondition<CN extends string>(
-    conditionName: CN & NotExtends<BNTasks | BNConditions, CN>
+    conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
-    Context,
-    BNTasks,
-    BNConditions | CN,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks,
+    WBConditions | CN,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs
   > {
     this.definition.endCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -100,98 +127,107 @@ export class WorkflowBuilder<
       ? never
       : TN
   >(
-    taskName: TN & NotExtends<BNTasks | BNConditions, TN>,
-    task: T & TaskWithValidContext<Context, T>
+    taskName: TN & NotExtends<WBTasks | WBConditions, TN>,
+    task: T & TaskWithValidContext<WBContext, T>
   ): WorkflowBuilder<
-    Context,
-    BNTasks | TN,
-    BNConditions,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit | X,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks | TN,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit | X,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs & { [tn in TN]: TB.TaskBuilderActivityOutputs<T> }
   >;
   task<
     TN extends string,
     T extends (
-      t: TB.InitializedTaskBuilder<Context>
-    ) => TB.AnyTaskBuilder<Context>,
+      t: TB.InitializedTaskBuilder<WBContext>
+    ) => TB.AnyTaskBuilder<WBContext>,
     X extends IsXorOrOrJoinSplit<
       TB.TaskBuilderSplitType<ReturnType<T>>
     > extends never
       ? never
       : TN
   >(
-    taskName: TN & NotExtends<BNTasks | BNConditions, TN>,
+    taskName: TN & NotExtends<WBTasks | WBConditions, TN>,
     task: T
   ): WorkflowBuilder<
-    Context,
-    BNTasks | TN,
-    BNConditions,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit | X,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks | TN,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit | X,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs & {
+      [tn in TN]: TB.TaskBuilderActivityOutputs<ReturnType<T>>;
+    }
   >;
   task<TN extends string>(
-    taskName: string & NotExtends<BNTasks | BNConditions, TN>
+    taskName: string & NotExtends<WBTasks | WBConditions, TN>
   ): WorkflowBuilder<
-    Context,
-    BNTasks | TN,
-    BNConditions,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks | TN,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs & {
+      [tn in TN]: TB.ActivityOutput;
+    }
   >;
   task(
     taskName: string,
     input?: TB.AnyTaskBuilder | ((t: TB.AnyTaskBuilder) => TB.AnyTaskBuilder)
   ) {
     if (!input) {
-      this.definition.tasks[taskName] = TB.task<Context>();
+      this.definition.tasks[taskName] = TB.task<WBContext>();
     } else if (input instanceof TB.TaskBuilder) {
       this.definition.tasks[taskName] = input;
     } else {
-      this.definition.tasks[taskName] = input(TB.task<Context>());
+      this.definition.tasks[taskName] = input(TB.task<WBContext>());
     }
 
     return this;
   }
 
   cancellationRegion<
-    TN extends BNTasks,
-    TNS extends Exclude<BNTasks, TN>[],
-    CNS extends BNConditions[]
+    TN extends WBTasks,
+    TNS extends Exclude<WBTasks, TN>[],
+    CNS extends WBConditions[]
   >(
-    taskName: TN & NotExtends<BNCancellationRegions, TN> & string,
+    taskName: TN & NotExtends<WBCancellationRegions, TN> & string,
     toCancel: { tasks?: TNS & string[]; conditions?: CNS & string[] }
   ): WorkflowBuilder<
-    Context,
-    BNTasks | TN,
-    BNConditions,
-    BNCancellationRegions | TN,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks,
-    BNConnectedConditions
+    WBContext,
+    WBTasks | TN,
+    WBConditions,
+    WBCancellationRegions | TN,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
     return this;
   }
 
-  connectCondition<CN extends BNConditions>(
-    conditionName: CN & NotExtends<BNConnectedConditions, CN> & string,
+  connectCondition<CN extends WBConditions>(
+    conditionName: CN & NotExtends<WBConnectedConditions, CN> & string,
     builder: (
-      to: ConditionFlowBuilder<BNTasks>
-    ) => ConditionFlowBuilder<BNTasks>
+      to: ConditionFlowBuilder<WBTasks>
+    ) => ConditionFlowBuilder<WBTasks>
   ): WorkflowBuilder<
-    Context,
-    BNTasks,
-    BNConditions,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks,
-    BNConnectedConditions | CN
+    WBContext,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions | CN,
+    WBTasksActivitiesOutputs
   > {
     this.definition.flows.conditions[conditionName] = builder(
       new ConditionFlowBuilder(conditionName)
@@ -199,36 +235,38 @@ export class WorkflowBuilder<
     return this;
   }
 
-  connectTask<TN extends BNTasksWithOrXorSplit, D>(
-    taskName: TN & NotExtends<BNConnectedTasks, TN> & string,
+  connectTask<TN extends WBTasksWithOrXorSplit, D>(
+    taskName: TN & NotExtends<WBConnectedTasks, TN> & string,
     builder: (
-      to: OrXorTaskFlowBuilder<BNConditions, BNTasks, never, Context>
+      to: OrXorTaskFlowBuilder<WBConditions, WBTasks, never, WBContext>
     ) => ValidOrXorTaskFlow<
-      OrXorTaskFlowBuilder<BNConditions, BNTasks, D, Context>
+      OrXorTaskFlowBuilder<WBConditions, WBTasks, D, WBContext>
     >
   ): WorkflowBuilder<
-    Context,
-    BNTasks,
-    BNConditions,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks | TN,
-    BNConnectedConditions
+    WBContext,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks | TN,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs
   >;
 
-  connectTask<TN extends BNTasks>(
-    taskName: TN & NotExtends<BNConnectedTasks, TN> & string,
+  connectTask<TN extends WBTasks>(
+    taskName: TN & NotExtends<WBConnectedTasks, TN> & string,
     builder: (
-      to: TaskFlowBuilder<BNConditions, BNTasks>
-    ) => TaskFlowBuilder<BNConditions, BNTasks>
+      to: TaskFlowBuilder<WBConditions, WBTasks>
+    ) => TaskFlowBuilder<WBConditions, WBTasks>
   ): WorkflowBuilder<
-    Context,
-    BNTasks,
-    BNConditions,
-    BNCancellationRegions,
-    BNTasksWithOrXorSplit,
-    BNConnectedTasks | TN,
-    BNConnectedConditions
+    WBContext,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks | TN,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs
   >;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -237,13 +275,17 @@ export class WorkflowBuilder<
       this.definition.tasks[taskName]?.splitType === 'or' ||
       this.definition.tasks[taskName]?.splitType === 'xor'
     ) {
-      const flow = new OrXorTaskFlowBuilder<BNConditions, BNTasks>(taskName);
-      const result: OrXorTaskFlowBuilder<BNConditions, BNTasks, true, Context> =
-        builder(flow);
+      const flow = new OrXorTaskFlowBuilder<WBConditions, WBTasks>(taskName);
+      const result: OrXorTaskFlowBuilder<
+        WBConditions,
+        WBTasks,
+        true,
+        WBContext
+      > = builder(flow);
       this.definition.flows.tasks[taskName] = result;
     } else {
-      const flow = new TaskFlowBuilder<BNConditions, BNTasks>(taskName);
-      const result: TaskFlowBuilder<BNConditions, BNTasks> = builder(flow);
+      const flow = new TaskFlowBuilder<WBConditions, WBTasks>(taskName);
+      const result: TaskFlowBuilder<WBConditions, WBTasks> = builder(flow);
       this.definition.flows.tasks[taskName] = result;
     }
     return this;

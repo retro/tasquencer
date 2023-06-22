@@ -33,7 +33,7 @@ it('', () => {
   .connectTaskToCondition('C', 'end')
   .connectTaskToCondition('D', 'end');*/
 
-  console.log(net.definition.flows.conditions);
+  //console.log(net.definition.flows.conditions);
   expect(true).toBe(true);
 });
 

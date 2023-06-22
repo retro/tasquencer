@@ -1,14 +1,18 @@
 import * as Data from '@effect/data/Data';
-import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import { OrXorTaskFlowBuilder } from './builder/FlowBuilder.js';
-import { WorkflowBuilder } from './builder/WorkflowBuilder.js';
+import { ActivityOutput } from './builder/TaskBuilder.js';
+import {
+  WorkflowBuilder,
+  WorkflowTasksActivitiesOutputs,
+} from './builder/WorkflowBuilder.js';
 import { Condition } from './elements/Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './elements/Flow.js';
 import { Task } from './elements/Task.js';
 import { Workflow } from './elements/Workflow.js';
 import { IdGenerator, StateManager } from './stateManager/types.js';
+import { Prettify } from './types.js';
 
 /*export type onStart = (
   state: InterpreterState
@@ -44,7 +48,9 @@ const TaskNotActivatedError = Data.tagged<TaskNotActivatedError>(
   'TaskNotActivatedError'
 );
 
-export class Interpreter {
+export class Interpreter<
+  TasksActivitiesOutputs extends Record<string, ActivityOutput>
+> {
   constructor(
     private workflow: Workflow,
     private stateManager: StateManager,
@@ -65,26 +71,28 @@ export class Interpreter {
     });
   }
 
-  activateTask(taskName: string) {
+  activateTask<T extends string>(taskName: T, _payload: unknown = undefined) {
     const { workflow } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(taskName));
       const isEnabled = yield* $(task.isEnabled());
       if (isEnabled) {
-        yield* $(task.activate());
+        const output = yield* $(task.activate());
+        return output as TasksActivitiesOutputs[T]['onActivate'];
       } else {
         yield* $(Effect.fail(TaskNotEnabledError()));
       }
     });
   }
 
-  completeTask(taskName: string) {
+  completeTask<T extends string>(taskName: T, _payload: unknown = undefined) {
     const { workflow } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(taskName));
       const isActive = yield* $(task.isActive());
       if (isActive) {
-        yield* $(task.complete());
+        const output = yield* $(task.complete());
+        return output as TasksActivitiesOutputs[T]['onComplete'];
       } else {
         yield* $(Effect.fail(TaskNotActivatedError()));
       }
@@ -235,6 +243,8 @@ export function make<
       }
     }
 
-    return new Interpreter(workflow, stateManager, context);
+    return new Interpreter<{
+      [K in keyof WorkflowTasksActivitiesOutputs<W>]: WorkflowTasksActivitiesOutputs<W>[K];
+    }>(workflow, stateManager, context);
   });
 }

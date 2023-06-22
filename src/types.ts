@@ -7,6 +7,10 @@ import {
 } from './builder/FlowBuilder.js';
 import { AnyTaskBuilder } from './builder/TaskBuilder.js';
 
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & object;
+
 export type NotExtends<NS, N> = N extends NS ? never : N;
 
 export type TaskState =
@@ -23,6 +27,7 @@ export type JoinType = SplitType;
 export type FlowType = 'task->condition' | 'condition->task';
 
 export interface OutgoingTaskFlow {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   predicate?: (...args: any[]) => Effect.Effect<any, any, boolean>;
   order?: number;
   isDefault?: true;

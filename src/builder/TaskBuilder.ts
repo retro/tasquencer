@@ -1,9 +1,6 @@
+import { Task } from '../elements/Task.js';
 import { JoinType, SplitType } from '../types.js';
 import * as AB from './ActivityBuilder.js';
-
-class Task {
-  constructor(private readonly name: string) {}
-}
 
 type ActivityBuilderWithValidContext<C, A> = C extends AB.ActivityUserContext<A>
   ? A
@@ -192,11 +189,6 @@ export class TaskBuilder<
       this.activities.onCancel = input(AB.onCancel<C>());
     }
     return this;
-  }
-
-  build(name: string) {
-    const TaskConstructor = this.Constructor ?? Task;
-    return new TaskConstructor(name);
   }
 }
 

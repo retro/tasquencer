@@ -8,7 +8,6 @@ import { Condition } from './elements/Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './elements/Flow.js';
 import { Task } from './elements/Task.js';
 import { Workflow } from './elements/Workflow.js';
-import type { Net } from './oldTypes.js';
 import { IdGenerator, StateManager } from './stateManager/types.js';
 
 /*export type onStart = (
@@ -106,14 +105,15 @@ export class Interpreter {
   getState() {
     const { workflow, stateManager } = this;
     return Effect.gen(function* ($) {
-      const workflowID = yield* $(workflow.getId());
-      return yield* $(stateManager.getWorkflowState(workflowID));
+      return yield* $(stateManager.getWorkflowState(workflow.id));
     });
   }
 }
 
 export function make<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   W extends WorkflowBuilder<object, any, any, any, any, any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   C extends W extends WorkflowBuilder<infer WC, any, any, any, any, any, any>
     ? WC
     : object

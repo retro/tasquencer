@@ -147,10 +147,4 @@ export class Workflow {
     }
     return Effect.fail(TaskDoesNotExist());
   }
-  getId = () => {
-    if (this.id) {
-      return Effect.succeed(this.id);
-    }
-    return Effect.fail(WorkflowNotInitialized());
-  };
 }

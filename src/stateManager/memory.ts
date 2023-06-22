@@ -12,40 +12,29 @@ import {
   type StateManager,
   type TaskItem,
   type WorkflowItem,
+  WorkflowState,
 } from './types.js';
 
-type ExtendedWorkflowItem = WorkflowItem & {
-  taskNameToId: Record<string, string>;
-  conditionNameToId: Record<string, string>;
-};
+type WorkflowStateRef = Ref.Ref<WorkflowState>;
 
-type ExtendedWorkflowState = Record<string, ExtendedWorkflowItem>;
-
-type WorkflowStateRef = Ref.Ref<ExtendedWorkflowState>;
-
-function getInitialWorkflowState(): ExtendedWorkflowItem {
+function getInitialWorkflowState(): WorkflowItem {
   return {
     tasks: {},
     conditions: {},
-    taskNameToId: {},
-    conditionNameToId: {},
   };
 }
 
-function getInitialConditionItem(
-  condition: Condition,
-  id: string
-): ConditionItem {
+function getInitialConditionItem(condition: Condition): ConditionItem {
   return {
-    id,
+    id: condition.id,
     name: condition.name,
     marking: 0,
   };
 }
 
-function getInitialTaskItem(task: Task, id: string): TaskItem {
+function getInitialTaskItem(task: Task): TaskItem {
   return {
-    id,
+    id: task.id,
     name: task.name,
     state: 'disabled',
   };
@@ -53,16 +42,16 @@ function getInitialTaskItem(task: Task, id: string): TaskItem {
 
 function updateStoreRef(
   storeRef: WorkflowStateRef,
-  updateFn: (draft: Draft<ExtendedWorkflowState>) => unknown
+  updateFn: (draft: Draft<WorkflowState>) => unknown
 ) {
-  return Ref.update(storeRef, (state) =>
-    create(state, (draft) => {
+  return Ref.update(storeRef, (state) => {
+    return create(state, (draft) => {
       updateFn(draft);
-    })
-  );
+    });
+  });
 }
 
-function getWorkflowById(storeRef: WorkflowStateRef, workflowId: string) {
+function getWorkflowStateById(storeRef: WorkflowStateRef, workflowId: string) {
   return Effect.gen(function* ($) {
     const store = yield* $(Ref.get(storeRef));
     const workflow = store[workflowId];
@@ -73,74 +62,21 @@ function getWorkflowById(storeRef: WorkflowStateRef, workflowId: string) {
   });
 }
 
-function getTaskId(storeRef: WorkflowStateRef, task: Task) {
+function getTaskState(storeRef: WorkflowStateRef, task: Task) {
   return Effect.gen(function* ($) {
-    const workflowId = yield* $(task.workflow.getId());
-    const workflowState = yield* $(getWorkflowById(storeRef, workflowId));
-    return workflowState.taskNameToId[task.name];
+    const workflowState = yield* $(
+      getWorkflowStateById(storeRef, task.workflow.id)
+    );
+    return workflowState.tasks[task.id];
   });
 }
 
-function getConditionId(storeRef: WorkflowStateRef, condition: Condition) {
+function getConditionState(storeRef: WorkflowStateRef, condition: Condition) {
   return Effect.gen(function* ($) {
-    const workflowId = yield* $(condition.workflow.getId());
-    const workflowState = yield* $(getWorkflowById(storeRef, workflowId));
-    return workflowState.conditionNameToId[condition.name];
-  });
-}
-
-function ensureTask(
-  storeRef: WorkflowStateRef,
-  idGenerator: IdGenerator,
-  task: Task
-) {
-  return Effect.gen(function* ($) {
-    const workflowId = yield* $(task.workflow.getId());
-    const existingId = yield* $(getTaskId(storeRef, task));
-
-    if (existingId) {
-      return existingId;
-    } else {
-      const taskId = yield* $(idGenerator.next('task'));
-      yield* $(
-        updateStoreRef(storeRef, (draft) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const workflow = draft[workflowId]!;
-          workflow.tasks[taskId] = getInitialTaskItem(task, taskId);
-          workflow.taskNameToId[task.name] = taskId;
-        })
-      );
-      return taskId;
-    }
-  });
-}
-
-function ensureCondition(
-  storeRef: WorkflowStateRef,
-  idGenerator: IdGenerator,
-  condition: Condition
-) {
-  return Effect.gen(function* ($) {
-    const workflowId = yield* $(condition.workflow.getId());
-    const existingId = yield* $(getConditionId(storeRef, condition));
-
-    if (existingId) {
-      return existingId;
-    } else {
-      const conditionId = yield* $(idGenerator.next('condition'));
-      yield* $(
-        updateStoreRef(storeRef, (draft) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const workflow = draft[workflowId]!;
-          workflow.conditions[conditionId] = getInitialConditionItem(
-            condition,
-            conditionId
-          );
-          workflow.conditionNameToId[condition.name] = conditionId;
-        })
-      );
-      return conditionId;
-    }
+    const workflowState = yield* $(
+      getWorkflowStateById(storeRef, condition.workflow.id)
+    );
+    return workflowState.conditions[condition.id];
   });
 }
 
@@ -162,60 +98,58 @@ export class Memory implements StateManager {
   }
 
   incrementConditionMarking(condition: Condition) {
-    const { storeRef, idGenerator } = this;
+    const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflowID = yield* $(condition.workflow.getId());
-
-      const conditionId = yield* $(
-        ensureCondition(storeRef, idGenerator, condition)
-      );
+      // We want to error out if the workflow is not initialized
+      getWorkflowStateById(storeRef, condition.workflow.id);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const workflow = draft[workflowID]!;
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const conditionItem = workflow.conditions[conditionId]!;
+          const workflow = draft[condition.workflow.id]!;
+          const conditionItem =
+            workflow.conditions[condition.id] ??
+            getInitialConditionItem(condition);
           conditionItem.marking = conditionItem.marking + 1;
+          workflow.conditions[condition.id] = conditionItem;
         })
       );
     });
   }
   decrementConditionMarking(condition: Condition) {
-    const { storeRef, idGenerator } = this;
+    const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflowID = yield* $(condition.workflow.getId());
-
-      const conditionId = yield* $(
-        ensureCondition(storeRef, idGenerator, condition)
-      );
+      // We want to error out if the workflow is not initialized
+      getWorkflowStateById(storeRef, condition.workflow.id);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const workflow = draft[workflowID]!;
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const conditionItem = workflow.conditions[conditionId]!;
+          const workflow = draft[condition.workflow.id]!;
+          const conditionItem =
+            workflow.conditions[condition.id] ??
+            getInitialConditionItem(condition);
           conditionItem.marking = conditionItem.marking - 1;
+          workflow.conditions[condition.id] = conditionItem;
         })
       );
     });
   }
   emptyConditionMarking(condition: Condition) {
-    const { storeRef, idGenerator } = this;
+    const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflowID = yield* $(condition.workflow.getId());
-      const conditionId = yield* $(
-        ensureCondition(storeRef, idGenerator, condition)
-      );
+      // We want to error out if the workflow is not initialized
+      getWorkflowStateById(storeRef, condition.workflow.id);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const workflow = draft[workflowID]!;
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const conditionItem = workflow.conditions[conditionId]!;
+          const workflow = draft[condition.workflow.id]!;
+          const conditionItem =
+            workflow.conditions[condition.id] ??
+            getInitialConditionItem(condition);
           conditionItem.marking = 0;
+          workflow.conditions[condition.id] = conditionItem;
         })
       );
     });
@@ -223,33 +157,26 @@ export class Memory implements StateManager {
   getConditionMarking(condition: Condition) {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const conditionId = yield* $(getConditionId(storeRef, condition));
+      const conditionState = yield* $(getConditionState(storeRef, condition));
 
-      if (!conditionId) {
-        return 0;
-      }
-
-      const workflowId = yield* $(condition.workflow.getId());
-      const workflow = yield* $(getWorkflowById(storeRef, workflowId));
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return workflow.conditions[conditionId]!.marking;
+      return conditionState?.marking ?? 0;
     });
   }
 
   updateTaskState(task: Task, taskState: TaskState) {
-    const { storeRef, idGenerator } = this;
+    const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflowID = yield* $(task.workflow.getId());
-
-      const taskId = yield* $(ensureTask(storeRef, idGenerator, task));
+      // We want to error out if the workflow is not initialized
+      getWorkflowStateById(storeRef, task.workflow.id);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const workflow = draft[workflowID]!;
+          const workflow = draft[task.workflow.id]!;
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const taskItem = workflow.tasks[taskId]!;
+          const taskItem = workflow.tasks[task.id] ?? getInitialTaskItem(task);
           taskItem.state = taskState;
+          workflow.tasks[task.id] = taskItem;
         })
       );
     });
@@ -273,23 +200,16 @@ export class Memory implements StateManager {
   getTaskState(task: Task) {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const taskId = yield* $(getTaskId(storeRef, task));
+      const taskState = yield* $(getTaskState(storeRef, task));
 
-      if (!taskId) {
-        return 'disabled';
-      }
-
-      const workflowId = yield* $(task.workflow.getId());
-      const workflow = yield* $(getWorkflowById(storeRef, workflowId));
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return workflow.tasks[taskId]!.state;
+      return taskState?.state ?? 'disabled';
     });
   }
 
   getWorkflowState(workflowId: string) {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflow = yield* $(getWorkflowById(storeRef, workflowId));
+      const workflow = yield* $(getWorkflowStateById(storeRef, workflowId));
       return {
         tasks: workflow.tasks,
         conditions: workflow.conditions,

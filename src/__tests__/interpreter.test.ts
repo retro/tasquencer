@@ -49,10 +49,10 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res1).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'enabled' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'enabled' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 1 },
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
       },
     });
 
@@ -62,10 +62,10 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res2).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'active' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'active' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
       },
     });
 
@@ -75,13 +75,13 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res3).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'enabled' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'enabled' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 1,
         },
@@ -94,13 +94,13 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res4).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'active' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'active' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
@@ -113,25 +113,25 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res5).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'enabled' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'enabled' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'enabled' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 1,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 1,
         },
@@ -144,25 +144,25 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res6).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'active' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'enabled' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 1,
         },
@@ -173,25 +173,25 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res7).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'active' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'enabled' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 1,
         },
@@ -204,25 +204,25 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res8).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'active' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'active' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'active' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 0,
         },
@@ -235,30 +235,30 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res9).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'completed' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'active' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'active' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 0,
         },
-        'condition-12': {
-          id: 'condition-12',
+        'condition-6': {
+          id: 'condition-6',
           name: 'implicit:pack_goods->check_goods',
           marking: 1,
         },
@@ -271,36 +271,36 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res10).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'completed' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'completed' },
-        'task-10': { id: 'task-10', name: 'check_goods', state: 'enabled' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'check_goods', state: 'enabled' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 0,
         },
-        'condition-12': {
-          id: 'condition-12',
+        'condition-6': {
+          id: 'condition-6',
           name: 'implicit:pack_goods->check_goods',
           marking: 1,
         },
-        'condition-13': {
-          id: 'condition-13',
+        'condition-7': {
+          id: 'condition-7',
           name: 'implicit:issue_receipt->check_goods',
           marking: 1,
         },
@@ -313,36 +313,36 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res11).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'completed' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'completed' },
-        'task-10': { id: 'task-10', name: 'check_goods', state: 'active' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'check_goods', state: 'active' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 0,
         },
-        'condition-12': {
-          id: 'condition-12',
+        'condition-6': {
+          id: 'condition-6',
           name: 'implicit:pack_goods->check_goods',
           marking: 0,
         },
-        'condition-13': {
-          id: 'condition-13',
+        'condition-7': {
+          id: 'condition-7',
           name: 'implicit:issue_receipt->check_goods',
           marking: 0,
         },
@@ -355,40 +355,40 @@ it('can run simple net with and-split and and-join', () => {
 
     expect(res12).toEqual({
       tasks: {
-        'task-6': { id: 'task-6', name: 'scan_goods', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'pay', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'pack_goods', state: 'completed' },
-        'task-9': { id: 'task-9', name: 'issue_receipt', state: 'completed' },
-        'task-10': { id: 'task-10', name: 'check_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'check_goods', state: 'completed' },
       },
       conditions: {
-        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
-        'condition-9': {
-          id: 'condition-9',
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
           name: 'implicit:scan_goods->pay',
           marking: 0,
         },
-        'condition-10': {
-          id: 'condition-10',
+        'condition-4': {
+          id: 'condition-4',
           name: 'implicit:pay->pack_goods',
           marking: 0,
         },
-        'condition-11': {
-          id: 'condition-11',
+        'condition-5': {
+          id: 'condition-5',
           name: 'implicit:pay->issue_receipt',
           marking: 0,
         },
-        'condition-12': {
-          id: 'condition-12',
+        'condition-6': {
+          id: 'condition-6',
           name: 'implicit:pack_goods->check_goods',
           marking: 0,
         },
-        'condition-13': {
-          id: 'condition-13',
+        'condition-7': {
+          id: 'condition-7',
           name: 'implicit:issue_receipt->check_goods',
           marking: 0,
         },
-        'condition-14': { id: 'condition-14', name: 'end', marking: 1 },
+        'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
       },
     });
   });

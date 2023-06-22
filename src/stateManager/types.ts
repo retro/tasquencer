@@ -3,7 +3,7 @@ import * as Effect from '@effect/io/Effect';
 
 import type { Condition } from '../elements/Condition.js';
 import type { Task } from '../elements/Task.js';
-import { WorkflowNotInitialized } from '../elements/Workflow.js';
+import { Workflow, WorkflowNotInitialized } from '../elements/Workflow.js';
 import { TaskState } from '../types.js';
 
 export interface JSInterpreterState {
@@ -30,7 +30,7 @@ export interface TaskItem {
 }
 
 export interface StateManager {
-  initializeWorkflow(id: string): Effect.Effect<never, never, void>;
+  initializeWorkflow(workflow: Workflow): Effect.Effect<never, never, void>;
 
   incrementConditionMarking<E>(
     condition: Condition
@@ -65,7 +65,7 @@ export interface StateManager {
   ): Effect.Effect<never, E | WorkflowNotInitialized, TaskState>;
 
   getWorkflowState<E>(
-    workflowID: string
+    workflow: Workflow
   ): Effect.Effect<never, E | WorkflowNotInitialized, WorkflowItem>;
 }
 

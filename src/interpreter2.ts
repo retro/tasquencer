@@ -54,7 +54,7 @@ export class Interpreter {
     const { workflow, stateManager } = this;
     return pipe(
       Effect.gen(function* ($) {
-        yield* $(stateManager.initializeWorkflow(workflow.id));
+        yield* $(stateManager.initializeWorkflow(workflow));
         yield* $(workflow.initialize());
         const startCondition = yield* $(workflow.getStartCondition());
         yield* $(startCondition.incrementMarking());
@@ -87,6 +87,7 @@ export class Interpreter {
       Effect.provideService(StateManager, this.stateManager)
     );
   }
+
   completeTask(taskName: string) {
     const { workflow } = this;
     return pipe(
@@ -102,10 +103,11 @@ export class Interpreter {
       Effect.provideService(StateManager, this.stateManager)
     );
   }
+
   getState() {
     const { workflow, stateManager } = this;
     return Effect.gen(function* ($) {
-      return yield* $(stateManager.getWorkflowState(workflow.id));
+      return yield* $(stateManager.getWorkflowState(workflow));
     });
   }
 }

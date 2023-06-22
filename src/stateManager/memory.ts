@@ -4,7 +4,7 @@ import { type Draft, create } from 'mutative';
 
 import type { Condition } from '../elements/Condition.js';
 import type { Task } from '../elements/Task.js';
-import { WorkflowNotInitialized } from '../elements/Workflow.js';
+import { Workflow, WorkflowNotInitialized } from '../elements/Workflow.js';
 import { TaskState } from '../types.js';
 import {
   type ConditionItem,
@@ -51,12 +51,12 @@ function updateStoreRef(
   });
 }
 
-function getWorkflowStateById(storeRef: WorkflowStateRef, workflowId: string) {
+function getWorkflowState(storeRef: WorkflowStateRef, workflow: Workflow) {
   return Effect.gen(function* ($) {
     const store = yield* $(Ref.get(storeRef));
-    const workflow = store[workflowId];
-    if (workflow) {
-      return workflow;
+    const workflowState = store[workflow.id];
+    if (workflowState) {
+      return workflowState;
     }
     return yield* $(Effect.fail(WorkflowNotInitialized()));
   });
@@ -64,9 +64,7 @@ function getWorkflowStateById(storeRef: WorkflowStateRef, workflowId: string) {
 
 function getTaskState(storeRef: WorkflowStateRef, task: Task) {
   return Effect.gen(function* ($) {
-    const workflowState = yield* $(
-      getWorkflowStateById(storeRef, task.workflow.id)
-    );
+    const workflowState = yield* $(getWorkflowState(storeRef, task.workflow));
     return workflowState.tasks[task.id];
   });
 }
@@ -74,7 +72,7 @@ function getTaskState(storeRef: WorkflowStateRef, task: Task) {
 function getConditionState(storeRef: WorkflowStateRef, condition: Condition) {
   return Effect.gen(function* ($) {
     const workflowState = yield* $(
-      getWorkflowStateById(storeRef, condition.workflow.id)
+      getWorkflowState(storeRef, condition.workflow)
     );
     return workflowState.conditions[condition.id];
   });
@@ -86,12 +84,12 @@ export class Memory implements StateManager {
     private readonly idGenerator: IdGenerator
   ) {}
 
-  initializeWorkflow(id: string) {
+  initializeWorkflow(workflow: Workflow) {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       yield* $(
         updateStoreRef(storeRef, (draft) => {
-          draft[id] = getInitialWorkflowState();
+          draft[workflow.id] = getInitialWorkflowState();
         })
       );
     });
@@ -101,7 +99,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowStateById(storeRef, condition.workflow.id);
+      getWorkflowState(storeRef, condition.workflow);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -120,7 +118,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowStateById(storeRef, condition.workflow.id);
+      getWorkflowState(storeRef, condition.workflow);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -139,7 +137,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowStateById(storeRef, condition.workflow.id);
+      getWorkflowState(storeRef, condition.workflow);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -167,7 +165,7 @@ export class Memory implements StateManager {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
       // We want to error out if the workflow is not initialized
-      getWorkflowStateById(storeRef, task.workflow.id);
+      getWorkflowState(storeRef, task.workflow);
 
       return yield* $(
         updateStoreRef(storeRef, (draft) => {
@@ -206,13 +204,13 @@ export class Memory implements StateManager {
     });
   }
 
-  getWorkflowState(workflowId: string) {
+  getWorkflowState(workflow: Workflow) {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflow = yield* $(getWorkflowStateById(storeRef, workflowId));
+      const workflowState = yield* $(getWorkflowState(storeRef, workflow));
       return {
-        tasks: workflow.tasks,
-        conditions: workflow.conditions,
+        tasks: workflowState.tasks,
+        conditions: workflowState.conditions,
       };
     });
   }

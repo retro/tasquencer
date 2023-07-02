@@ -1,4 +1,8 @@
+import * as Effect from '@effect/io/Effect';
+
 import { Task } from '../elements/Task.js';
+import { Workflow } from '../elements/Workflow.js';
+import { IdGenerator } from '../stateManager/types.js';
 import { JoinType, SplitType } from '../types.js';
 import * as AB from './ActivityBuilder.js';
 
@@ -241,6 +245,23 @@ export class TaskBuilder<
       this.activities.onCancel = input(AB.onCancel<C>());
     }
     return this;
+  }
+
+  build(workflow: Workflow, name: string) {
+    const { splitType, joinType } = this;
+    return Effect.gen(function* ($) {
+      const idGenerator = yield* $(IdGenerator);
+      const task = new Task(
+        yield* $(idGenerator.next('task')),
+        name,
+        workflow,
+        {
+          splitType,
+          joinType,
+        }
+      );
+      workflow.addTask(task);
+    });
   }
 }
 

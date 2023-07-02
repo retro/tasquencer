@@ -1,37 +1,15 @@
-import * as Data from '@effect/data/Data';
 import * as Effect from '@effect/io/Effect';
 
+import {
+  ConditionDoesNotExist,
+  StartConditionDoesNotExist,
+  TaskDoesNotExist,
+} from '../errors.js';
 import { StateManager } from '../stateManager/types.js';
 import { Condition } from './Condition.js';
 import { Task } from './Task.js';
 
-export interface TaskDoesNotExist extends Data.Case {
-  readonly _tag: 'TaskDoesNotExist';
-}
-export const TaskDoesNotExist =
-  Data.tagged<TaskDoesNotExist>('TaskDoesNotExist');
-
-export interface StartConditionDoesNotExist extends Data.Case {
-  readonly _tag: 'StartConditionDoesNotExist';
-}
-export const StartConditionDoesNotExist =
-  Data.tagged<StartConditionDoesNotExist>('StartConditionDoesNotExist');
-
-export interface WorkflowNotInitialized extends Data.Case {
-  readonly _tag: 'WorkflowNotInitialized';
-}
-export const WorkflowNotInitialized = Data.tagged<WorkflowNotInitialized>(
-  'WorkflowNotInitialized'
-);
-
-export interface ConditionDoesNotExist extends Data.Case {
-  readonly _tag: 'ConditionDoesNotExist';
-}
-export const ConditionDoesNotExist = Data.tagged<ConditionDoesNotExist>(
-  'ConditionDoesNotExist'
-);
-
-export class Workflow {
+export class Workflow<C extends object = object> {
   //net: Net;
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};

@@ -40,15 +40,15 @@ export class Task {
   constructor(
     id: string,
     name: string,
-    task: AnyTaskBuilder,
-    workflow: Workflow
+    workflow: Workflow,
+    props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     this.id = id;
     this.name = name;
     this.workflow = workflow;
 
-    this.splitType = task.splitType;
-    this.joinType = task.joinType;
+    this.splitType = props?.splitType;
+    this.joinType = props?.joinType;
   }
   addIncomingFlow(flow: ConditionToTaskFlow) {
     this.incomingFlows.add(flow);

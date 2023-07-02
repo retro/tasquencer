@@ -1,16 +1,16 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 interface TaskDefinition {
   id: string;
   name: string;
-  joinType?: "and" | "or" | "xor";
-  splitType?: "and" | "or" | "xor";
+  joinType?: 'and' | 'or' | 'xor';
+  splitType?: 'and' | 'or' | 'xor';
   timeout?: number;
   deadline?: Date;
   allowMultipleInstances?: boolean;
   cancellationSet?: string[];
   cancellationRegion?: string;
-  gatewayType?: "event" | null;
+  gatewayType?: 'event' | null;
   events?: EventDefinition[];
   resetSet?: string[];
 }
@@ -19,8 +19,8 @@ interface SubWorkflowDefinition {
   id: string;
   name: string;
   subWorkflow: WorkflowDefinition;
-  joinType?: "and" | "or" | "xor";
-  splitType?: "and" | "or" | "xor";
+  joinType?: 'and' | 'or' | 'xor';
+  splitType?: 'and' | 'or' | 'xor';
   allowMultipleInstances?: boolean;
   timeout?: number;
   deadline?: Date;
@@ -44,7 +44,7 @@ interface WorkflowDefinition {
 
 interface EventDefinition {
   id: string;
-  eventType: "timer" | "message" | "signal" | "error";
+  eventType: 'timer' | 'message' | 'signal' | 'error';
   eventCondition: string;
 }
 
@@ -64,7 +64,7 @@ class Condition {
   constructor(private expression: string) {}
 
   evaluate(context: Context): boolean {
-    return new Function("context", `return ${this.expression};`)(context);
+    return new Function('context', `return ${this.expression};`)(context);
   }
 }
 
@@ -105,8 +105,8 @@ class Task {
   constructor(
     public id: string,
     public name: string,
-    public joinType: "and" | "or" | "xor" = "and",
-    public splitType: "and" | "or" | "xor" = "and",
+    public joinType: 'and' | 'or' | 'xor' = 'and',
+    public splitType: 'and' | 'or' | 'xor' = 'and',
     instanceId: number,
     timeout?: number | null,
     deadline?: Date | null,
@@ -201,9 +201,9 @@ class Task {
       (token) => token
     ).length;
 
-    if (this.joinType === "xor") {
+    if (this.joinType === 'xor') {
       return completedTokens === 1;
-    } else if (this.joinType === "or") {
+    } else if (this.joinType === 'or') {
       return completedTokens > 0;
     } else {
       return completedTokens === this.incomingFlows;
@@ -223,8 +223,8 @@ class SubWorkflowTask extends Task {
     id: string,
     name: string,
     public subWorkflow: YAWLInterpreter,
-    joinType: "and" | "or" | "xor" = "and",
-    splitType: "and" | "or" | "xor" = "and",
+    joinType: 'and' | 'or' | 'xor' = 'and',
+    splitType: 'and' | 'or' | 'xor' = 'and',
     instanceId: number,
     timeout?: number,
     deadline?: Date,
@@ -270,8 +270,8 @@ class EventGatewayTask extends Task {
     id: string,
     name: string,
     events: EventDefinition[],
-    joinType: "and" | "or" | "xor" = "and",
-    splitType: "and" | "or" | "xor" = "and",
+    joinType: 'and' | 'or' | 'xor' = 'and',
+    splitType: 'and' | 'or' | 'xor' = 'and',
     instanceId: number,
     interpreter: YAWLInterpreter
   ) {
@@ -329,8 +329,8 @@ class CompositeTask extends Task {
     id: string,
     name: string,
     childTasks: Task[],
-    joinType: "and" | "or" | "xor" = "and",
-    splitType: "and" | "or" | "xor" = "and",
+    joinType: 'and' | 'or' | 'xor' = 'and',
+    splitType: 'and' | 'or' | 'xor' = 'and',
     instanceId: number,
     timeout?: number,
     deadline?: Date,
@@ -360,7 +360,7 @@ class CompositeTask extends Task {
       childTask.execute(context)
     );
     await Promise.allSettled(executionPromises);
-    console.log(`Finished composite task ${this.name}`);
+    log(`Finished composite task ${this.name}`);
   }
 }
 
@@ -380,7 +380,7 @@ class YAWLInterpreter {
   loadWorkflow(workflowDefinition: WorkflowDefinition): void {
     // Process tasks and sub-workflows
     for (const taskDef of workflowDefinition.tasks) {
-      if (taskDef.gatewayType === "event") {
+      if (taskDef.gatewayType === 'event') {
         const task = new EventGatewayTask(
           taskDef.id,
           taskDef.name,
@@ -391,7 +391,7 @@ class YAWLInterpreter {
           this
         );
         this.tasks.set(taskDef.id, task);
-      } else if ("subWorkflow" in taskDef) {
+      } else if ('subWorkflow' in taskDef) {
         const task = new SubWorkflowTask(
           taskDef.id,
           taskDef.name,
@@ -544,7 +544,7 @@ class YAWLInterpreter {
 
       const executionPromises: Promise<void>[] = [];
 
-      if (task.splitType === "xor") {
+      if (task.splitType === 'xor') {
         const executedFlow = outgoingFlows.find((flow) =>
           flow.execute(context)
         );
@@ -571,7 +571,7 @@ class YAWLInterpreter {
             const promise = this.handleTaskFlow(instance, context, flow);
             executionPromises.push(promise);
 
-            if (task.splitType === "or") {
+            if (task.splitType === 'or') {
               break;
             }
           }

@@ -21,7 +21,7 @@ function makeIdGenerator(): IdGenerator {
 }
 
 it('can run simple net with and-split and and-join', () => {
-  const workflow = Builder.workflow()
+  const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
     .task('scan_goods')
     .task('pay', (t) => t.withSplitType('and'))
@@ -37,10 +37,21 @@ it('can run simple net with and-split and and-join', () => {
     .connectTask('check_goods', (to) => to.condition('end'));
 
   const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
     const interpreter = yield* $(
       Interpreter.make(workflow, {}),
-      Effect.provideServiceEffect(StateManager, createMemory()),
-      Effect.provideService(IdGenerator, makeIdGenerator())
+      Effect.provideService(StateManager, stateManager)
     );
 
     yield* $(interpreter.start());

@@ -12,7 +12,6 @@ import { ConditionToTaskFlow, TaskToConditionFlow } from './elements/Flow.js';
 import { Task } from './elements/Task.js';
 import { Workflow } from './elements/Workflow.js';
 import { IdGenerator, StateManager } from './stateManager/types.js';
-import { Prettify } from './types.js';
 
 /*export type onStart = (
   state: InterpreterState
@@ -71,7 +70,10 @@ export class Interpreter<
     });
   }
 
-  activateTask<T extends string>(taskName: T, _payload: unknown = undefined) {
+  activateTask<T extends keyof TasksActivitiesOutputs>(
+    taskName: T & string,
+    _payload: unknown = undefined
+  ) {
     const { workflow } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(taskName));
@@ -85,7 +87,10 @@ export class Interpreter<
     });
   }
 
-  completeTask<T extends string>(taskName: T, _payload: unknown = undefined) {
+  completeTask<T extends keyof TasksActivitiesOutputs>(
+    taskName: T & string,
+    _payload: unknown = undefined
+  ) {
     const { workflow } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(taskName));
@@ -108,140 +113,12 @@ export class Interpreter<
 }
 
 export function make<
+  W extends Workflow,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  W extends WorkflowBuilder<object, any, any, any, any, any, any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  C extends W extends WorkflowBuilder<infer WC, any, any, any, any, any, any>
-    ? WC
-    : object
->(workflowBuilder: W, context: C) {
+  C extends W extends Workflow<infer WC> ? WC : object
+>(workflow: W, context: C) {
   return Effect.gen(function* ($) {
     const stateManager = yield* $(StateManager);
-    const idGenerator = yield* $(IdGenerator);
-
-    const workflow = new Workflow(
-      yield* $(idGenerator.next('workflow')),
-      stateManager
-    );
-
-    for (const [taskName, taskBuilder] of Object.entries(
-      workflowBuilder.definition.tasks
-    )) {
-      const task = new Task(
-        yield* $(idGenerator.next('task')),
-        taskName,
-        taskBuilder,
-        workflow
-      );
-
-      workflow.addTask(task);
-    }
-
-    for (const [conditionName, conditionNode] of Object.entries(
-      workflowBuilder.definition.conditions
-    )) {
-      const condition = new Condition(
-        yield* $(idGenerator.next('condition')),
-        conditionName,
-        conditionNode,
-        workflow
-      );
-
-      workflow.addCondition(condition);
-    }
-
-    workflow.setStartCondition(workflowBuilder.definition.startCondition ?? '');
-    workflow.setEndCondition(workflowBuilder.definition.endCondition ?? '');
-
-    for (const [conditionName, conditionFlows] of Object.entries(
-      workflowBuilder.definition.flows.conditions
-    )) {
-      const condition = yield* $(workflow.getCondition(conditionName));
-      for (const taskName of conditionFlows.to) {
-        const task = yield* $(workflow.getTask(taskName));
-        const flow = new ConditionToTaskFlow(condition, task);
-        task.addIncomingFlow(flow);
-        condition.addOutgoingFlow(flow);
-      }
-    }
-
-    for (const [taskName, taskFlows] of Object.entries(
-      workflowBuilder.definition.flows.tasks
-    )) {
-      const task = yield* $(workflow.getTask(taskName));
-      for (const [conditionName, props] of Object.entries(
-        taskFlows.toConditions
-      )) {
-        const condition = yield* $(workflow.getCondition(conditionName));
-        const flow = new TaskToConditionFlow(task, condition, props);
-        condition.addIncomingFlow(flow);
-        task.addOutgoingFlow(flow);
-      }
-      for (const [toTaskName, props] of Object.entries(taskFlows.toTasks)) {
-        const toTask = yield* $(workflow.getTask(toTaskName));
-        const condition = new Condition(
-          yield* $(idGenerator.next('condition')),
-          `implicit:${taskName}->${toTask.name}`,
-          { isImplicit: true },
-          workflow
-        );
-
-        workflow.addCondition(condition);
-
-        const leftFlow = new TaskToConditionFlow(task, condition, props);
-        const rightFlow = new ConditionToTaskFlow(condition, toTask);
-        task.addOutgoingFlow(leftFlow);
-        condition.addIncomingFlow(leftFlow);
-        condition.addOutgoingFlow(rightFlow);
-        toTask.addIncomingFlow(rightFlow);
-      }
-
-      if (taskFlows instanceof OrXorTaskFlowBuilder) {
-        const defaultFlow = taskFlows.toDefault;
-        if (defaultFlow?.type === 'task') {
-          const toTask = yield* $(workflow.getTask(defaultFlow.name));
-          const condition = new Condition(
-            yield* $(idGenerator.next('condition')),
-            `implicit:${taskName}->${toTask.name}`,
-            { isImplicit: true },
-            workflow
-          );
-
-          workflow.addCondition(condition);
-
-          const leftFlow = new TaskToConditionFlow(task, condition, {
-            order: Infinity,
-          });
-          const rightFlow = new ConditionToTaskFlow(condition, toTask);
-          task.addOutgoingFlow(leftFlow);
-          condition.addIncomingFlow(leftFlow);
-          condition.addOutgoingFlow(rightFlow);
-          toTask.addIncomingFlow(rightFlow);
-        } else if (defaultFlow?.type === 'condition') {
-          const condition = yield* $(workflow.getCondition(defaultFlow.name));
-          const flow = new TaskToConditionFlow(task, condition);
-          condition.addIncomingFlow(flow);
-          task.addOutgoingFlow(flow);
-        }
-      }
-    }
-
-    for (const [taskName, cancellationRegion] of Object.entries(
-      workflowBuilder.definition.cancellationRegions
-    )) {
-      const task = yield* $(workflow.getTask(taskName));
-      for (const cancelledTaskName of cancellationRegion.tasks ?? []) {
-        task.addTaskToCancellationRegion(
-          yield* $(workflow.getTask(cancelledTaskName))
-        );
-      }
-      for (const cancelledConditionName of cancellationRegion.conditions ??
-        []) {
-        task.addConditionToCancellationRegion(
-          yield* $(workflow.getCondition(cancelledConditionName))
-        );
-      }
-    }
 
     return new Interpreter<{
       [K in keyof WorkflowTasksActivitiesOutputs<W>]: WorkflowTasksActivitiesOutputs<W>[K];

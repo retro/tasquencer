@@ -1,3 +1,12 @@
+import * as Effect from '@effect/io/Effect';
+
+import { Condition } from '../elements/Condition.js';
+import { Workflow } from '../elements/Workflow.js';
+import {
+  EndConditionDoesNotExist,
+  StartConditionDoesNotExist,
+} from '../errors.js';
+import { IdGenerator, StateManager } from '../stateManager/types.js';
 import type {
   ConditionNode,
   NotExtends,
@@ -55,9 +64,11 @@ export class WorkflowBuilder<
     TB.ActivityOutput
   >
 > {
+  readonly name: string;
   definition: WorkflowBuilderDefinition;
 
-  constructor() {
+  constructor(name: string) {
+    this.name = name;
     this.definition = {
       conditions: {},
       tasks: {},
@@ -290,10 +301,87 @@ export class WorkflowBuilder<
     }
     return this;
   }
+  build() {
+    const { definition } = this;
+
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(StateManager);
+      const idGenerator = yield* $(IdGenerator);
+      const workflow = new Workflow<WBContext>(
+        yield* $(idGenerator.next('workflow')),
+        stateManager
+      );
+
+      for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
+        // TaskBuilder will add Task to workflow
+        yield* $(taskBuilder.build(workflow, taskName));
+      }
+
+      for (const [conditionName, conditionNode] of Object.entries(
+        definition.conditions
+      )) {
+        const condition = new Condition(
+          yield* $(idGenerator.next('condition')),
+          conditionName,
+          conditionNode,
+          workflow
+        );
+
+        workflow.addCondition(condition);
+      }
+
+      if (
+        definition.startCondition &&
+        workflow.conditions[definition.startCondition]
+      ) {
+        workflow.setStartCondition(definition.startCondition);
+      } else {
+        yield* $(Effect.fail(StartConditionDoesNotExist()));
+      }
+
+      if (
+        definition.endCondition &&
+        workflow.conditions[definition.endCondition]
+      ) {
+        workflow.setEndCondition(definition.endCondition);
+      } else {
+        yield* $(Effect.fail(EndConditionDoesNotExist()));
+      }
+
+      for (const [, conditionFlows] of Object.entries(
+        definition.flows.conditions
+      )) {
+        yield* $(conditionFlows.build(workflow));
+      }
+
+      for (const [, taskFlows] of Object.entries(definition.flows.tasks)) {
+        yield* $(taskFlows.build(workflow));
+      }
+
+      for (const [taskName, cancellationRegion] of Object.entries(
+        definition.cancellationRegions
+      )) {
+        const task = yield* $(workflow.getTask(taskName));
+        for (const cancelledTaskName of cancellationRegion.tasks ?? []) {
+          task.addTaskToCancellationRegion(
+            yield* $(workflow.getTask(cancelledTaskName))
+          );
+        }
+        for (const cancelledConditionName of cancellationRegion.conditions ??
+          []) {
+          task.addConditionToCancellationRegion(
+            yield* $(workflow.getCondition(cancelledConditionName))
+          );
+        }
+      }
+
+      return workflow;
+    });
+  }
 }
 
-export function workflow<C extends object>() {
-  return new WorkflowBuilder<C>();
+export function workflow<C extends object>(name: string) {
+  return new WorkflowBuilder<C>(name);
 }
 
 /*function isAdmin({ context }: { context: { userId: string } }) {

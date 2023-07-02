@@ -20,7 +20,7 @@ interface ActivityContext {
     activateTask: () => Effect.Effect<never, never, void>;
   };
   activate: DefaultActivityContext & {
-    completeTask: (payload: unknown) => Effect.Effect<never, never, void>;
+    completeTask: (input?: unknown) => Effect.Effect<never, never, void>;
   };
   complete: DefaultActivityContext;
   cancel: DefaultActivityContext;

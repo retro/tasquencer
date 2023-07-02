@@ -2,7 +2,7 @@ import * as Effect from '@effect/io/Effect';
 import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
-import * as Interpreter from '../interpreter2.js';
+import * as Interpreter from '../interpreter.js';
 import { createMemory } from '../stateManager/memory.js';
 import { IdGenerator, StateManager } from '../stateManager/types.js';
 
@@ -690,8 +690,6 @@ it('can run workflow with activities', () => {
 
     const workflowRes = yield* $(interpreter.getState());
 
-    console.log(log);
-
     expect(log).toEqual([
       { name: 'scan_goods', activityPhase: 'before', taskPhase: 'enable' },
       {
@@ -979,6 +977,52 @@ it('can run workflow with activities', () => {
           name: 'implicit:issue_receipt->check_goods',
           marking: 0,
         },
+        'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});
+
+it('can auto activate and auto complete tasks', () => {
+  const workflowDefinition = Builder.workflow('name')
+    .startCondition('start')
+    .task('A', (t) =>
+      t
+        .onEnable((a) => a.procedure(({ activateTask }) => activateTask()))
+        .onActivate((a) => a.procedure(({ completeTask }) => completeTask()))
+    )
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter.start());
+
+    const res1 = yield* $(interpreter.getState());
+
+    expect(res1).toEqual({
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
       },
     });

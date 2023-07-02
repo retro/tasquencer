@@ -1,3 +1,4 @@
+import * as Context from '@effect/data/Context';
 import * as Effect from '@effect/io/Effect';
 
 import {
@@ -57,3 +58,15 @@ export interface WorkflowBuilderDefinition {
     >;
   };
 }
+
+export interface TaskActionsService {
+  activateTask(
+    taskName: string,
+    input?: unknown
+  ): Effect.Effect<never, never, void>;
+  completeTask(
+    taskName: string,
+    input?: unknown
+  ): Effect.Effect<never, never, void>;
+}
+export const TaskActionsService = Context.Tag<TaskActionsService>();

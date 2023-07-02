@@ -2,7 +2,12 @@ import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import { TaskActivities } from '../builder/TaskBuilder.js';
-import type { JoinType, SplitType, TaskState } from '../types.js';
+import {
+  JoinType,
+  SplitType,
+  TaskActionsService,
+  TaskState,
+} from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
@@ -74,32 +79,12 @@ export class Task {
     });
   }
 
-  getDefaultActivityContext() {
+  getActivityContext() {
     return {
       getTaskId: () => Effect.succeed(this.id),
       getTaskName: () => Effect.succeed(this.name),
       getWorkflowId: () => Effect.succeed(this.workflow.id),
       getTaskState: () => Effect.succeed(this.getState()),
-    };
-  }
-
-  getActivityContextForEnabledState() {
-    return {
-      ...this.getDefaultActivityContext(),
-      activateTask: () => {
-        console.log('ON ACTIVATE TASK');
-        return Effect.unit();
-      },
-    };
-  }
-
-  getActivityContextForActiveState() {
-    return {
-      ...this.getDefaultActivityContext(),
-      completeTask: () => {
-        console.log('ON COMPLETE TASK');
-        return Effect.unit();
-      },
     };
   }
 
@@ -112,10 +97,16 @@ export class Task {
       if (isValidTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
-          const activityContext = self.getActivityContextForEnabledState();
+          const activityContext = self.getActivityContext();
+          const taskActionsService = yield* $(TaskActionsService);
+          const activateTask = (input?: unknown) => {
+            return taskActionsService.activateTask(self.name, input);
+          };
+
           const beforeResult = yield* $(
             self.activities.onEnable.callbacks.before({
               ...activityContext,
+              activateTask,
               context,
               input: undefined,
             })
@@ -124,6 +115,7 @@ export class Task {
           const result = yield* $(
             self.activities.onEnable.callbacks.procedure({
               ...activityContext,
+              activateTask,
               context,
               input: beforeResult,
             })
@@ -131,6 +123,7 @@ export class Task {
           yield* $(
             self.activities.onEnable.callbacks.after({
               ...activityContext,
+              activateTask,
               context,
               input: result,
             })
@@ -145,7 +138,7 @@ export class Task {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'disabled')) {
-        const activityContext = self.getDefaultActivityContext();
+        const activityContext = self.getActivityContext();
         const beforeResult = yield* $(
           self.activities.onDisable.callbacks.before({
             ...activityContext,
@@ -177,11 +170,16 @@ export class Task {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'active')) {
-        const activityContext = self.getActivityContextForEnabledState();
+        const activityContext = self.getActivityContext();
+        const taskActionsService = yield* $(TaskActionsService);
+        const completeTask = (input?: unknown) => {
+          return taskActionsService.completeTask(self.name, input);
+        };
 
         const beforeResult = yield* $(
           self.activities.onActivate.callbacks.before({
             ...activityContext,
+            completeTask,
             context,
             input,
           })
@@ -192,6 +190,7 @@ export class Task {
         const result = yield* $(
           self.activities.onActivate.callbacks.procedure({
             ...activityContext,
+            completeTask,
             context,
             input: beforeResult,
           })
@@ -206,6 +205,7 @@ export class Task {
         return yield* $(
           self.activities.onActivate.callbacks.after({
             ...activityContext,
+            completeTask,
             context,
             input: result,
           })
@@ -219,7 +219,7 @@ export class Task {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'completed')) {
-        const activityContext = self.getDefaultActivityContext();
+        const activityContext = self.getActivityContext();
 
         const beforeResult = yield* $(
           self.activities.onComplete.callbacks.before({
@@ -258,7 +258,7 @@ export class Task {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'canceled')) {
-        const activityContext = self.getDefaultActivityContext();
+        const activityContext = self.getActivityContext();
         const beforeResult = yield* $(
           self.activities.onCancel.callbacks.before({
             ...activityContext,

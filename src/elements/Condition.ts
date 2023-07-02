@@ -37,42 +37,42 @@ export class Condition {
     this.postSet[flow.nextElement.name] = flow.nextElement;
   }
 
-  incrementMarking() {
+  incrementMarking(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.stateManager.incrementConditionMarking(self));
-      yield* $(self.enableTasks());
+      yield* $(self.enableTasks(context));
     });
   }
 
-  decrementMarking() {
+  decrementMarking(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.stateManager.decrementConditionMarking(self));
-      yield* $(self.disableTasks());
+      yield* $(self.disableTasks(context));
     });
   }
 
-  enableTasks() {
+  enableTasks(context: object) {
     const tasks = Object.values(this.postSet);
-    return Effect.allParDiscard(tasks.map((task) => task.enable()));
+    return Effect.allParDiscard(tasks.map((task) => task.enable(context)));
   }
 
-  disableTasks() {
+  disableTasks(context: object) {
     const tasks = Object.values(this.postSet);
-    return Effect.allParDiscard(tasks.map((task) => task.disable()));
+    return Effect.allParDiscard(tasks.map((task) => task.disable(context)));
   }
 
-  cancelTasks() {
+  cancelTasks(context: object) {
     const tasks = Object.values(this.postSet);
-    return Effect.allParDiscard(tasks.map((task) => task.cancel()));
+    return Effect.allParDiscard(tasks.map((task) => task.cancel(context)));
   }
 
-  cancel() {
+  cancel(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.stateManager.emptyConditionMarking(self));
-      yield* $(self.cancelTasks());
+      yield* $(self.cancelTasks(context));
     });
   }
 

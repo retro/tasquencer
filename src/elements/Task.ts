@@ -1,6 +1,7 @@
 import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
+import { TaskActivities } from '../builder/TaskBuilder.js';
 import type { JoinType, SplitType, TaskState } from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
@@ -33,6 +34,7 @@ export class Task {
   } = { tasks: {}, conditions: {} };
   readonly id: string;
   readonly name: string;
+  readonly activities: TaskActivities;
   readonly splitType: SplitType | undefined;
   readonly joinType: JoinType | undefined;
 
@@ -40,12 +42,13 @@ export class Task {
     id: string,
     name: string,
     workflow: Workflow,
+    activities: TaskActivities,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     this.id = id;
     this.name = name;
     this.workflow = workflow;
-
+    this.activities = activities;
     this.splitType = props?.splitType;
     this.joinType = props?.joinType;
   }
@@ -71,7 +74,36 @@ export class Task {
     });
   }
 
-  enable() {
+  getDefaultActivityContext() {
+    return {
+      getTaskId: () => Effect.succeed(this.id),
+      getTaskName: () => Effect.succeed(this.name),
+      getWorkflowId: () => Effect.succeed(this.workflow.id),
+      getTaskState: () => Effect.succeed(this.getState()),
+    };
+  }
+
+  getActivityContextForEnabledState() {
+    return {
+      ...this.getDefaultActivityContext(),
+      activateTask: () => {
+        console.log('ON ACTIVATE TASK');
+        return Effect.unit();
+      },
+    };
+  }
+
+  getActivityContextForActiveState() {
+    return {
+      ...this.getDefaultActivityContext(),
+      completeTask: () => {
+        console.log('ON COMPLETE TASK');
+        return Effect.unit();
+      },
+    };
+  }
+
+  enable(context: object) {
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -80,54 +112,175 @@ export class Task {
       if (isValidTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
+          const activityContext = self.getActivityContextForEnabledState();
+          const beforeResult = yield* $(
+            self.activities.onEnable.callbacks.before({
+              ...activityContext,
+              context,
+              input: undefined,
+            })
+          );
           yield* $(self.workflow.stateManager.enableTask(self));
+          const result = yield* $(
+            self.activities.onEnable.callbacks.procedure({
+              ...activityContext,
+              context,
+              input: beforeResult,
+            })
+          );
+          yield* $(
+            self.activities.onEnable.callbacks.after({
+              ...activityContext,
+              context,
+              input: result,
+            })
+          );
         }
       }
     });
   }
 
-  disable() {
+  disable(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'disabled')) {
+        const activityContext = self.getDefaultActivityContext();
+        const beforeResult = yield* $(
+          self.activities.onDisable.callbacks.before({
+            ...activityContext,
+            context,
+            input: undefined,
+          })
+        );
         yield* $(self.workflow.stateManager.disableTask(self));
+        const result = yield* $(
+          self.activities.onDisable.callbacks.procedure({
+            ...activityContext,
+            context,
+            input: beforeResult,
+          })
+        );
+        yield* $(
+          self.activities.onDisable.callbacks.after({
+            ...activityContext,
+            context,
+            input: result,
+          })
+        );
       }
     });
   }
 
-  activate() {
+  activate(context: object, input: unknown = undefined) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'active')) {
+        const activityContext = self.getActivityContextForEnabledState();
+
+        const beforeResult = yield* $(
+          self.activities.onActivate.callbacks.before({
+            ...activityContext,
+            context,
+            input,
+          })
+        );
+
         yield* $(self.workflow.stateManager.activateTask(self));
 
+        const result = yield* $(
+          self.activities.onActivate.callbacks.procedure({
+            ...activityContext,
+            context,
+            input: beforeResult,
+          })
+        );
+
         const preSet = Object.values(self.preSet);
-        const updates = preSet.map((condition) => condition.decrementMarking());
+        const updates = preSet.map((condition) =>
+          condition.decrementMarking(context)
+        );
         yield* $(Effect.allParDiscard(updates));
+
+        return yield* $(
+          self.activities.onActivate.callbacks.after({
+            ...activityContext,
+            context,
+            input: result,
+          })
+        );
       }
     });
   }
 
-  complete() {
+  complete(context: object, input: unknown = undefined) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'completed')) {
+        const activityContext = self.getDefaultActivityContext();
+
+        const beforeResult = yield* $(
+          self.activities.onComplete.callbacks.before({
+            ...activityContext,
+            context,
+            input,
+          })
+        );
+
         yield* $(self.workflow.stateManager.completeTask(self));
-        yield* $(self.cancelCancellationRegion());
-        yield* $(self.produceTokensInOutgoingFlows());
+
+        const result = yield* $(
+          self.activities.onComplete.callbacks.procedure({
+            ...activityContext,
+            context,
+            input: beforeResult,
+          })
+        );
+
+        yield* $(self.cancelCancellationRegion(context));
+        yield* $(self.produceTokensInOutgoingFlows(context));
+
+        return yield* $(
+          self.activities.onComplete.callbacks.after({
+            ...activityContext,
+            context,
+            input: result,
+          })
+        );
       }
     });
   }
 
-  cancel() {
+  cancel(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'canceled')) {
+        const activityContext = self.getDefaultActivityContext();
+        const beforeResult = yield* $(
+          self.activities.onCancel.callbacks.before({
+            ...activityContext,
+            context,
+            input: undefined,
+          })
+        );
         yield* $(self.workflow.stateManager.cancelTask(self));
+        const result = yield* $(
+          self.activities.onCancel.callbacks.procedure({
+            ...activityContext,
+            context,
+            input: beforeResult,
+          })
+        );
+        yield* $(
+          self.activities.onCancel.callbacks.after({
+            ...activityContext,
+            context,
+            input: result,
+          })
+        );
       }
     });
   }
@@ -147,44 +300,44 @@ export class Task {
     );
   }
 
-  cancelCancellationRegion() {
+  cancelCancellationRegion(context: object) {
     const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>
-      t.cancel()
+      t.cancel(context)
     );
     const conditionUpdates = Object.values(
       this.cancellationRegion.conditions
-    ).map((c) => c.cancel());
+    ).map((c) => c.cancel(context));
 
     return Effect.allParDiscard([...taskUpdates, ...conditionUpdates]);
   }
 
-  private produceTokensInOutgoingFlows() {
+  private produceTokensInOutgoingFlows(context: object) {
     switch (this.splitType) {
       case 'or':
-        return this.produceOrSplitTokensInOutgoingFlows();
+        return this.produceOrSplitTokensInOutgoingFlows(context);
       case 'xor':
-        return this.produceXorSplitTokensInOutgoingFlows();
+        return this.produceXorSplitTokensInOutgoingFlows(context);
       default:
-        return this.produceAndSplitTokensInOutgoingFlows();
+        return this.produceAndSplitTokensInOutgoingFlows(context);
     }
   }
 
-  private produceOrSplitTokensInOutgoingFlows() {
+  private produceOrSplitTokensInOutgoingFlows(context: object) {
     const flows = this.outgoingFlows;
     const updates = Object.entries(flows).map(([conditionName, flow]) => {
       if (flow.isDefault) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[conditionName]!.incrementMarking();
+        return this.postSet[conditionName]!.incrementMarking(context);
       } else if (flow.predicate ? flow.predicate(null) : false) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[conditionName]!.incrementMarking();
+        return this.postSet[conditionName]!.incrementMarking(context);
       }
       return Effect.unit();
     });
     return Effect.allParDiscard(updates);
   }
 
-  private produceXorSplitTokensInOutgoingFlows() {
+  private produceXorSplitTokensInOutgoingFlows(context: object) {
     const flows = this.outgoingFlows;
     const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
       return flowA.order > flowB.order ? 1 : flowA.order < flowB.order ? -1 : 0;
@@ -193,19 +346,19 @@ export class Task {
     for (const flow of sortedFlows) {
       if (flow.isDefault) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return flow.nextElement.incrementMarking();
+        return flow.nextElement.incrementMarking(context);
       } else if (flow.predicate ? flow.predicate(null) : false) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return flow.nextElement.incrementMarking();
+        return flow.nextElement.incrementMarking(context);
       }
     }
     return Effect.unit();
   }
 
-  private produceAndSplitTokensInOutgoingFlows() {
+  private produceAndSplitTokensInOutgoingFlows(context: object) {
     const updates = Array.from(this.outgoingFlows).map((flow) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return flow.nextElement.incrementMarking();
+      return flow.nextElement.incrementMarking(context);
     });
     return Effect.allParDiscard(updates);
   }

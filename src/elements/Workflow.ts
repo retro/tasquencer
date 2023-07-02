@@ -1,5 +1,6 @@
 import * as Effect from '@effect/io/Effect';
 
+import * as TB from '../builder/TaskBuilder.js';
 import {
   ConditionDoesNotExist,
   StartConditionDoesNotExist,
@@ -9,7 +10,20 @@ import { StateManager } from '../stateManager/types.js';
 import { Condition } from './Condition.js';
 import { Task } from './Task.js';
 
-export class Workflow<C extends object = object> {
+export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
+  object,
+  infer U
+>
+  ? U
+  : never;
+
+export class Workflow<
+  _Context extends object = object,
+  _WorkflowTaskActivitiesOutputs extends Record<
+    string,
+    TB.ActivityOutput
+  > = Record<string, TB.ActivityOutput>
+> {
   //net: Net;
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};
@@ -99,7 +113,7 @@ export class Workflow<C extends object = object> {
     return Effect.fail(ConditionDoesNotExist());
   }
 
-  initialize() {
+  initialize(): Effect.Effect<never, never, void> {
     return this.stateManager.initializeWorkflow(this);
   }
   resume() {

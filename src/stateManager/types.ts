@@ -33,37 +33,27 @@ export interface TaskItem {
 export interface StateManager {
   initializeWorkflow(workflow: Workflow): Effect.Effect<never, never, void>;
 
-  incrementConditionMarking<E>(
+  incrementConditionMarking(
     condition: Condition
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  decrementConditionMarking<E>(
+  ): Effect.Effect<never, WorkflowNotInitialized, void>;
+  decrementConditionMarking(
     condition: Condition
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  emptyConditionMarking<E>(
+  ): Effect.Effect<never, WorkflowNotInitialized, void>;
+  emptyConditionMarking(
     condition: Condition
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  getConditionMarking<E>(
+  ): Effect.Effect<never, WorkflowNotInitialized, void>;
+  getConditionMarking(
     condition: Condition
-  ): Effect.Effect<never, E | WorkflowNotInitialized, number>;
+  ): Effect.Effect<never, WorkflowNotInitialized, number>;
 
-  enableTask<E>(
+  enableTask(task: Task): Effect.Effect<never, WorkflowNotInitialized, void>;
+  disableTask(task: Task): Effect.Effect<never, WorkflowNotInitialized, void>;
+  activateTask(task: Task): Effect.Effect<never, WorkflowNotInitialized, void>;
+  cancelTask(task: Task): Effect.Effect<never, WorkflowNotInitialized, void>;
+  completeTask(task: Task): Effect.Effect<never, WorkflowNotInitialized, void>;
+  getTaskState(
     task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  disableTask<E>(
-    task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  activateTask<E>(
-    task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  cancelTask<E>(
-    task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  completeTask<E>(
-    task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, void>;
-  getTaskState<E>(
-    task: Task
-  ): Effect.Effect<never, E | WorkflowNotInitialized, TaskState>;
+  ): Effect.Effect<never, WorkflowNotInitialized, TaskState>;
 
   getWorkflowState(
     workflowOrId: Workflow | string

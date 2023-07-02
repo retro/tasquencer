@@ -22,7 +22,7 @@ export type TaskBuilderUserContext<T> = T extends TaskBuilder<
   ? C
   : never;
 
-interface TaskActivities {
+export interface TaskActivities {
   onDisable: AB.OnDisableActivity;
   onEnable: AB.OnEnableActivity;
   onActivate: AB.OnActivateActivity;
@@ -83,10 +83,8 @@ export type InitializedTaskBuilder<C extends object = object> = TaskBuilder<
 >;
 
 export interface ActivityOutput {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onActivate: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onComplete: any;
+  onActivate: unknown;
+  onComplete: unknown;
 }
 
 export class TaskBuilder<
@@ -248,12 +246,13 @@ export class TaskBuilder<
   }
 
   build(workflow: Workflow, name: string, idProvider: IdProvider) {
-    const { splitType, joinType } = this;
+    const { splitType, joinType, activities } = this;
     return Effect.gen(function* ($) {
       const task = new Task(
         yield* $(idProvider.getTaskId(name)),
         name,
         workflow,
+        activities,
         {
           splitType,
           joinType,

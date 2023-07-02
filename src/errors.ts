@@ -32,3 +32,17 @@ export interface ConditionDoesNotExist extends Data.Case {
 export const ConditionDoesNotExist = Data.tagged<ConditionDoesNotExist>(
   'ConditionDoesNotExist'
 );
+
+export interface TaskNotEnabledError extends Data.Case {
+  readonly _tag: 'TaskNotEnabledError';
+}
+export const TaskNotEnabledError = Data.tagged<TaskNotEnabledError>(
+  'TaskNotEnabledError'
+);
+
+export interface TaskNotActivatedError extends Data.Case {
+  readonly _tag: 'TaskNotActivatedError';
+}
+export const TaskNotActivatedError = Data.tagged<TaskNotActivatedError>(
+  'TaskNotActivatedError'
+);

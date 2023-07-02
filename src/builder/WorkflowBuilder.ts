@@ -31,26 +31,6 @@ type IsXorOrOrJoinSplit<T> = T extends never
   ? true
   : never;
 
-export type WorkflowTasksActivitiesOutputs<T> = T extends WorkflowBuilder<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  infer O
->
-  ? O
-  : never;
-
 // TODO: implement invariant checking
 export class WorkflowBuilder<
   WBContext extends object,
@@ -317,7 +297,15 @@ export class WorkflowBuilder<
       );
       const idProvider = new IdProvider(prevState, idGenerator);
 
-      const workflow = new Workflow<WBContext>(workflowId, stateManager);
+      const workflow = new Workflow<
+        WBContext,
+        {
+          [K in WBTasks & string]: {
+            onActivate: WBTasksActivitiesOutputs[K]['onActivate'];
+            onComplete: WBTasksActivitiesOutputs[K]['onComplete'];
+          };
+        }
+      >(workflowId, stateManager);
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow

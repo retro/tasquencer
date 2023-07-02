@@ -1,9 +1,11 @@
-import * as Data from '@effect/data/Data';
 import * as Effect from '@effect/io/Effect';
 
 import { ActivityOutput } from './builder/TaskBuilder.js';
-import { WorkflowTasksActivitiesOutputs } from './builder/WorkflowBuilder.js';
-import { Workflow } from './elements/Workflow.js';
+import {
+  Workflow,
+  WorkflowTasksActivitiesOutputs,
+} from './elements/Workflow.js';
+import { TaskNotActivatedError, TaskNotEnabledError } from './errors.js';
 import { StateManager } from './stateManager/types.js';
 
 /*export type onStart = (
@@ -25,21 +27,6 @@ export type onCancel = (
   state: InterpreterState
 ) => Effect.Effect<never, never, void>;
 export const onCancel = Context.Tag<onCancel>();*/
-
-interface TaskNotEnabledError extends Data.Case {
-  readonly _tag: 'TaskNotEnabledError';
-}
-const TaskNotEnabledError = Data.tagged<TaskNotEnabledError>(
-  'TaskNotEnabledError'
-);
-
-interface TaskNotActivatedError extends Data.Case {
-  readonly _tag: 'TaskNotActivatedError';
-}
-const TaskNotActivatedError = Data.tagged<TaskNotActivatedError>(
-  'TaskNotActivatedError'
-);
-
 export class Interpreter<
   TasksActivitiesOutputs extends Record<string, ActivityOutput>
 > {
@@ -49,11 +36,11 @@ export class Interpreter<
     private context: object
   ) {}
   start() {
-    const { workflow } = this;
+    const { workflow, context } = this;
     return Effect.gen(function* ($) {
       yield* $(workflow.initialize());
       const startCondition = yield* $(workflow.getStartCondition());
-      yield* $(startCondition.incrementMarking());
+      yield* $(startCondition.incrementMarking(context));
     });
   }
   resume() {
@@ -63,37 +50,43 @@ export class Interpreter<
     });
   }
 
-  activateTask<T extends keyof TasksActivitiesOutputs>(
+  activateTask<T extends keyof TasksActivitiesOutputs, I>(
     taskName: T & string,
-    _payload: unknown = undefined
+    input?: I
   ) {
-    const { workflow } = this;
+    const { workflow, context } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(taskName));
       const isEnabled = yield* $(task.isEnabled());
-      if (isEnabled) {
-        const output = yield* $(task.activate());
-        return output as TasksActivitiesOutputs[T]['onActivate'];
-      } else {
+      if (!isEnabled) {
         yield* $(Effect.fail(TaskNotEnabledError()));
       }
+      const output = yield* $(task.activate(context, input));
+      return output as unknown extends I
+        ? undefined
+        : unknown extends TasksActivitiesOutputs[T]['onActivate']
+        ? I
+        : TasksActivitiesOutputs[T]['onActivate'];
     });
   }
 
-  completeTask<T extends keyof TasksActivitiesOutputs>(
+  completeTask<T extends keyof TasksActivitiesOutputs, I>(
     taskName: T & string,
-    _payload: unknown = undefined
+    input?: I
   ) {
-    const { workflow } = this;
+    const { workflow, context } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(taskName));
       const isActive = yield* $(task.isActive());
-      if (isActive) {
-        const output = yield* $(task.complete());
-        return output as TasksActivitiesOutputs[T]['onComplete'];
-      } else {
+      if (!isActive) {
         yield* $(Effect.fail(TaskNotActivatedError()));
       }
+      const output = yield* $(task.complete(context, input));
+      return output as unknown extends I
+        ? undefined
+        : unknown extends TasksActivitiesOutputs[T]['onComplete']
+        ? I
+        : TasksActivitiesOutputs[T]['onComplete'];
     });
   }
 
@@ -113,8 +106,8 @@ export function make<
   return Effect.gen(function* ($) {
     const stateManager = yield* $(StateManager);
 
-    return new Interpreter<{
-      [K in keyof WorkflowTasksActivitiesOutputs<W>]: WorkflowTasksActivitiesOutputs<W>[K];
-    }>(workflow, stateManager, context);
+    return new Interpreter<
+      WorkflowTasksActivitiesOutputs<W>
+    >(workflow, stateManager, context);
   });
 }

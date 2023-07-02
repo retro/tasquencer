@@ -6,21 +6,21 @@ type ActivityTypeWithInput = 'activate' | 'complete';
 type ActivityTypeWithoutInput = 'disable' | 'enable' | 'cancel';
 export type ActivityType = ActivityTypeWithInput | ActivityTypeWithoutInput;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyEffect = Effect.Effect<any, any, any>;
+type AnyEffect = Effect.Effect<never, never, any>;
 
 interface DefaultActivityContext {
   getTaskId: () => Effect.Effect<never, never, string>;
+  getTaskName: () => Effect.Effect<never, never, string>;
   getWorkflowId: () => Effect.Effect<never, never, string>;
   getTaskState: () => Effect.Effect<never, never, TaskState>;
 }
 interface ActivityContext {
   disable: DefaultActivityContext;
   enable: DefaultActivityContext & {
-    activateTask: (payload: unknown) => Effect.Effect<never, never, void>;
+    activateTask: () => Effect.Effect<never, never, void>;
   };
   activate: DefaultActivityContext & {
     completeTask: (payload: unknown) => Effect.Effect<never, never, void>;
-    cancelTask: (payload: unknown) => Effect.Effect<never, never, void>;
   };
   complete: DefaultActivityContext;
   cancel: DefaultActivityContext;
@@ -72,7 +72,7 @@ export class ActivityBuilder<
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   O // Output
 > {
-  private readonly callbacks: ActivityCallbacks = {} as ActivityCallbacks;
+  readonly callbacks: ActivityCallbacks = {} as ActivityCallbacks;
   constructor(private readonly activityType: AT) {}
   initialize() {
     return this.before(({ input }) => Effect.succeed(input))
@@ -85,7 +85,7 @@ export class ActivityBuilder<
         context: C;
         input: AT extends ActivityTypeWithInput ? unknown : undefined;
       }
-    ) => AnyEffect
+    ) => Effect.Effect<never, never, unknown>
   >(
     cb: CB
   ): ActivityBuilder<
@@ -101,7 +101,7 @@ export class ActivityBuilder<
   procedure<
     CB extends (
       payload: ActivityContext[AT] & { context: C; input: PI }
-    ) => AnyEffect
+    ) => Effect.Effect<never, never, unknown>
   >(
     cb: CB
   ): ActivityBuilder<AT, C, PI, SuccessReturnType<CB>, SuccessReturnType<CB>> {
@@ -112,7 +112,7 @@ export class ActivityBuilder<
   after<
     CB extends (
       payload: ActivityContext[AT] & { context: C; input: AI }
-    ) => AnyEffect
+    ) => Effect.Effect<never, never, unknown>
   >(cb: CB): ActivityBuilder<AT, C, PI, AI, SuccessReturnType<CB>> {
     this.callbacks.after = cb;
     return this;

@@ -324,15 +324,16 @@ export class Task {
 
   private produceOrSplitTokensInOutgoingFlows(context: object) {
     const flows = this.outgoingFlows;
-    const updates = Object.entries(flows).map(([conditionName, flow]) => {
-      if (flow.isDefault) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[conditionName]!.incrementMarking(context);
-      } else if (flow.predicate ? flow.predicate(null) : false) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.postSet[conditionName]!.incrementMarking(context);
-      }
-      return Effect.unit();
+    const updates = Array.from(flows).map((flow) => {
+      return Effect.gen(function* ($) {
+        if (flow.isDefault) {
+          yield* $(flow.nextElement.incrementMarking(context));
+        } else if (
+          flow.predicate ? yield* $(flow.predicate({ context })) : false
+        ) {
+          yield* $(flow.nextElement.incrementMarking(context));
+        }
+      });
     });
     return Effect.allParDiscard(updates);
   }
@@ -343,16 +344,17 @@ export class Task {
       return flowA.order > flowB.order ? 1 : flowA.order < flowB.order ? -1 : 0;
     });
 
-    for (const flow of sortedFlows) {
-      if (flow.isDefault) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return flow.nextElement.incrementMarking(context);
-      } else if (flow.predicate ? flow.predicate(null) : false) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return flow.nextElement.incrementMarking(context);
+    return Effect.gen(function* ($) {
+      for (const flow of sortedFlows) {
+        if (flow.isDefault) {
+          return yield* $(flow.nextElement.incrementMarking(context));
+        } else if (
+          flow.predicate ? yield* $(flow.predicate({ context })) : false
+        ) {
+          return yield* $(flow.nextElement.incrementMarking(context));
+        }
       }
-    }
-    return Effect.unit();
+    });
   }
 
   private produceAndSplitTokensInOutgoingFlows(context: object) {

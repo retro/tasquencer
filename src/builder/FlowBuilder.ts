@@ -5,8 +5,9 @@ import { ConditionToTaskFlow, TaskToConditionFlow } from '../elements/Flow.js';
 import { Workflow } from '../elements/Workflow.js';
 import { IdProvider } from './IdProvider.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyFlowPredicate = (...args: any[]) => Effect.Effect<any, any, boolean>;
+type AnyFlowPredicate = (
+  ...args: any[]
+) => Effect.Effect<never, never, boolean>;
 
 export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,6 +199,7 @@ export class OrXorTaskFlowBuilder<
 
         const leftFlow = new TaskToConditionFlow(task, condition, {
           order: Infinity,
+          isDefault: true,
         });
         const rightFlow = new ConditionToTaskFlow(condition, toTask);
         task.addOutgoingFlow(leftFlow);

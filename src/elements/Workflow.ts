@@ -17,6 +17,10 @@ export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
   ? U
   : never;
 
+// TODO: implement onStart and onEnd activities
+// TODO: persist workflow state (running, done) and name
+// TODO: figure out if workflow should end when end condition is reached even
+// if there are tokens elsewhere
 export class Workflow<
   _Context extends object = object,
   _WorkflowTaskActivitiesOutputs extends Record<
@@ -31,63 +35,6 @@ export class Workflow<
   private endCondition?: Condition;
 
   constructor(readonly id: string, readonly stateManager: StateManager) {}
-
-  /*constructor1(net: Net) {
-    this.net = net;
-
-    Object.values(net.tasks).forEach((task) => {
-      const wTask = new Task(this, task);
-      this.tasks[wTask.name] = wTask;
-    });
-    Object.values(net.conditions).forEach((condition) => {
-      const wCondition = new Condition(this, condition);
-      this.conditions[wCondition.name] = wCondition;
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.startCondition = this.conditions[net.startCondition]!;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.endCondition = this.conditions[net.endCondition]!;
-
-    Object.entries(net.flows.tasks).forEach(([taskName, flows]) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const wTask = this.tasks[taskName]!;
-      Object.entries(flows).forEach(([conditionName, flow]) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const wCondition = this.conditions[conditionName]!;
-        wTask.addOutgoingFlow(wCondition, flow);
-        wCondition.addIncomingFlow(wTask);
-      });
-    });
-
-    Object.entries(net.flows.conditions).forEach(([conditionName, flows]) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const wCondition = this.conditions[conditionName]!;
-      flows.forEach((flow) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const wTask = this.tasks[flow]!;
-        wCondition.addOutgoingFlow(wTask);
-        wTask.addIncomingFlow(wCondition);
-      });
-    });
-
-    Object.entries(net.cancellationRegions).forEach(
-      ([task, cancellationRegion]) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const wTask = this.tasks[task]!;
-
-        cancellationRegion.tasks?.forEach((task) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          wTask.addTaskToCancellationRegion(this.tasks[task]!);
-        });
-
-        cancellationRegion.conditions?.forEach((condition) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          wTask.addConditionToCancellationRegion(this.conditions[condition]!);
-        });
-      }
-    );
-  }*/
 
   addTask(task: Task) {
     this.tasks[task.name] = task;

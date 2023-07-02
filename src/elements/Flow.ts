@@ -13,14 +13,14 @@ export class TaskToConditionFlow {
   readonly order: number;
   readonly isDefault: boolean = false;
   readonly predicate: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ((...args: any[]) => Effect.Effect<any, any, boolean>) | undefined;
+  ((...args: any[]) => Effect.Effect<never, never, boolean>) | undefined;
   constructor(
     readonly priorElement: Task,
     readonly nextElement: Condition,
     props: {
       order?: number;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      predicate?: (...args: any[]) => Effect.Effect<any, any, boolean>;
+      predicate?: (...args: any[]) => Effect.Effect<never, never, boolean>;
       isDefault?: boolean;
     } = {}
   ) {

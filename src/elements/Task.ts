@@ -1,7 +1,6 @@
 import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
-import { type AnyTaskBuilder } from '../builder/TaskBuilder.js';
 import type { JoinType, SplitType, TaskState } from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';

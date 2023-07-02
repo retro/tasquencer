@@ -406,3 +406,79 @@ it('can run simple net with and-split and and-join', () => {
 
   Effect.runSync(program);
 });
+
+it('can run resume a workflow', () => {
+  const workflowDefinition = Builder.workflow('checkout')
+    .startCondition('start')
+    .task('scan_goods')
+    .task('pay', (t) => t.withSplitType('and'))
+    .task('pack_goods')
+    .task('issue_receipt')
+    .task('check_goods', (t) => t.withJoinType('and'))
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('scan_goods'))
+    .connectTask('scan_goods', (to) => to.task('pay'))
+    .connectTask('pay', (to) => to.task('pack_goods').task('issue_receipt'))
+    .connectTask('pack_goods', (to) => to.task('check_goods'))
+    .connectTask('issue_receipt', (to) => to.task('check_goods'))
+    .connectTask('check_goods', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow1 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter1 = yield* $(
+      Interpreter.make(workflow1, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter1.start());
+    yield* $(interpreter1.activateTask('scan_goods'));
+
+    const workflow2 = yield* $(
+      workflowDefinition.build(workflow1.id),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter2 = yield* $(
+      Interpreter.make(workflow2, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter2.completeTask('scan_goods'));
+
+    const res3 = yield* $(interpreter2.getState());
+
+    // In this case some IDs are different than in the previous test
+    // because idGenerator was not reset. If the task or condition wasn't
+    // persisted, it will get a new ID on resume. What is important is that
+    // the conditions and tasks that were persisted have their state and ID
+    // restored.
+    expect(res3).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'pay', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-9': {
+          id: 'condition-9',
+          name: 'implicit:scan_goods->pay',
+          marking: 1,
+        },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});

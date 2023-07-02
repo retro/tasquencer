@@ -2,9 +2,9 @@ import * as Effect from '@effect/io/Effect';
 
 import { Task } from '../elements/Task.js';
 import { Workflow } from '../elements/Workflow.js';
-import { IdGenerator } from '../stateManager/types.js';
 import { JoinType, SplitType } from '../types.js';
 import * as AB from './ActivityBuilder.js';
+import { IdProvider } from './IdProvider.js';
 
 type ActivityBuilderWithValidContext<C, A> = C extends AB.ActivityUserContext<A>
   ? A
@@ -247,12 +247,11 @@ export class TaskBuilder<
     return this;
   }
 
-  build(workflow: Workflow, name: string) {
+  build(workflow: Workflow, name: string, idProvider: IdProvider) {
     const { splitType, joinType } = this;
     return Effect.gen(function* ($) {
-      const idGenerator = yield* $(IdGenerator);
       const task = new Task(
-        yield* $(idGenerator.next('task')),
+        yield* $(idProvider.getTaskId(name)),
         name,
         workflow,
         {

@@ -4,7 +4,8 @@ import { type Draft, create } from 'mutative';
 
 import type { Condition } from '../elements/Condition.js';
 import type { Task } from '../elements/Task.js';
-import { Workflow, WorkflowNotInitialized } from '../elements/Workflow.js';
+import { Workflow } from '../elements/Workflow.js';
+import { WorkflowNotInitialized } from '../errors.js';
 import { TaskState } from '../types.js';
 import {
   type ConditionItem,
@@ -51,15 +52,19 @@ function updateStoreRef(
   });
 }
 
-function getWorkflowState(storeRef: WorkflowStateRef, workflow: Workflow) {
+function getWorkflowStateById(storeRef: WorkflowStateRef, id: string) {
   return Effect.gen(function* ($) {
     const store = yield* $(Ref.get(storeRef));
-    const workflowState = store[workflow.id];
+    const workflowState = store[id];
     if (workflowState) {
       return workflowState;
     }
     return yield* $(Effect.fail(WorkflowNotInitialized()));
   });
+}
+
+function getWorkflowState(storeRef: WorkflowStateRef, workflow: Workflow) {
+  return getWorkflowStateById(storeRef, workflow.id);
 }
 
 function getTaskState(storeRef: WorkflowStateRef, task: Task) {
@@ -204,10 +209,14 @@ export class Memory implements StateManager {
     });
   }
 
-  getWorkflowState(workflow: Workflow) {
+  getWorkflowState(workflowOrId: Workflow | string) {
     const { storeRef } = this;
     return Effect.gen(function* ($) {
-      const workflowState = yield* $(getWorkflowState(storeRef, workflow));
+      const workflowState = yield* $(
+        typeof workflowOrId === 'string'
+          ? getWorkflowStateById(storeRef, workflowOrId)
+          : getWorkflowState(storeRef, workflowOrId)
+      );
       return {
         tasks: workflowState.tasks,
         conditions: workflowState.conditions,

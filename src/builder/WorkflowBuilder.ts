@@ -18,6 +18,7 @@ import {
   TaskFlowBuilder,
   ValidOrXorTaskFlow,
 } from './FlowBuilder.js';
+import { IdProvider } from './IdProvider.js';
 import * as TB from './TaskBuilder.js';
 
 type TaskWithValidContext<C, T> = C extends TB.TaskBuilderUserContext<T>
@@ -301,27 +302,33 @@ export class WorkflowBuilder<
     }
     return this;
   }
-  build() {
+  build(prevId?: string) {
     const { definition } = this;
 
     return Effect.gen(function* ($) {
       const stateManager = yield* $(StateManager);
       const idGenerator = yield* $(IdGenerator);
-      const workflow = new Workflow<WBContext>(
-        yield* $(idGenerator.next('workflow')),
-        stateManager
+      const workflowId = prevId ?? (yield* $(idGenerator.next('workflow')));
+      const prevState = yield* $(
+        stateManager.getWorkflowState(workflowId),
+        Effect.catchTag('WorkflowNotInitialized', () =>
+          Effect.succeed(undefined)
+        )
       );
+      const idProvider = new IdProvider(prevState, idGenerator);
+
+      const workflow = new Workflow<WBContext>(workflowId, stateManager);
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow
-        yield* $(taskBuilder.build(workflow, taskName));
+        yield* $(taskBuilder.build(workflow, taskName, idProvider));
       }
 
       for (const [conditionName, conditionNode] of Object.entries(
         definition.conditions
       )) {
         const condition = new Condition(
-          yield* $(idGenerator.next('condition')),
+          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           conditionNode,
           workflow
@@ -355,7 +362,7 @@ export class WorkflowBuilder<
       }
 
       for (const [, taskFlows] of Object.entries(definition.flows.tasks)) {
-        yield* $(taskFlows.build(workflow));
+        yield* $(taskFlows.build(workflow, idProvider));
       }
 
       for (const [taskName, cancellationRegion] of Object.entries(

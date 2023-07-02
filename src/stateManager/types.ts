@@ -3,7 +3,8 @@ import * as Effect from '@effect/io/Effect';
 
 import type { Condition } from '../elements/Condition.js';
 import type { Task } from '../elements/Task.js';
-import { Workflow, WorkflowNotInitialized } from '../elements/Workflow.js';
+import { Workflow } from '../elements/Workflow.js';
+import type { WorkflowNotInitialized } from '../errors.js';
 import { TaskState } from '../types.js';
 
 export interface JSInterpreterState {
@@ -64,9 +65,9 @@ export interface StateManager {
     task: Task
   ): Effect.Effect<never, E | WorkflowNotInitialized, TaskState>;
 
-  getWorkflowState<E>(
-    workflow: Workflow
-  ): Effect.Effect<never, E | WorkflowNotInitialized, WorkflowItem>;
+  getWorkflowState(
+    workflowOrId: Workflow | string
+  ): Effect.Effect<never, WorkflowNotInitialized, WorkflowItem>;
 }
 
 export const StateManager = Context.Tag<StateManager>();

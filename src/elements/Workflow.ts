@@ -1,6 +1,7 @@
 import * as Effect from '@effect/io/Effect';
 
 import * as TB from '../builder/TaskBuilder.js';
+import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
   StartConditionDoesNotExist,
@@ -8,6 +9,7 @@ import {
 } from '../errors.js';
 import { StateManager } from '../stateManager/types.js';
 import { Condition } from './Condition.js';
+import { Marking } from './Marking.js';
 import { Task } from './Task.js';
 
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
@@ -89,5 +91,44 @@ export class Workflow<
   }
   getState() {
     return this.stateManager.getWorkflowState(this.id);
+  }
+  isOrJoinSatisfied(task: Task) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const workflowState = yield* $(self.getState());
+      const activeTasks = Object.values(workflowState.tasks).reduce<Task[]>(
+        (acc, taskData) => {
+          if (taskData.state === 'active') {
+            console.log(taskData.name);
+            const task = self.tasks[taskData.name];
+            task && acc.push(task);
+          }
+          return acc;
+        },
+        []
+      );
+      const enabledConditions = Object.values(workflowState.conditions).reduce<
+        Condition[]
+      >((acc, conditionData) => {
+        if (conditionData.marking > 0) {
+          const condition = self.conditions[conditionData.name];
+          condition && acc.push(condition);
+        }
+        return acc;
+      }, []);
+
+      const marking = new Marking(activeTasks, enabledConditions);
+
+      const e2wfojnet = new E2WFOJNet(
+        Object.values(self.tasks),
+        Object.values(self.conditions),
+        task
+      );
+
+      e2wfojnet.restrictNet(marking);
+      e2wfojnet.restrictNet(task);
+
+      return e2wfojnet.orJoinEnabled(marking, task);
+    });
   }
 }

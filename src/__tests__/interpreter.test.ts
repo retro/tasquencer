@@ -56,7 +56,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.start());
 
-    const res1 = yield* $(interpreter.getState());
+    const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
       tasks: {
@@ -69,7 +69,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.activateTask('scan_goods'));
 
-    const res2 = yield* $(interpreter.getState());
+    const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
       tasks: {
@@ -82,7 +82,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('scan_goods'));
 
-    const res3 = yield* $(interpreter.getState());
+    const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
       tasks: {
@@ -101,7 +101,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.activateTask('pay'));
 
-    const res4 = yield* $(interpreter.getState());
+    const res4 = yield* $(interpreter.getWorkflowState());
 
     expect(res4).toEqual({
       tasks: {
@@ -120,7 +120,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('pay'));
 
-    const res5 = yield* $(interpreter.getState());
+    const res5 = yield* $(interpreter.getWorkflowState());
 
     expect(res5).toEqual({
       tasks: {
@@ -151,7 +151,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.activateTask('pack_goods'));
 
-    const res6 = yield* $(interpreter.getState());
+    const res6 = yield* $(interpreter.getWorkflowState());
 
     expect(res6).toEqual({
       tasks: {
@@ -180,7 +180,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    const res7 = yield* $(interpreter.getState());
+    const res7 = yield* $(interpreter.getWorkflowState());
 
     expect(res7).toEqual({
       tasks: {
@@ -211,7 +211,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.activateTask('issue_receipt'));
 
-    const res8 = yield* $(interpreter.getState());
+    const res8 = yield* $(interpreter.getWorkflowState());
 
     expect(res8).toEqual({
       tasks: {
@@ -242,7 +242,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('pack_goods'));
 
-    const res9 = yield* $(interpreter.getState());
+    const res9 = yield* $(interpreter.getWorkflowState());
 
     expect(res9).toEqual({
       tasks: {
@@ -278,7 +278,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('issue_receipt'));
 
-    const res10 = yield* $(interpreter.getState());
+    const res10 = yield* $(interpreter.getWorkflowState());
 
     expect(res10).toEqual({
       tasks: {
@@ -320,7 +320,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.activateTask('check_goods'));
 
-    const res11 = yield* $(interpreter.getState());
+    const res11 = yield* $(interpreter.getWorkflowState());
 
     expect(res11).toEqual({
       tasks: {
@@ -362,7 +362,7 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('check_goods'));
 
-    const res12 = yield* $(interpreter.getState());
+    const res12 = yield* $(interpreter.getWorkflowState());
 
     expect(res12).toEqual({
       tasks: {
@@ -457,7 +457,7 @@ it('can run resume a workflow', () => {
 
     yield* $(interpreter2.completeTask('scan_goods'));
 
-    const res3 = yield* $(interpreter2.getState());
+    const res3 = yield* $(interpreter2.getWorkflowState());
 
     // In this case some IDs are different than in the previous test
     // because idGenerator was not reset. If the task or condition wasn't
@@ -688,7 +688,7 @@ it('can run workflow with activities', () => {
     yield* $(interpreter.activateTask('check_goods'));
     yield* $(interpreter.completeTask('check_goods'));
 
-    const workflowRes = yield* $(interpreter.getState());
+    const workflowRes = yield* $(interpreter.getWorkflowState());
 
     expect(log).toEqual([
       { name: 'scan_goods', activityPhase: 'before', taskPhase: 'enable' },
@@ -1017,7 +1017,7 @@ it('can auto activate and auto complete tasks', () => {
 
     yield* $(interpreter.start());
 
-    const res1 = yield* $(interpreter.getState());
+    const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
       tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
@@ -1065,7 +1065,7 @@ it('supports deferred choice pattern', () => {
 
     yield* $(interpreter.start());
 
-    const res1 = yield* $(interpreter.getState());
+    const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
       tasks: {
@@ -1080,7 +1080,7 @@ it('supports deferred choice pattern', () => {
     yield* $(interpreter.activateTask('task_1'));
     yield* $(interpreter.completeTask('task_1'));
 
-    const res2 = yield* $(interpreter.getState());
+    const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
       tasks: {
@@ -1101,7 +1101,7 @@ it('supports deferred choice pattern', () => {
     yield* $(interpreter.activateTask('task_1a'));
     yield* $(interpreter.completeTask('task_1a'));
 
-    const res3 = yield* $(interpreter.getState());
+    const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
       tasks: {
@@ -1164,7 +1164,7 @@ it('supports xor join', () => {
 
     yield* $(interpreter.start());
 
-    const res1 = yield* $(interpreter.getState());
+    const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
       tasks: {
@@ -1178,7 +1178,7 @@ it('supports xor join', () => {
     yield* $(interpreter.activateTask('initial_task'));
     yield* $(interpreter.completeTask('initial_task'));
 
-    const res2 = yield* $(interpreter.getState());
+    const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
       tasks: {
@@ -1196,7 +1196,7 @@ it('supports xor join', () => {
     yield* $(interpreter.activateTask('task_b'));
     yield* $(interpreter.completeTask('task_b'));
 
-    const res3 = yield* $(interpreter.getState());
+    const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
       tasks: {
@@ -1265,7 +1265,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.start());
 
-    const res1 = yield* $(interpreter.getState());
+    const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
       tasks: {
@@ -1279,7 +1279,7 @@ it('supports interleaved parallel routing pattern', () => {
     yield* $(interpreter.activateTask('initial_task'));
     yield* $(interpreter.completeTask('initial_task'));
 
-    const res2 = yield* $(interpreter.getState());
+    const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
       tasks: {
@@ -1305,7 +1305,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.activateTask('task_a'));
 
-    const res3 = yield* $(interpreter.getState());
+    const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
       tasks: {
@@ -1331,7 +1331,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.completeTask('task_a'));
 
-    const res4 = yield* $(interpreter.getState());
+    const res4 = yield* $(interpreter.getWorkflowState());
 
     expect(res4).toEqual({
       tasks: {
@@ -1363,7 +1363,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.activateTask('task_b'));
 
-    const res5 = yield* $(interpreter.getState());
+    const res5 = yield* $(interpreter.getWorkflowState());
 
     expect(res5).toEqual({
       tasks: {
@@ -1395,7 +1395,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.completeTask('task_b'));
 
-    const res6 = yield* $(interpreter.getState());
+    const res6 = yield* $(interpreter.getWorkflowState());
 
     expect(res6).toEqual({
       tasks: {
@@ -1432,7 +1432,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.activateTask('task_c'));
 
-    const res7 = yield* $(interpreter.getState());
+    const res7 = yield* $(interpreter.getWorkflowState());
 
     expect(res7).toEqual({
       tasks: {
@@ -1469,7 +1469,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.completeTask('task_c'));
 
-    const res8 = yield* $(interpreter.getState());
+    const res8 = yield* $(interpreter.getWorkflowState());
 
     expect(res8).toEqual({
       tasks: {
@@ -1512,7 +1512,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.activateTask('task_d'));
 
-    const res9 = yield* $(interpreter.getState());
+    const res9 = yield* $(interpreter.getWorkflowState());
 
     expect(res9).toEqual({
       tasks: {
@@ -1555,7 +1555,7 @@ it('supports interleaved parallel routing pattern', () => {
 
     yield* $(interpreter.completeTask('task_d'));
 
-    const res10 = yield* $(interpreter.getState());
+    const res10 = yield* $(interpreter.getWorkflowState());
 
     expect(res10).toEqual({
       tasks: {
@@ -1605,7 +1605,7 @@ it('supports interleaved parallel routing pattern', () => {
     yield* $(interpreter.activateTask('finish_task'));
     yield* $(interpreter.completeTask('finish_task'));
 
-    const res11 = yield* $(interpreter.getState());
+    const res11 = yield* $(interpreter.getWorkflowState());
 
     expect(res11).toEqual({
       tasks: {
@@ -1698,7 +1698,7 @@ it('supports xor join', () => {
     yield* $(interpreter1.activateTask('A'));
     yield* $(interpreter1.completeTask('A'));
 
-    const res1_1 = yield* $(interpreter1.getState());
+    const res1_1 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_1).toEqual({
       tasks: {
@@ -1720,7 +1720,7 @@ it('supports xor join', () => {
     yield* $(interpreter2.activateTask('A'));
     yield* $(interpreter2.completeTask('A'));
 
-    const res2_1 = yield* $(interpreter2.getState());
+    const res2_1 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_1).toEqual({
       tasks: {
@@ -1742,7 +1742,7 @@ it('supports xor join', () => {
     yield* $(interpreter3.activateTask('A'));
     yield* $(interpreter3.completeTask('A'));
 
-    const res3_1 = yield* $(interpreter3.getState());
+    const res3_1 = yield* $(interpreter3.getWorkflowState());
 
     expect(res3_1).toEqual({
       tasks: {
@@ -1810,7 +1810,7 @@ it('supports or split and or join', () => {
 
     yield* $(interpreter1.start());
 
-    const res1_1 = yield* $(interpreter1.getState());
+    const res1_1 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_1).toEqual({
       tasks: { 'task-1': { id: 'task-1', name: 'register', state: 'enabled' } },
@@ -1822,7 +1822,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter1.activateTask('register'));
     yield* $(interpreter1.completeTask('register'));
 
-    const res1_2 = yield* $(interpreter1.getState());
+    const res1_2 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_2).toEqual({
       tasks: {
@@ -1854,7 +1854,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter1.activateTask('book_flight'));
     yield* $(interpreter1.completeTask('book_flight'));
 
-    const res1_3 = yield* $(interpreter1.getState());
+    const res1_3 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_3).toEqual({
       tasks: {
@@ -1891,7 +1891,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter1.activateTask('book_hotel'));
     yield* $(interpreter1.completeTask('book_hotel'));
 
-    const res1_4 = yield* $(interpreter1.getState());
+    const res1_4 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_4).toEqual({
       tasks: {
@@ -1933,7 +1933,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter1.activateTask('book_car'));
     yield* $(interpreter1.completeTask('book_car'));
 
-    const res1_5 = yield* $(interpreter1.getState());
+    const res1_5 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_5).toEqual({
       tasks: {
@@ -1997,7 +1997,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter2.activateTask('register'));
     yield* $(interpreter2.completeTask('register'));
 
-    const res2_1 = yield* $(interpreter2.getState());
+    const res2_1 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_1).toEqual({
       tasks: {
@@ -2023,7 +2023,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter2.activateTask('book_flight'));
     yield* $(interpreter2.completeTask('book_flight'));
 
-    const res2_2 = yield* $(interpreter2.getState());
+    const res2_2 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_2).toEqual({
       tasks: {
@@ -2054,7 +2054,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter2.activateTask('book_hotel'));
     yield* $(interpreter2.completeTask('book_hotel'));
 
-    const res2_3 = yield* $(interpreter2.getState());
+    const res2_3 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_3).toEqual({
       tasks: {
@@ -2107,7 +2107,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter3.activateTask('register'));
     yield* $(interpreter3.completeTask('register'));
 
-    const res3_1 = yield* $(interpreter3.getState());
+    const res3_1 = yield* $(interpreter3.getWorkflowState());
 
     expect(res3_1).toEqual({
       tasks: {
@@ -2127,7 +2127,7 @@ it('supports or split and or join', () => {
     yield* $(interpreter3.activateTask('book_hotel'));
     yield* $(interpreter3.completeTask('book_hotel'));
 
-    const res3_2 = yield* $(interpreter3.getState());
+    const res3_2 = yield* $(interpreter3.getWorkflowState());
 
     expect(res3_2).toEqual({
       tasks: {

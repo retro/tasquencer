@@ -1,5 +1,3 @@
-import { cons } from '@fp-ts/optic';
-
 import { Condition } from './elements/Condition.js';
 import { Marking } from './elements/Marking.js';
 import { Task } from './elements/Task.js';

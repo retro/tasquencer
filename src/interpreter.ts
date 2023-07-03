@@ -190,11 +190,8 @@ export class Interpreter<
     });
   }
 
-  getState() {
-    const { workflow, stateManager } = this;
-    return Effect.gen(function* ($) {
-      return yield* $(stateManager.getWorkflowState(workflow));
-    });
+  getWorkflowState() {
+    return this.workflow.getState();
   }
 }
 

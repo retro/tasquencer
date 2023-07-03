@@ -1758,3 +1758,398 @@ it('supports xor join', () => {
 
   Effect.runSync(program);
 });
+
+it('supports or split and or join', () => {
+  const workflowDefinition = Builder.workflow<{
+    shouldBookFlight: boolean;
+    shouldBookCar: boolean;
+  }>('or-split-and-or-join')
+    .startCondition('start')
+    .task('register', (t) => t.withSplitType('or'))
+    .task('book_flight')
+    .task('book_hotel')
+    .task('book_car')
+    .task('pay', (t) => t.withJoinType('or'))
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('register'))
+    .connectTask('register', (to) =>
+      to
+        .task('book_flight', ({ context }) =>
+          Effect.succeed(context.shouldBookFlight)
+        )
+        .task('book_car', ({ context }) =>
+          Effect.succeed(context.shouldBookCar)
+        )
+        .defaultTask('book_hotel')
+    )
+    .connectTask('book_flight', (to) => to.task('pay'))
+    .connectTask('book_hotel', (to) => to.task('pay'))
+    .connectTask('book_car', (to) => to.task('pay'))
+    .connectTask('pay', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow1 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter1 = yield* $(
+      Interpreter.make(workflow1, {
+        shouldBookFlight: true,
+        shouldBookCar: true,
+      }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter1.start());
+
+    const res1_1 = yield* $(interpreter1.getState());
+
+    expect(res1_1).toEqual({
+      tasks: { 'task-1': { id: 'task-1', name: 'register', state: 'enabled' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('register'));
+    yield* $(interpreter1.completeTask('register'));
+
+    const res1_2 = yield* $(interpreter1.getState());
+
+    expect(res1_2).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'enabled' },
+        'task-4': { id: 'task-4', name: 'book_car', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'book_hotel', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:register->book_flight',
+          marking: 1,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:register->book_car',
+          marking: 1,
+        },
+        'condition-5': {
+          id: 'condition-5',
+          name: 'implicit:register->book_hotel',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('book_flight'));
+    yield* $(interpreter1.completeTask('book_flight'));
+
+    const res1_3 = yield* $(interpreter1.getState());
+
+    expect(res1_3).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'book_car', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'book_hotel', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:register->book_flight',
+          marking: 0,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:register->book_car',
+          marking: 1,
+        },
+        'condition-5': {
+          id: 'condition-5',
+          name: 'implicit:register->book_hotel',
+          marking: 1,
+        },
+        'condition-6': {
+          id: 'condition-6',
+          name: 'implicit:book_flight->pay',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('book_hotel'));
+    yield* $(interpreter1.completeTask('book_hotel'));
+
+    const res1_4 = yield* $(interpreter1.getState());
+
+    expect(res1_4).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'book_car', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'book_hotel', state: 'completed' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:register->book_flight',
+          marking: 0,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:register->book_car',
+          marking: 1,
+        },
+        'condition-5': {
+          id: 'condition-5',
+          name: 'implicit:register->book_hotel',
+          marking: 0,
+        },
+        'condition-6': {
+          id: 'condition-6',
+          name: 'implicit:book_flight->pay',
+          marking: 1,
+        },
+        'condition-7': {
+          id: 'condition-7',
+          name: 'implicit:book_hotel->pay',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('book_car'));
+    yield* $(interpreter1.completeTask('book_car'));
+
+    const res1_5 = yield* $(interpreter1.getState());
+
+    expect(res1_5).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'book_car', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'book_hotel', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'pay', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:register->book_flight',
+          marking: 0,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:register->book_car',
+          marking: 0,
+        },
+        'condition-5': {
+          id: 'condition-5',
+          name: 'implicit:register->book_hotel',
+          marking: 0,
+        },
+        'condition-6': {
+          id: 'condition-6',
+          name: 'implicit:book_flight->pay',
+          marking: 1,
+        },
+        'condition-7': {
+          id: 'condition-7',
+          name: 'implicit:book_hotel->pay',
+          marking: 1,
+        },
+        'condition-8': {
+          id: 'condition-8',
+          name: 'implicit:book_car->pay',
+          marking: 1,
+        },
+      },
+    });
+
+    const workflow2 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter2 = yield* $(
+      Interpreter.make(workflow2, {
+        shouldBookFlight: true,
+        shouldBookCar: false,
+      }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter2.start());
+
+    yield* $(interpreter2.activateTask('register'));
+    yield* $(interpreter2.completeTask('register'));
+
+    const res2_1 = yield* $(interpreter2.getState());
+
+    expect(res2_1).toEqual({
+      tasks: {
+        'task-6': { id: 'task-6', name: 'register', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'book_flight', state: 'enabled' },
+        'task-8': { id: 'task-8', name: 'book_hotel', state: 'enabled' },
+      },
+      conditions: {
+        'condition-9': { id: 'condition-9', name: 'start', marking: 0 },
+        'condition-11': {
+          id: 'condition-11',
+          name: 'implicit:register->book_flight',
+          marking: 1,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:register->book_hotel',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('book_flight'));
+    yield* $(interpreter2.completeTask('book_flight'));
+
+    const res2_2 = yield* $(interpreter2.getState());
+
+    expect(res2_2).toEqual({
+      tasks: {
+        'task-6': { id: 'task-6', name: 'register', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'book_flight', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'book_hotel', state: 'enabled' },
+      },
+      conditions: {
+        'condition-9': { id: 'condition-9', name: 'start', marking: 0 },
+        'condition-11': {
+          id: 'condition-11',
+          name: 'implicit:register->book_flight',
+          marking: 0,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:register->book_hotel',
+          marking: 1,
+        },
+        'condition-14': {
+          id: 'condition-14',
+          name: 'implicit:book_flight->pay',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('book_hotel'));
+    yield* $(interpreter2.completeTask('book_hotel'));
+
+    const res2_3 = yield* $(interpreter2.getState());
+
+    expect(res2_3).toEqual({
+      tasks: {
+        'task-6': { id: 'task-6', name: 'register', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'book_flight', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'book_hotel', state: 'completed' },
+        'task-10': { id: 'task-10', name: 'pay', state: 'enabled' },
+      },
+      conditions: {
+        'condition-9': { id: 'condition-9', name: 'start', marking: 0 },
+        'condition-11': {
+          id: 'condition-11',
+          name: 'implicit:register->book_flight',
+          marking: 0,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:register->book_hotel',
+          marking: 0,
+        },
+        'condition-14': {
+          id: 'condition-14',
+          name: 'implicit:book_flight->pay',
+          marking: 1,
+        },
+        'condition-15': {
+          id: 'condition-15',
+          name: 'implicit:book_hotel->pay',
+          marking: 1,
+        },
+      },
+    });
+
+    const workflow3 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter3 = yield* $(
+      Interpreter.make(workflow3, {
+        shouldBookFlight: false,
+        shouldBookCar: false,
+      }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter3.start());
+
+    yield* $(interpreter3.activateTask('register'));
+    yield* $(interpreter3.completeTask('register'));
+
+    const res3_1 = yield* $(interpreter3.getState());
+
+    expect(res3_1).toEqual({
+      tasks: {
+        'task-11': { id: 'task-11', name: 'register', state: 'completed' },
+        'task-13': { id: 'task-13', name: 'book_hotel', state: 'enabled' },
+      },
+      conditions: {
+        'condition-17': { id: 'condition-17', name: 'start', marking: 0 },
+        'condition-21': {
+          id: 'condition-21',
+          name: 'implicit:register->book_hotel',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter3.activateTask('book_hotel'));
+    yield* $(interpreter3.completeTask('book_hotel'));
+
+    const res3_2 = yield* $(interpreter3.getState());
+
+    expect(res3_2).toEqual({
+      tasks: {
+        'task-11': { id: 'task-11', name: 'register', state: 'completed' },
+        'task-13': { id: 'task-13', name: 'book_hotel', state: 'completed' },
+        'task-15': { id: 'task-15', name: 'pay', state: 'enabled' },
+      },
+      conditions: {
+        'condition-17': { id: 'condition-17', name: 'start', marking: 0 },
+        'condition-21': {
+          id: 'condition-21',
+          name: 'implicit:register->book_hotel',
+          marking: 0,
+        },
+        'condition-23': {
+          id: 'condition-23',
+          name: 'implicit:book_hotel->pay',
+          marking: 1,
+        },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});

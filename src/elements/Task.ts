@@ -2,6 +2,7 @@ import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import { TaskActivities } from '../builder/TaskBuilder.js';
+import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   JoinType,
   SplitType,
@@ -10,6 +11,7 @@ import {
 } from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+import { Marking } from './Marking.js';
 import { Workflow } from './Workflow.js';
 
 const VALID_STATE_TRANSITIONS = {
@@ -70,6 +72,21 @@ export class Task {
   }
   addConditionToCancellationRegion(condition: Condition) {
     this.cancellationRegion.conditions[condition.name] = condition;
+  }
+
+  getPresetElements() {
+    return new Set(Object.values(this.preSet));
+  }
+
+  getPostsetElements() {
+    return new Set(Object.values(this.postSet));
+  }
+
+  getRemoveSet() {
+    return new Set([
+      ...Object.values(this.cancellationRegion.tasks),
+      ...Object.values(this.cancellationRegion.conditions),
+    ]);
   }
 
   getState() {
@@ -359,7 +376,6 @@ export class Task {
 
   private produceAndSplitTokensInOutgoingFlows(context: object) {
     const updates = Array.from(this.outgoingFlows).map((flow) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return flow.nextElement.incrementMarking(context);
     });
     return Effect.allParDiscard(updates);
@@ -377,6 +393,44 @@ export class Task {
   }
 
   private isOrJoinSatisfied() {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const workflowState = yield* $(self.workflow.getState());
+      const activeTasks = Object.values(workflowState.tasks).reduce<Task[]>(
+        (acc, taskData) => {
+          if (taskData.state === 'active') {
+            console.log(taskData.name);
+            const task = self.workflow.tasks[taskData.name];
+            task && acc.push(task);
+          }
+          return acc;
+        },
+        []
+      );
+      const enabledConditions = Object.values(workflowState.conditions).reduce<
+        Condition[]
+      >((acc, conditionData) => {
+        if (conditionData.marking > 0) {
+          const condition = self.workflow.conditions[conditionData.name];
+          condition && acc.push(condition);
+        }
+        return acc;
+      }, []);
+
+      const marking = new Marking(activeTasks, enabledConditions);
+
+      const e2wfojnet = new E2WFOJNet(
+        Object.values(self.workflow.tasks),
+        Object.values(self.workflow.conditions),
+        self
+      );
+
+      e2wfojnet.restrictNet(marking);
+      e2wfojnet.restrictNet(self);
+
+      return e2wfojnet.orJoinEnabled(marking, self);
+    });
+
     return Effect.succeed(false);
   }
 

@@ -87,4 +87,7 @@ export class Workflow<
     }
     return Effect.fail(TaskDoesNotExist());
   }
+  getState() {
+    return this.stateManager.getWorkflowState(this.id);
+  }
 }

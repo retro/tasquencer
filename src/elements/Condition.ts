@@ -37,6 +37,14 @@ export class Condition {
     this.postSet[flow.nextElement.name] = flow.nextElement;
   }
 
+  getPresetElements() {
+    return new Set(Object.values(this.preSet));
+  }
+
+  getPostsetElements() {
+    return new Set(Object.values(this.postSet));
+  }
+
   incrementMarking(context: object) {
     const self = this;
     return Effect.gen(function* ($) {

@@ -1,20 +1,18 @@
-import { cons } from '@fp-ts/optic';
-
-import { Condition } from './elements/Condition.js';
-import { Marking } from './elements/Marking.js';
-import { Task } from './elements/Task.js';
-
-type NetElement = Condition | Task;
+import { Digraph, Edge, Node, attribute as _, toDot } from 'ts-graphviz';
 
 class RElement {
   private name: string;
   private presetFlows: Record<string, RFlow> = {};
   private postsetFlows: Record<string, RFlow> = {};
-  readonly id: string;
+  private id: string;
 
   constructor(id: string) {
     this.id = id;
     this.name = id;
+  }
+
+  getId(): string {
+    return this.id;
   }
 
   setName(name: string): void {
@@ -64,16 +62,18 @@ class RElement {
 
   setPreset(flowsInto: RFlow): void {
     if (flowsInto) {
-      this.presetFlows[flowsInto.getPriorElement().id] = flowsInto;
-      flowsInto.getPriorElement().postsetFlows[flowsInto.getNextElement().id] =
-        flowsInto;
+      this.presetFlows[flowsInto.getPriorElement().getId()] = flowsInto;
+      flowsInto.getPriorElement().postsetFlows[
+        flowsInto.getNextElement().getId()
+      ] = flowsInto;
     }
   }
   setPostset(flowsInto: RFlow): void {
     if (flowsInto) {
-      this.postsetFlows[flowsInto.getNextElement().id] = flowsInto;
-      flowsInto.getNextElement().presetFlows[flowsInto.getPriorElement().id] =
-        flowsInto;
+      this.postsetFlows[flowsInto.getNextElement().getId()] = flowsInto;
+      flowsInto.getNextElement().presetFlows[
+        flowsInto.getPriorElement().getId()
+      ] = flowsInto;
     }
   }
 
@@ -114,7 +114,7 @@ class RMarking {
       this.markedPlaces = locations;
     } else {
       for (const netElement of locations) {
-        const netElementName = netElement.id;
+        const netElementName = netElement.getId();
         let tokenCount = 1;
         if (this.markedPlaces.has(netElementName)) {
           const count = this.markedPlaces.get(netElementName) ?? 0;
@@ -350,17 +350,219 @@ class RTransition extends RElement {
   }
 }
 
+export abstract class YExternalNetElement {
+  private id: string;
+  protected name: string;
+  private presetFlows = new Map<string, YFlow>();
+  private postsetFlows = new Map<string, YFlow>();
+  private cancelledBySet = new Set<YExternalNetElement>();
+
+  constructor(id: string) {
+    this.id = id;
+    this.name = id;
+  }
+
+  public getName(): string {
+    return this.name;
+  }
+
+  public setName(name: string): void {
+    this.name = name;
+  }
+
+  public getID() {
+    return this.id;
+  }
+
+  public addPreset(flow: YFlow): void {
+    if (flow) {
+      const prior = flow.getPriorElement();
+      if (prior) {
+        this.presetFlows.set(prior.getID(), flow);
+        prior.postsetFlows.set(this.getID(), flow);
+      }
+    }
+  }
+
+  public addPostset(flow: YFlow): void {
+    if (flow) {
+      const next = flow.getNextElement();
+      if (next) {
+        this.postsetFlows.set(next.getID(), flow);
+        next.presetFlows.set(this.getID(), flow);
+      }
+    }
+  }
+
+  public removePresetFlow(flow: YFlow): void {
+    if (flow) {
+      const prior = flow.getPriorElement();
+      this.presetFlows.delete(prior.getID());
+      prior.postsetFlows.delete(this.getID());
+    }
+  }
+
+  public removePostsetFlow(flow: YFlow): void {
+    if (flow) {
+      const next = flow.getNextElement();
+      this.postsetFlows.delete(next.getID());
+      next.presetFlows.delete(this.getID());
+    }
+  }
+
+  public getPostsetElements(): Set<YExternalNetElement> {
+    const postsetElements = new Set<YExternalNetElement>();
+    for (const flow of this.postsetFlows.values()) {
+      postsetElements.add(flow.getNextElement());
+    }
+    return postsetElements;
+  }
+
+  public getPresetElements(): Set<YExternalNetElement> {
+    const presetElements = new Set<YExternalNetElement>();
+    for (const flow of this.presetFlows.values()) {
+      presetElements.add(flow.getPriorElement());
+    }
+    return presetElements;
+  }
+
+  public getPostsetFlow(netElement: YExternalNetElement): YFlow | undefined {
+    return this.postsetFlows.get(netElement.getID());
+  }
+
+  public getPresetFlow(netElement: YExternalNetElement): YFlow | undefined {
+    return this.presetFlows.get(netElement.getID());
+  }
+
+  public getPostsetFlows(): Set<YFlow> {
+    return new Set(this.postsetFlows.values());
+  }
+
+  public getPresetFlows(): Set<YFlow> {
+    return new Set(this.presetFlows.values());
+  }
+
+  public getPostsetElement(id: string): YExternalNetElement | undefined {
+    return this.postsetFlows.get(id)?.getNextElement();
+  }
+
+  public getPresetElement(id: string): YExternalNetElement | undefined {
+    return this.presetFlows.get(id)?.getPriorElement();
+  }
+
+  public getCancelledBySet(): Set<YExternalNetElement> | null {
+    return this.cancelledBySet !== null ? new Set(this.cancelledBySet) : null;
+  }
+
+  public addToCancelledBySet(t: YTask): void {
+    if (t !== null) this.cancelledBySet.add(t);
+  }
+
+  public removeFromCancelledBySet(t: YTask): void {
+    if (t !== null) this.cancelledBySet.delete(t);
+  }
+}
+
+type SplitJoinType = 'and' | 'or' | 'xor';
+type MaybeSplitJoinType = undefined | SplitJoinType;
+
+export class YTask extends YExternalNetElement {
+  private splitType: MaybeSplitJoinType;
+  private joinType: MaybeSplitJoinType;
+  private removeSet = new Set<YExternalNetElement>();
+
+  constructor(
+    id: string,
+    joinType: MaybeSplitJoinType,
+    splitType: MaybeSplitJoinType
+  ) {
+    super(id);
+    this.joinType = joinType;
+    this.splitType = splitType;
+  }
+
+  getJoinType(): SplitJoinType | undefined {
+    return this.joinType;
+  }
+
+  getSplitType(): SplitJoinType | undefined {
+    return this.splitType;
+  }
+
+  setRemoveSet(removeSet: Set<YExternalNetElement>) {
+    this.removeSet = removeSet;
+  }
+
+  getRemoveSet(): Set<YExternalNetElement> {
+    return this.removeSet;
+  }
+}
+
+export class YCondition extends YExternalNetElement {}
+
+export class YFlow {
+  private priorElement: YExternalNetElement;
+  private nextElement: YExternalNetElement;
+  private evalOrdering?: number;
+  private isDefault?: boolean;
+
+  constructor(
+    priorElement: YExternalNetElement,
+    nextElement: YExternalNetElement,
+    props?: { evalOrdering?: number; isDefault?: boolean }
+  ) {
+    this.priorElement = priorElement;
+    this.nextElement = nextElement;
+    this.evalOrdering = props?.evalOrdering;
+    this.isDefault = props?.isDefault;
+  }
+
+  public getPriorElement(): YExternalNetElement {
+    return this.priorElement;
+  }
+
+  public getNextElement(): YExternalNetElement {
+    return this.nextElement;
+  }
+
+  public getEvalOrdering() {
+    return this.evalOrdering;
+  }
+
+  public setEvalOrdering(evalOrdering: number): void {
+    this.evalOrdering = evalOrdering;
+  }
+
+  public isDefaultFlow() {
+    return this.isDefault;
+  }
+
+  public setIsDefaultFlow(isDefault: boolean): void {
+    this.isDefault = isDefault;
+  }
+}
+
+export class YMarking {
+  private locations: YExternalNetElement[];
+  constructor(locations: YExternalNetElement[]) {
+    this.locations = locations;
+  }
+  getLocations() {
+    return this.locations;
+  }
+}
+
 export class E2WFOJNet {
   private transitions: Record<string, RTransition> = {};
   private places: Record<string, RPlace> = {};
   private orJoins: Record<string, RTransition> = {};
-  private yOrJoins: Record<string, Task> = {};
-  private yTasks: Task[];
-  private yConditions: Condition[];
+  private yOrJoins: Record<string, YExternalNetElement> = {};
+  private yTasks: YTask[];
+  private yConditions: YCondition[];
   private alreadyConsideredMarkings = new Set<RMarking>();
   private conditions = new Set();
 
-  constructor(yTasks: Task[], yConditions: Condition[], orJoin: Task) {
+  constructor(yTasks: YTask[], yConditions: YCondition[], orJoin: YTask) {
     this.yTasks = yTasks;
     this.yConditions = yConditions;
     this.convertToResetNet();
@@ -371,8 +573,8 @@ export class E2WFOJNet {
 
   private convertToResetNet(): void {
     for (const nextElement of this.yConditions) {
-      const p = new RPlace(nextElement.name);
-      this.places[p.id] = p;
+      const p = new RPlace(nextElement.getID());
+      this.places[p.getId()] = p;
       this.conditions.add(nextElement);
     }
 
@@ -382,68 +584,68 @@ export class E2WFOJNet {
     for (const next of this.yTasks) {
       const nextElement = next;
 
-      const p = new RPlace('p_' + nextElement.name);
-      this.places[p.id] = p;
+      const p = new RPlace('p_' + nextElement.getID());
+      this.places[p.getId()] = p;
 
-      if (nextElement.joinType == 'and' || !nextElement.joinType) {
-        const t = new RTransition(nextElement.name + '_start');
-        _StartTransitions[t.id] = t;
+      if (nextElement.getJoinType() == 'and') {
+        const t = new RTransition(nextElement.getID() + '_start');
+        _StartTransitions[t.getId()] = t;
         const pre = nextElement.getPresetElements();
         for (const preElement of pre) {
           const inflow = new RFlow(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.places[preElement.name]!,
+            this.places[preElement.getID()]!,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.places['p_' + nextElement.name]!
+            this.places['p_' + nextElement.getID()]!
           );
           t.setPostset(outflow);
         }
-      } else if (nextElement.joinType == 'xor') {
+      } else if (nextElement.getJoinType() == 'xor') {
         const pre = nextElement.getPresetElements();
         for (const preElement of pre) {
           const t = new RTransition(
-            nextElement.name + '_start^' + preElement.name
+            nextElement.getID() + '_start^' + preElement.getID()
           );
-          _StartTransitions[t.id] = t;
+          _StartTransitions[t.getId()] = t;
           const inflow = new RFlow(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.places[preElement.name]!,
+            this.places[preElement.getID()]!,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.places['p_' + nextElement.name]!
+            this.places['p_' + nextElement.getID()]!
           );
           t.setPostset(outflow);
         }
-      } else if (nextElement.joinType == 'or') {
-        const t = new RTransition(nextElement.name + '_start');
-        _StartTransitions[t.id] = t;
-        this.orJoins[t.id] = t;
-        this.yOrJoins[nextElement.name] = nextElement;
+      } else if (nextElement.getJoinType() == 'or') {
+        const t = new RTransition(nextElement.getID() + '_start');
+        _StartTransitions[t.getId()] = t;
+        this.orJoins[t.getId()] = t;
+        this.yOrJoins[nextElement.getID()] = nextElement;
       }
-      if (nextElement.splitType == 'and' || !nextElement.splitType) {
-        const t = new RTransition(nextElement.name + '_end');
-        _EndTransitions[t.id] = t;
+      if (nextElement.getSplitType() == 'and') {
+        const t = new RTransition(nextElement.getID() + '_end');
+        _EndTransitions[t.getId()] = t;
         const post = nextElement.getPostsetElements();
         for (const postElement of post) {
           const inflow = new RFlow(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.places['p_' + nextElement.name]!,
+            this.places['p_' + nextElement.getID()]!,
             t
           );
           t.setPreset(inflow);
           const outflow = new RFlow(
             t,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.places[postElement.name]!
+            this.places[postElement.getID()]!
           );
           t.setPostset(outflow);
         }
@@ -451,26 +653,26 @@ export class E2WFOJNet {
         if (!setIsEmpty(removeSet)) {
           this.addCancelSet(t, removeSet);
         }
-      } else if (nextElement.splitType == 'xor') {
+      } else if (nextElement.getSplitType() == 'xor') {
         const post = nextElement.getPostsetElements();
         for (const postElement of post) {
           const t = new RTransition(
-            nextElement.name + '_end^' + postElement.name
+            nextElement.getID() + '_end^' + postElement.getID()
           );
-          _EndTransitions[t.id] = t;
+          _EndTransitions[t.getId()] = t;
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const inflow = new RFlow(this.places['p_' + nextElement.name]!, t);
+          const inflow = new RFlow(this.places['p_' + nextElement.getID()]!, t);
           t.setPreset(inflow);
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const outflow = new RFlow(t, this.places[postElement.name]!);
+          const outflow = new RFlow(t, this.places[postElement.getID()]!);
           t.setPostset(outflow);
           const removeSet = new Set(nextElement.getRemoveSet());
           if (!setIsEmpty(removeSet)) {
             this.addCancelSet(t, removeSet);
           }
         }
-      } else if (nextElement.splitType == 'or') {
-        const xSubSet = new Set<Set<NetElement>>();
+      } else if (nextElement.getSplitType() == 'or') {
+        const xSubSet = new Set<Set<YExternalNetElement>>();
         const post = nextElement.getPostsetElements();
         for (let i = 1; i <= post.size; i++) {
           const subSet = this.generateCombination(post, i);
@@ -479,18 +681,18 @@ export class E2WFOJNet {
         for (const x of xSubSet) {
           let tid = '';
           for (const postElement of x) {
-            tid += postElement.name + ' ';
+            tid += postElement.getID() + ' ';
           }
-          const t = new RTransition(nextElement.name + '_end^{' + tid + '}');
-          _EndTransitions[t.id] = t;
+          const t = new RTransition(nextElement.getID() + '_end^{' + tid + '}');
+          _EndTransitions[t.getId()] = t;
 
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const inflow = new RFlow(this.places['p_' + nextElement.name]!, t);
+          const inflow = new RFlow(this.places['p_' + nextElement.getID()]!, t);
 
           t.setPreset(inflow);
           for (const postElement of x) {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const outflow = new RFlow(t, this.places[postElement.name]!);
+            const outflow = new RFlow(t, this.places[postElement.getID()]!);
             t.setPostset(outflow);
           }
           const removeSet = new Set(nextElement.getRemoveSet());
@@ -508,14 +710,14 @@ export class E2WFOJNet {
   }
 
   private generateCombination(
-    netElements: Set<NetElement>,
+    netElements: Set<YExternalNetElement>,
     size: number
-  ): Set<Set<NetElement>> {
-    const subSets = new Set<Set<NetElement>>();
+  ): Set<Set<YExternalNetElement>> {
+    const subSets = new Set<Set<YExternalNetElement>>();
     const elements = Array.from(netElements);
     const x = new CombinationGenerator(elements.length, size);
     while (x.hasMore()) {
-      const combsubSet = new Set<NetElement>();
+      const combsubSet = new Set<YExternalNetElement>();
       const indices = x.getNext();
       for (const i of indices) {
         const element = elements[i];
@@ -526,17 +728,20 @@ export class E2WFOJNet {
     return subSets;
   }
 
-  private addCancelSet(rt: RTransition, removeSet: Set<NetElement>): void {
+  private addCancelSet(
+    rt: RTransition,
+    removeSet: Set<YExternalNetElement>
+  ): void {
     const removeSetT = new Set(removeSet);
     const removeSetR = new Set<RPlace>();
     removeSet.forEach((c) => {
-      const p = this.places[c.name];
+      const p = this.places[c.getID()];
       if (p !== null && p !== undefined) {
         removeSetR.add(p);
       }
     });
     removeSetT.forEach((t) => {
-      const p = this.places['p_' + t.name];
+      const p = this.places['p_' + t.getID()];
       if (p !== null && p !== undefined) {
         removeSetR.add(p);
       }
@@ -544,26 +749,26 @@ export class E2WFOJNet {
     rt.setRemoveSet(removeSetR);
   }
 
-  private orJoinRemove(j: Task): void {
+  private orJoinRemove(j: YTask): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete this.yOrJoins[j.name];
+    delete this.yOrJoins[j.getID()];
 
     for (const rj of Object.values(this.orJoins)) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this.transitions[rj.id];
+      delete this.transitions[rj.getId()];
     }
     for (const otherOrJoin of Object.values(this.yOrJoins)) {
       const pre = otherOrJoin.getPresetElements();
       for (const preElement of pre) {
         const t = new RTransition(
-          otherOrJoin.name + '_start^' + preElement.name
+          otherOrJoin.getID() + '_start^' + preElement.getID()
         );
-        this.transitions[t.id] = t;
+        this.transitions[t.getId()] = t;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const inflow = new RFlow(this.places[preElement.name]!, t);
+        const inflow = new RFlow(this.places[preElement.getID()]!, t);
         t.setPreset(inflow);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const outflow = new RFlow(t, this.places['p_' + otherOrJoin.name]!);
+        const outflow = new RFlow(t, this.places['p_' + otherOrJoin.getID()]!);
         t.setPostset(outflow);
       }
     }
@@ -666,7 +871,7 @@ export class E2WFOJNet {
     const markedPlaces = currentM.getMarkedPlaces();
     if (removeSet && removeSet.size > 0) {
       for (const place of removeSet) {
-        const placeName = place.id;
+        const placeName = place.getId();
         if (markedPlaces.has(placeName)) {
           if (postSet.has(place)) {
             const count = markedPlaces.get(placeName) ?? 0;
@@ -693,7 +898,7 @@ export class E2WFOJNet {
 
     postSet.forEach((element) => {
       netElement = element;
-      netElementName = netElement.id;
+      netElementName = netElement.getId();
       if (premarkedPlaces.has(netElementName)) {
         let count = premarkedPlaces.get(netElementName) ?? 0;
 
@@ -720,7 +925,7 @@ export class E2WFOJNet {
 
     preSet.forEach((element) => {
       netElement = element;
-      netElementName = netElement.id;
+      netElementName = netElement.getId();
 
       if (premarkedPlaces.has(netElementName)) {
         let count = premarkedPlaces.get(netElementName) ?? 0;
@@ -736,7 +941,7 @@ export class E2WFOJNet {
 
     removeSet.forEach((element) => {
       netElement = element;
-      netElementName = netElement.id;
+      netElementName = netElement.getId();
       if (!premarkedPlaces.has(netElementName)) {
         tokenCount = 1;
         premarkedPlaces.set(netElementName, tokenCount);
@@ -785,17 +990,17 @@ export class E2WFOJNet {
     return Z_min;
   }
 
-  orJoinEnabled(M: Marking, orJoin: Task): boolean {
-    const markedTasks = new Set<NetElement>();
+  orJoinEnabled(M: YMarking, orJoin: YTask): boolean {
+    const markedTasks = new Set<YExternalNetElement>();
     const RMap = new Map<string, number>();
-    const YLocations: NetElement[] = M.getLocations();
+    const YLocations: YExternalNetElement[] = M.getLocations();
 
     for (const nextElement of YLocations) {
-      if (nextElement instanceof Condition) {
-        const condition: Condition = nextElement;
-        const place: RPlace | undefined = this.places[condition.name];
+      if (nextElement instanceof YCondition) {
+        const condition: YCondition = nextElement;
+        const place: RPlace | undefined = this.places[condition.getID()];
         if (place !== undefined) {
-          const placename: string = place.id;
+          const placename: string = place.getId();
           let tokenCount = 1;
           if (RMap.has(placename)) {
             let count: number = RMap.get(placename) ?? 0;
@@ -805,16 +1010,16 @@ export class E2WFOJNet {
           RMap.set(placename, tokenCount);
         }
       }
-      if (nextElement instanceof Task) {
+      if (nextElement instanceof YTask) {
         markedTasks.add(nextElement);
       }
     }
 
     for (const task of markedTasks) {
-      const internalPlace: string = 'p_' + task.name;
+      const internalPlace: string = 'p_' + task.getID();
       const place: RPlace | undefined = this.places[internalPlace];
       if (place !== undefined) {
-        const placename: string = place.id;
+        const placename: string = place.getId();
         const tokenCount = 1;
         RMap.set(placename, tokenCount);
       }
@@ -822,16 +1027,17 @@ export class E2WFOJNet {
 
     const RM: RMarking = new RMarking(RMap);
 
-    const X: Set<Condition> = orJoin.getPresetElements();
+    const X: Set<YCondition> = orJoin.getPresetElements();
     const newMap = new Map<string, number>();
     const emptyPreSetPlaces = new Set<RPlace>();
     let tokenCount = 1;
 
     for (const preSetCondition of X) {
-      const preSetPlace: RPlace | undefined = this.places[preSetCondition.name];
+      const preSetPlace: RPlace | undefined =
+        this.places[preSetCondition.getID()];
       if (preSetPlace !== undefined) {
         if (YLocations.includes(preSetCondition)) {
-          const preSetPlaceName: string = preSetPlace.id;
+          const preSetPlaceName: string = preSetPlace.getId();
           newMap.set(preSetPlaceName, tokenCount);
         } else {
           emptyPreSetPlaces.add(preSetPlace);
@@ -840,10 +1046,9 @@ export class E2WFOJNet {
     }
 
     const Y: RSetOfMarkings = new RSetOfMarkings();
-
     for (const q of emptyPreSetPlaces) {
       tokenCount = 1;
-      const qname: string = q.id;
+      const qname: string = q.getId();
       newMap.set(qname, tokenCount);
       const M_w: RMarking = new RMarking(new Map(newMap));
       Y.addMarking(M_w);
@@ -859,17 +1064,17 @@ export class E2WFOJNet {
     return true;
   }
 
-  restrictNet(value: Task | Marking): void {
-    if (value instanceof Task) {
+  restrictNet(value: YTask | YMarking): void {
+    if (value instanceof YTask) {
       const j = value;
 
       const restrictedTrans = new Set<RTransition>();
       const restrictedPlaces = new Set<RPlace>();
 
       const pre = new Set<RPlace>();
-      const yPre: Set<Condition> = j.getPresetElements();
+      const yPre: Set<YCondition> = j.getPresetElements();
       for (const condition of yPre) {
-        const place: RPlace | undefined = this.places[condition.name];
+        const place: RPlace | undefined = this.places[condition.getID()];
         if (place !== undefined) {
           pre.add(place);
         }
@@ -898,16 +1103,16 @@ export class E2WFOJNet {
 
       // Make sure that every condition in M is external
       for (const nextElement of yMarked) {
-        if (nextElement instanceof Condition) {
-          const place = this.places[nextElement.name];
+        if (nextElement instanceof YCondition) {
+          const place = this.places[nextElement.getID()];
           if (place !== undefined) {
             markedPlaces.add(place);
           }
         }
 
         // Need to consider active tasks in a marking
-        if (nextElement instanceof Task) {
-          const internalPlace = 'p_' + nextElement.name;
+        if (nextElement instanceof YTask) {
+          const internalPlace = 'p_' + nextElement.getID();
           const place = this.places[internalPlace];
           if (place !== undefined) {
             markedPlaces.add(place);
@@ -950,7 +1155,7 @@ export class E2WFOJNet {
     );
     for (const t of irrelevantTrans) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this.transitions[t.id];
+      delete this.transitions[t.getId()];
     }
     for (const t of restrictedTrans) {
       if (t.isCancelTransition()) {
@@ -967,7 +1172,7 @@ export class E2WFOJNet {
         const postSetFlows = { ...tElement.getPostsetFlows() };
         for (const p of postSetToRemove) {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-          delete postSetFlows[p.id];
+          delete postSetFlows[p.getId()];
         }
         tElement.setPostsetFlows(postSetFlows);
       }
@@ -981,7 +1186,7 @@ export class E2WFOJNet {
         const preSetFlows = { ...tElement.getPresetFlows() };
         for (const p of preSetToRemove) {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-          delete preSetFlows[p.id];
+          delete preSetFlows[p.getId()];
         }
         tElement.setPresetFlows(preSetFlows);
       }
@@ -991,7 +1196,7 @@ export class E2WFOJNet {
     );
     for (const p of irrelevantPlaces) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete this.places[p.id];
+      delete this.places[p.getId()];
 
       const pElement = p as RElement;
       const preSetToRemove = new Set(
@@ -1004,7 +1209,7 @@ export class E2WFOJNet {
         const preSetFlows = { ...pElement.getPresetFlows() };
         for (const t of preSetToRemove) {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-          delete preSetFlows[t.id];
+          delete preSetFlows[t.getId()];
         }
         pElement.setPresetFlows(preSetFlows);
       }
@@ -1019,11 +1224,54 @@ export class E2WFOJNet {
         const postSetFlows = { ...pElement.getPostsetFlows() };
         for (const t of postSetToRemove) {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-          delete postSetFlows[t.id];
+          delete postSetFlows[t.getId()];
         }
         pElement.setPostsetFlows(postSetFlows);
       }
     }
+  }
+  toDot() {
+    const g = new Digraph({ [_.rankdir]: 'LR', [_.splines]: 'polyline' });
+    const transitionNodes: Record<string, Node> = {};
+    const placeNodes: Record<string, Node> = {};
+
+    Object.values(this.transitions).forEach((transition) => {
+      const node = new Node(transition.getId(), { [_.shape]: 'square' });
+      transitionNodes[transition.getId()] = node;
+      g.addNode(node);
+    });
+
+    Object.values(this.places).forEach((place) => {
+      const node = new Node(place.getId(), { [_.shape]: 'circle' });
+      placeNodes[place.getId()] = node;
+      g.addNode(node);
+    });
+
+    Object.values(this.transitions).forEach((transition) => {
+      const postset = transition.getPostsetElements();
+      Array.from(postset).forEach((place) => {
+        const transitionNode = transitionNodes[transition.getId()];
+        const placeNode = placeNodes[place.getId()];
+        if (placeNode && transitionNode) {
+          const e = new Edge([transitionNode, placeNode]);
+          g.addEdge(e);
+        }
+      });
+    });
+
+    Object.values(this.places).forEach((place) => {
+      const postset = place.getPostsetElements();
+      Array.from(postset).forEach((transition) => {
+        const placeNode = placeNodes[place.getId()];
+        const transitionNode = transitionNodes[transition.getId()];
+        if (placeNode && transitionNode) {
+          const e = new Edge([placeNode, transitionNode]);
+          g.addEdge(e);
+        }
+      });
+    });
+
+    return toDot(g);
   }
 }
 

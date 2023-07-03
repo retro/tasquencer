@@ -6,6 +6,7 @@ import { Workflow } from '../elements/Workflow.js';
 import { IdProvider } from './IdProvider.js';
 
 type AnyFlowPredicate = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...args: any[]
 ) => Effect.Effect<never, never, boolean>;
 
@@ -122,8 +123,7 @@ export class OrXorTaskFlowBuilder<
     taskName: BNTasks & string,
     predicate: (payload: {
       context: Context;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    }) => Effect.Effect<any, any, boolean>
+    }) => Effect.Effect<never, never, boolean>
   ): OrXorTaskFlowBuilder<BNConditions, BNTasks, HasDefault, Context> {
     this.order++;
     this.toTasks[taskName] = { order: this.order, predicate };
@@ -133,8 +133,7 @@ export class OrXorTaskFlowBuilder<
     conditionName: BNTasks & string,
     predicate: (payload: {
       context: Context;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    }) => Effect.Effect<any, any, boolean>
+    }) => Effect.Effect<never, never, boolean>
   ): OrXorTaskFlowBuilder<BNConditions, BNTasks, HasDefault, Context> {
     this.order++;
     this.toConditions[conditionName] = { order: this.order, predicate };

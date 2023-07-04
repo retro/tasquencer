@@ -45,11 +45,10 @@ export class Condition {
     return new Set(Object.values(this.postSet));
   }
 
-  incrementMarking(context: object) {
+  incrementMarking() {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.stateManager.incrementConditionMarking(self));
-      yield* $(self.enableTasks(context));
     });
   }
 
@@ -80,7 +79,7 @@ export class Condition {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.stateManager.emptyConditionMarking(self));
-      yield* $(self.cancelTasks(context));
+      yield* $(self.disableTasks(context));
     });
   }
 

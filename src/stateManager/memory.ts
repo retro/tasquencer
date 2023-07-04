@@ -132,7 +132,11 @@ export class Memory implements StateManager {
           const conditionItem =
             workflow.conditions[condition.id] ??
             getInitialConditionItem(condition);
-          conditionItem.marking = conditionItem.marking - 1;
+          // TODO: if we move marking count to be cached on the condition level
+          // condition shouldn't try to decrement below 0. This can happen when
+          // there is an or join flow which wasn't enabled, but the task was enabled
+          // which then consumes the tokens from all incoming conditions.
+          conditionItem.marking = Math.max(conditionItem.marking - 1, 0);
           workflow.conditions[condition.id] = conditionItem;
         })
       );

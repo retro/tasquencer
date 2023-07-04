@@ -2153,3 +2153,943 @@ it('supports or split and or join', () => {
 
   Effect.runSync(program);
 });
+
+it('supports multiple or splits and or joins (1)', () => {
+  const workflowDefinition = Builder.workflow<{ isTaskDEnabled: boolean }>(
+    'xor-join'
+  )
+    .startCondition('start')
+    .task('A', (t) => t.withSplitType('and'))
+    .task('B')
+    .task('C', (t) => t.withSplitType('or'))
+    .task('D')
+    .task('E', (t) => t.withJoinType('or'))
+    .task('F', (t) => t.withJoinType('or'))
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.task('B').task('C'))
+    .connectTask('B', (to) => to.task('F'))
+    .connectTask('C', (to) =>
+      to
+        .task('D', ({ context }) => Effect.succeed(context.isTaskDEnabled))
+        .defaultTask('E')
+    )
+    .connectTask('D', (to) => to.task('E'))
+    .connectTask('E', (to) => to.task('F'))
+    .connectTask('F', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow1 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter1 = yield* $(
+      Interpreter.make(workflow1, { isTaskDEnabled: true }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter1.start());
+
+    const res1_1 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_1).toEqual({
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('A'));
+    yield* $(interpreter1.completeTask('A'));
+
+    const res1_2 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_2).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 1 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('B'));
+    yield* $(interpreter1.completeTask('B'));
+
+    const res1_3 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_3).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 1 },
+        'condition-5': { id: 'condition-5', name: 'implicit:B->F', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('C'));
+    yield* $(interpreter1.completeTask('C'));
+
+    const res1_4 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_4).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:B->F', marking: 1 },
+        'condition-6': { id: 'condition-6', name: 'implicit:C->D', marking: 1 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->E', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('D'));
+    yield* $(interpreter1.completeTask('D'));
+
+    const res1_5 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_5).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:B->F', marking: 1 },
+        'condition-6': { id: 'condition-6', name: 'implicit:C->D', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->E', marking: 1 },
+        'condition-8': { id: 'condition-8', name: 'implicit:D->E', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('E'));
+    yield* $(interpreter1.completeTask('E'));
+
+    const res1_6 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_6).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'F', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:B->F', marking: 1 },
+        'condition-6': { id: 'condition-6', name: 'implicit:C->D', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->E', marking: 0 },
+        'condition-8': { id: 'condition-8', name: 'implicit:D->E', marking: 0 },
+        'condition-9': { id: 'condition-9', name: 'implicit:E->F', marking: 1 },
+      },
+    });
+
+    const workflow2 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter2 = yield* $(
+      Interpreter.make(workflow2, { isTaskDEnabled: false }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter2.start());
+
+    const res2_1 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_1).toEqual({
+      tasks: { 'task-7': { id: 'task-7', name: 'A', state: 'enabled' } },
+      conditions: {
+        'condition-10': { id: 'condition-10', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('A'));
+    yield* $(interpreter2.completeTask('A'));
+
+    const res2_2 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_2).toEqual({
+      tasks: {
+        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'B', state: 'enabled' },
+        'task-9': { id: 'task-9', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-10': { id: 'condition-10', name: 'start', marking: 0 },
+        'condition-12': {
+          id: 'condition-12',
+          name: 'implicit:A->B',
+          marking: 1,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:A->C',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('B'));
+    yield* $(interpreter2.completeTask('B'));
+
+    const res2_3 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_3).toEqual({
+      tasks: {
+        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'B', state: 'completed' },
+        'task-9': { id: 'task-9', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-10': { id: 'condition-10', name: 'start', marking: 0 },
+        'condition-12': {
+          id: 'condition-12',
+          name: 'implicit:A->B',
+          marking: 0,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:A->C',
+          marking: 1,
+        },
+        'condition-14': {
+          id: 'condition-14',
+          name: 'implicit:B->F',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('C'));
+    yield* $(interpreter2.completeTask('C'));
+
+    const res2_4 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_4).toEqual({
+      tasks: {
+        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'B', state: 'completed' },
+        'task-9': { id: 'task-9', name: 'C', state: 'completed' },
+        'task-11': { id: 'task-11', name: 'E', state: 'enabled' },
+      },
+      conditions: {
+        'condition-10': { id: 'condition-10', name: 'start', marking: 0 },
+        'condition-12': {
+          id: 'condition-12',
+          name: 'implicit:A->B',
+          marking: 0,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:A->C',
+          marking: 0,
+        },
+        'condition-14': {
+          id: 'condition-14',
+          name: 'implicit:B->F',
+          marking: 1,
+        },
+        'condition-16': {
+          id: 'condition-16',
+          name: 'implicit:C->E',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('E'));
+    yield* $(interpreter2.completeTask('E'));
+
+    const res2_5 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_5).toEqual({
+      tasks: {
+        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'B', state: 'completed' },
+        'task-9': { id: 'task-9', name: 'C', state: 'completed' },
+        'task-11': { id: 'task-11', name: 'E', state: 'completed' },
+        'task-12': { id: 'task-12', name: 'F', state: 'enabled' },
+      },
+      conditions: {
+        'condition-10': { id: 'condition-10', name: 'start', marking: 0 },
+        'condition-12': {
+          id: 'condition-12',
+          name: 'implicit:A->B',
+          marking: 0,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:A->C',
+          marking: 0,
+        },
+        'condition-14': {
+          id: 'condition-14',
+          name: 'implicit:B->F',
+          marking: 1,
+        },
+        'condition-16': {
+          id: 'condition-16',
+          name: 'implicit:C->E',
+          marking: 0,
+        },
+        'condition-17': {
+          id: 'condition-17',
+          name: 'implicit:D->E',
+          marking: 0,
+        },
+        'condition-18': {
+          id: 'condition-18',
+          name: 'implicit:E->F',
+          marking: 1,
+        },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});
+
+it('supports multiple or splits and or joins (2)', () => {
+  const workflowDefinition = Builder.workflow<{ isBToCEnabled: boolean }>(
+    'or-split-or-join'
+  )
+    .startCondition('start')
+    .task('A', (t) => t.withSplitType('and'))
+    .task('B', (t) => t.withSplitType('xor'))
+    .task('C', (t) => t.withJoinType('or'))
+    .task('D', (t) => t.withJoinType('or'))
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.task('B').task('C'))
+    .connectTask('B', (to) =>
+      to
+        .task('C', ({ context }) => Effect.succeed(context.isBToCEnabled))
+        .defaultTask('D')
+    )
+    .connectTask('C', (to) => to.task('D'))
+    .connectTask('D', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow1 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter1 = yield* $(
+      Interpreter.make(workflow1, { isBToCEnabled: true }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter1.start());
+
+    const res1_1 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_1).toEqual({
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('A'));
+    yield* $(interpreter1.completeTask('A'));
+
+    const res1_2 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_2).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 1 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('B'));
+    yield* $(interpreter1.completeTask('B'));
+
+    const res1_3 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_3).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 1 },
+        'condition-5': { id: 'condition-5', name: 'implicit:B->C', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter1.activateTask('C'));
+    yield* $(interpreter1.completeTask('C'));
+
+    const res1_4 = yield* $(interpreter1.getWorkflowState());
+
+    expect(res1_4).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'implicit:A->B', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:B->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->D', marking: 1 },
+      },
+    });
+
+    const workflow2 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter2 = yield* $(
+      Interpreter.make(workflow2, { isBToCEnabled: false }),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter2.start());
+
+    const res2_1 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_1).toEqual({
+      tasks: { 'task-5': { id: 'task-5', name: 'A', state: 'enabled' } },
+      conditions: {
+        'condition-8': { id: 'condition-8', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('A'));
+    yield* $(interpreter2.completeTask('A'));
+
+    const res2_2 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_2).toEqual({
+      tasks: {
+        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'B', state: 'enabled' },
+      },
+      conditions: {
+        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
+        'condition-10': {
+          id: 'condition-10',
+          name: 'implicit:A->B',
+          marking: 1,
+        },
+        'condition-11': {
+          id: 'condition-11',
+          name: 'implicit:A->C',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('B'));
+    yield* $(interpreter2.completeTask('B'));
+
+    const res2_3 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_3).toEqual({
+      tasks: {
+        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'B', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
+        'condition-10': {
+          id: 'condition-10',
+          name: 'implicit:A->B',
+          marking: 0,
+        },
+        'condition-11': {
+          id: 'condition-11',
+          name: 'implicit:A->C',
+          marking: 1,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:B->D',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter2.activateTask('C'));
+    yield* $(interpreter2.completeTask('C'));
+
+    const res2_4 = yield* $(interpreter2.getWorkflowState());
+
+    expect(res2_4).toEqual({
+      tasks: {
+        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'B', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'C', state: 'completed' },
+        'task-8': { id: 'task-8', name: 'D', state: 'enabled' },
+      },
+      conditions: {
+        'condition-8': { id: 'condition-8', name: 'start', marking: 0 },
+        'condition-10': {
+          id: 'condition-10',
+          name: 'implicit:A->B',
+          marking: 0,
+        },
+        'condition-11': {
+          id: 'condition-11',
+          name: 'implicit:A->C',
+          marking: 0,
+        },
+        'condition-13': {
+          id: 'condition-13',
+          name: 'implicit:B->D',
+          marking: 1,
+        },
+        'condition-12': {
+          id: 'condition-12',
+          name: 'implicit:B->C',
+          marking: 0,
+        },
+        'condition-14': {
+          id: 'condition-14',
+          name: 'implicit:C->D',
+          marking: 1,
+        },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});
+
+it('supports or joins and cancellation regions', () => {
+  const workflowDefinition = Builder.workflow('or-join-cancellation-region')
+    .startCondition('start')
+    .task('A', (t) => t.withSplitType('and'))
+    .task('B', (t) => t.withSplitType('and').withJoinType('xor'))
+    .task('C')
+    .task('D')
+    .task('E')
+    .task('F', (t) => t.withJoinType('and'))
+    .task('G', (t) => t.withJoinType('or'))
+    .endCondition('end')
+    .condition('bToB')
+    .condition('bToDAndE')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.task('B').task('C'))
+    .connectTask('B', (to) => to.condition('bToB').condition('bToDAndE'))
+    .connectCondition('bToB', (to) => to.task('B'))
+    .connectCondition('bToDAndE', (to) => to.task('D').task('E'))
+    .connectTask('C', (to) => to.task('G'))
+    .connectTask('D', (to) => to.task('F'))
+    .connectTask('E', (to) => to.task('F'))
+    .connectTask('F', (to) => to.task('G'))
+    .connectTask('G', (to) => to.condition('end'))
+    .cancellationRegion('D', { conditions: ['bToB'] });
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter.start());
+
+    const res1 = yield* $(interpreter.getWorkflowState());
+
+    expect(res1).toEqual({
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('A'));
+    yield* $(interpreter.completeTask('A'));
+
+    const res2 = yield* $(interpreter.getWorkflowState());
+
+    expect(res2).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 1 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('C'));
+    yield* $(interpreter.completeTask('C'));
+
+    const res3 = yield* $(interpreter.getWorkflowState());
+
+    expect(res3).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 1 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->G', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('B'));
+    yield* $(interpreter.completeTask('B'));
+
+    const res4 = yield* $(interpreter.getWorkflowState());
+
+    expect(res4).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
+        'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 0 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->G', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'bToB', marking: 1 },
+        'condition-4': { id: 'condition-4', name: 'bToDAndE', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('E'));
+    yield* $(interpreter.completeTask('E'));
+
+    const res5 = yield* $(interpreter.getWorkflowState());
+
+    expect(res5).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'disabled' },
+        'task-5': { id: 'task-5', name: 'E', state: 'completed' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 0 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->G', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'bToB', marking: 1 },
+        'condition-4': { id: 'condition-4', name: 'bToDAndE', marking: 0 },
+        'condition-9': { id: 'condition-9', name: 'implicit:E->F', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('B'));
+    yield* $(interpreter.completeTask('B'));
+
+    const res6 = yield* $(interpreter.getWorkflowState());
+
+    expect(res6).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
+        'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 0 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->G', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'bToB', marking: 1 },
+        'condition-4': { id: 'condition-4', name: 'bToDAndE', marking: 1 },
+        'condition-9': { id: 'condition-9', name: 'implicit:E->F', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('D'));
+    yield* $(interpreter.completeTask('D'));
+
+    const res7 = yield* $(interpreter.getWorkflowState());
+
+    expect(res7).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'disabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'disabled' },
+        'task-6': { id: 'task-6', name: 'F', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 0 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->G', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'bToB', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'bToDAndE', marking: 0 },
+        'condition-9': { id: 'condition-9', name: 'implicit:E->F', marking: 1 },
+        'condition-8': { id: 'condition-8', name: 'implicit:D->F', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('F'));
+    yield* $(interpreter.completeTask('F'));
+
+    const res8 = yield* $(interpreter.getWorkflowState());
+
+    expect(res8).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'disabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'disabled' },
+        'task-6': { id: 'task-6', name: 'F', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'G', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'implicit:A->B', marking: 0 },
+        'condition-6': { id: 'condition-6', name: 'implicit:A->C', marking: 0 },
+        'condition-7': { id: 'condition-7', name: 'implicit:C->G', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'bToB', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'bToDAndE', marking: 0 },
+        'condition-9': { id: 'condition-9', name: 'implicit:E->F', marking: 0 },
+        'condition-8': { id: 'condition-8', name: 'implicit:D->F', marking: 0 },
+        'condition-10': {
+          id: 'condition-10',
+          name: 'implicit:F->G',
+          marking: 1,
+        },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});
+
+it('supports or joins, loops and cancellation regions', () => {
+  // http://www.padsweb.rwth-aachen.de/wvdaalst/publications/p528.pdf
+  const workflowDefinition = Builder.workflow('or-join-cancellation-region')
+    .startCondition('start')
+    .task('A')
+    .task('B')
+    .task('C')
+    .task('D', (t) => t.withSplitType('and'))
+    .task('E', (t) => t.withJoinType('or'))
+    .condition('c1')
+    .condition('c2')
+    .condition('c3')
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.condition('c1'))
+    .connectCondition('c1', (to) => to.task('B'))
+    .connectTask('B', (to) => to.condition('c2'))
+    .connectCondition('c2', (to) => to.task('C').task('E'))
+    .connectTask('C', (to) => to.condition('c3'))
+    .connectCondition('c3', (to) => to.task('D').task('E'))
+    .connectTask('D', (to) => to.condition('c1').condition('c2'))
+    .connectTask('E', (to) => to.condition('end'))
+    .cancellationRegion('C', { tasks: ['B'], conditions: ['c1', 'c2'] });
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter.start());
+
+    const res1 = yield* $(interpreter.getWorkflowState());
+
+    expect(res1).toEqual({
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('A'));
+    yield* $(interpreter.completeTask('A'));
+
+    const res2 = yield* $(interpreter.getWorkflowState());
+
+    expect(res2).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'c1', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('B'));
+    yield* $(interpreter.completeTask('B'));
+
+    const res3 = yield* $(interpreter.getWorkflowState());
+
+    expect(res3).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+        'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'c1', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'c2', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('C'));
+    yield* $(interpreter.completeTask('C'));
+
+    const res4 = yield* $(interpreter.getWorkflowState());
+
+    expect(res4).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'disabled' },
+        'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'c1', marking: 0 },
+        'condition-3': { id: 'condition-3', name: 'c2', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'c3', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('D'));
+    yield* $(interpreter.completeTask('D'));
+
+    const res5 = yield* $(interpreter.getWorkflowState());
+
+    expect(res5).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+        'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
+        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'c1', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'c2', marking: 1 },
+        'condition-4': { id: 'condition-4', name: 'c3', marking: 0 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('E'));
+    yield* $(interpreter.completeTask('E'));
+
+    const res6 = yield* $(interpreter.getWorkflowState());
+
+    expect(res6).toEqual({
+      tasks: {
+        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'C', state: 'disabled' },
+        'task-5': { id: 'task-5', name: 'E', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'c1', marking: 1 },
+        'condition-3': { id: 'condition-3', name: 'c2', marking: 0 },
+        'condition-4': { id: 'condition-4', name: 'c3', marking: 0 },
+        'condition-5': { id: 'condition-5', name: 'end', marking: 1 },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});

@@ -45,13 +45,16 @@ export class Interpreter<
     private context: object,
     private queue: Queue.Queue<QueueItem>
   ) {}
+  // TODO: Check if workflow was already started
   start() {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.initialize());
       const startCondition = yield* $(self.workflow.getStartCondition());
       yield* $(
-        startCondition.incrementMarking(self.context),
+        Effect.succeed(startCondition),
+        Effect.tap((s) => s.incrementMarking()),
+        Effect.tap((s) => s.enableTasks(self.context)),
         Effect.provideService(TaskActionsService, self.getTaskActionsService())
       );
 

@@ -256,6 +256,7 @@ export class Task {
 
         yield* $(self.cancelCancellationRegion(context));
         yield* $(self.produceTokensInOutgoingFlows(context));
+        yield* $(self.enablePostTasks(context));
 
         return yield* $(
           self.activities.onComplete.callbacks.after({
@@ -323,7 +324,10 @@ export class Task {
       this.cancellationRegion.conditions
     ).map((c) => c.cancel(context));
 
-    return Effect.allParDiscard([...taskUpdates, ...conditionUpdates]);
+    return Effect.allDiscard([
+      Effect.allParDiscard(taskUpdates),
+      Effect.allParDiscard(conditionUpdates),
+    ]);
   }
 
   private produceTokensInOutgoingFlows(context: object) {
@@ -333,7 +337,7 @@ export class Task {
       case 'xor':
         return this.produceXorSplitTokensInOutgoingFlows(context);
       default:
-        return this.produceAndSplitTokensInOutgoingFlows(context);
+        return this.produceAndSplitTokensInOutgoingFlows();
     }
   }
 
@@ -342,11 +346,11 @@ export class Task {
     const updates = Array.from(flows).map((flow) => {
       return Effect.gen(function* ($) {
         if (flow.isDefault) {
-          yield* $(flow.nextElement.incrementMarking(context));
+          yield* $(flow.nextElement.incrementMarking());
         } else if (
           flow.predicate ? yield* $(flow.predicate({ context })) : false
         ) {
-          yield* $(flow.nextElement.incrementMarking(context));
+          yield* $(flow.nextElement.incrementMarking());
         }
       });
     });
@@ -362,19 +366,19 @@ export class Task {
     return Effect.gen(function* ($) {
       for (const flow of sortedFlows) {
         if (flow.isDefault) {
-          return yield* $(flow.nextElement.incrementMarking(context));
+          return yield* $(flow.nextElement.incrementMarking());
         } else if (
           flow.predicate ? yield* $(flow.predicate({ context })) : false
         ) {
-          return yield* $(flow.nextElement.incrementMarking(context));
+          return yield* $(flow.nextElement.incrementMarking());
         }
       }
     });
   }
 
-  private produceAndSplitTokensInOutgoingFlows(context: object) {
+  private produceAndSplitTokensInOutgoingFlows() {
     const updates = Array.from(this.outgoingFlows).map((flow) => {
-      return flow.nextElement.incrementMarking(context);
+      return flow.nextElement.incrementMarking();
     });
     return Effect.allParDiscard(updates);
   }
@@ -423,5 +427,13 @@ export class Task {
         ? true
         : false;
     });
+  }
+
+  private enablePostTasks(context: object) {
+    return Effect.allDiscard(
+      Array.from(this.outgoingFlows).map((flow) =>
+        flow.nextElement.enableTasks(context)
+      )
+    );
   }
 }

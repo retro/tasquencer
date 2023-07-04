@@ -1,1 +1,2 @@
-export { Builder } from './oldBuilder.js';
+export * as Builder from './builder.js';
+export * as Interpreter from './interpreter.js';

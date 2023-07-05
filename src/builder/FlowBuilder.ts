@@ -1,16 +1,24 @@
 import * as Effect from '@effect/io/Effect';
 
 import { Condition } from '../elements/Condition.js';
-import { ConditionToTaskFlow, TaskToConditionFlow } from '../elements/Flow.js';
+import {
+  ConditionToTaskFlow,
+  TaskToConditionFlow,
+  TaskToConditionFlowProps,
+} from '../elements/Flow.js';
 import { Workflow } from '../elements/Workflow.js';
 import { IdProvider } from './IdProvider.js';
 
 type AnyFlowPredicate = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...args: any[]
-) => Effect.Effect<never, never, boolean>;
+) => Effect.Effect<unknown, unknown, boolean>;
 
 export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,6 +110,8 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
 export class OrXorTaskFlowBuilder<
   BNConditions,
   BNTasks,
+  R = never,
+  E = never,
   HasDefault = never,
   Context extends object = object
 > {
@@ -119,35 +129,45 @@ export class OrXorTaskFlowBuilder<
   constructor(from: string) {
     this.from = from;
   }
-  task(
+  task<R1, E1>(
     taskName: BNTasks & string,
-    predicate: (payload: {
-      context: Context;
-    }) => Effect.Effect<never, never, boolean>
-  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, HasDefault, Context> {
+    predicate: (payload: { context: Context }) => Effect.Effect<R1, E1, boolean>
+  ): OrXorTaskFlowBuilder<
+    BNConditions,
+    BNTasks,
+    R | R1,
+    E | E1,
+    HasDefault,
+    Context
+  > {
     this.order++;
     this.toTasks[taskName] = { order: this.order, predicate };
     return this;
   }
-  condition(
+  condition<R1, E1>(
     conditionName: BNTasks & string,
-    predicate: (payload: {
-      context: Context;
-    }) => Effect.Effect<never, never, boolean>
-  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, HasDefault, Context> {
+    predicate: (payload: { context: Context }) => Effect.Effect<R1, E1, boolean>
+  ): OrXorTaskFlowBuilder<
+    BNConditions,
+    BNTasks,
+    R | R1,
+    E | E1,
+    HasDefault,
+    Context
+  > {
     this.order++;
     this.toConditions[conditionName] = { order: this.order, predicate };
     return this;
   }
   defaultTask(
     taskName: BNTasks & string
-  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, true, Context> {
+  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, R, E, true, Context> {
     this.toDefault = { type: 'task', name: taskName };
     return this;
   }
   defaultCondition(
     conditionName: BNConditions & string
-  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, true, Context> {
+  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, R, E, true, Context> {
     this.toDefault = { type: 'condition', name: conditionName };
     return this;
   }
@@ -158,7 +178,11 @@ export class OrXorTaskFlowBuilder<
 
       for (const [conditionName, props] of Object.entries(toConditions)) {
         const condition = yield* $(workflow.getCondition(conditionName));
-        const flow = new TaskToConditionFlow(task, condition, props);
+        const flow = new TaskToConditionFlow(
+          task,
+          condition,
+          props as TaskToConditionFlowProps
+        );
         condition.addIncomingFlow(flow);
         task.addOutgoingFlow(flow);
       }
@@ -175,7 +199,11 @@ export class OrXorTaskFlowBuilder<
 
         workflow.addCondition(condition);
 
-        const leftFlow = new TaskToConditionFlow(task, condition, props);
+        const leftFlow = new TaskToConditionFlow(
+          task,
+          condition,
+          props as TaskToConditionFlowProps
+        );
         const rightFlow = new ConditionToTaskFlow(condition, toTask);
         task.addOutgoingFlow(leftFlow);
         condition.addIncomingFlow(leftFlow);

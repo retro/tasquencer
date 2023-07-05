@@ -34,6 +34,8 @@ type IsXorOrOrJoinSplit<T> = T extends never
 // TODO: implement invariant checking
 export class WorkflowBuilder<
   WBContext extends object,
+  R,
+  E,
   WBTasks = never,
   WBConditions = never,
   WBCancellationRegions = never,
@@ -69,6 +71,8 @@ export class WorkflowBuilder<
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks,
     WBConditions | CN,
     WBCancellationRegions,
@@ -84,6 +88,8 @@ export class WorkflowBuilder<
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks,
     WBConditions | CN,
     WBCancellationRegions,
@@ -100,6 +106,8 @@ export class WorkflowBuilder<
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks,
     WBConditions | CN,
     WBCancellationRegions,
@@ -123,6 +131,8 @@ export class WorkflowBuilder<
     task: T & TaskWithValidContext<WBContext, T>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks | TN,
     WBConditions,
     WBCancellationRegions,
@@ -146,6 +156,8 @@ export class WorkflowBuilder<
     task: T
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks | TN,
     WBConditions,
     WBCancellationRegions,
@@ -160,6 +172,8 @@ export class WorkflowBuilder<
     taskName: string & NotExtends<WBTasks | WBConditions, TN>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks | TN,
     WBConditions,
     WBCancellationRegions,
@@ -194,6 +208,8 @@ export class WorkflowBuilder<
     toCancel: { tasks?: TNS & string[]; conditions?: CNS & string[] }
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks | TN,
     WBConditions,
     WBCancellationRegions | TN,
@@ -213,6 +229,8 @@ export class WorkflowBuilder<
     ) => ConditionFlowBuilder<WBTasks>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks,
     WBConditions,
     WBCancellationRegions,
@@ -227,15 +245,24 @@ export class WorkflowBuilder<
     return this;
   }
 
-  connectTask<TN extends WBTasksWithOrXorSplit, D>(
+  connectTask<TN extends WBTasksWithOrXorSplit, D, R1, E1>(
     taskName: TN & NotExtends<WBConnectedTasks, TN> & string,
     builder: (
-      to: OrXorTaskFlowBuilder<WBConditions, WBTasks, never, WBContext>
+      to: OrXorTaskFlowBuilder<
+        WBConditions,
+        WBTasks,
+        never,
+        never,
+        never,
+        WBContext
+      >
     ) => ValidOrXorTaskFlow<
-      OrXorTaskFlowBuilder<WBConditions, WBTasks, D, WBContext>
+      OrXorTaskFlowBuilder<WBConditions, WBTasks, R1, E1, D, WBContext>
     >
   ): WorkflowBuilder<
     WBContext,
+    R | R1,
+    E | E1,
     WBTasks,
     WBConditions,
     WBCancellationRegions,
@@ -252,6 +279,8 @@ export class WorkflowBuilder<
     ) => TaskFlowBuilder<WBConditions, WBTasks>
   ): WorkflowBuilder<
     WBContext,
+    R,
+    E,
     WBTasks,
     WBConditions,
     WBCancellationRegions,
@@ -267,10 +296,17 @@ export class WorkflowBuilder<
       this.definition.tasks[taskName]?.splitType === 'or' ||
       this.definition.tasks[taskName]?.splitType === 'xor'
     ) {
-      const flow = new OrXorTaskFlowBuilder<WBConditions, WBTasks>(taskName);
+      const flow = new OrXorTaskFlowBuilder<
+        WBConditions,
+        WBTasks,
+        never,
+        never
+      >(taskName);
       const result: OrXorTaskFlowBuilder<
         WBConditions,
         WBTasks,
+        unknown,
+        unknown,
         true,
         WBContext
       > = builder(flow);
@@ -298,6 +334,8 @@ export class WorkflowBuilder<
       const idProvider = new IdProvider(prevState, idGenerator);
 
       const workflow = new Workflow<
+        R,
+        E,
         WBContext,
         {
           [K in WBTasks & string]: {
@@ -376,5 +414,5 @@ export class WorkflowBuilder<
 }
 
 export function workflow<C extends object>(name: string) {
-  return new WorkflowBuilder<C>(name);
+  return new WorkflowBuilder<C, never, never>(name);
 }

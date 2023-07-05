@@ -9,6 +9,13 @@ export class ConditionToTaskFlow {
   constructor(readonly priorElement: Condition, readonly nextElement: Task) {}
 }
 
+export interface TaskToConditionFlowProps {
+  order?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  predicate?: (...args: any[]) => Effect.Effect<never, never, boolean>;
+  isDefault?: boolean;
+}
+
 export class TaskToConditionFlow {
   readonly order: number;
   readonly isDefault: boolean = false;
@@ -17,12 +24,7 @@ export class TaskToConditionFlow {
   constructor(
     readonly priorElement: Task,
     readonly nextElement: Condition,
-    props: {
-      order?: number;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      predicate?: (...args: any[]) => Effect.Effect<never, never, boolean>;
-      isDefault?: boolean;
-    } = {}
+    props: TaskToConditionFlowProps = {}
   ) {
     this.order = props.isDefault ? Infinity : props.order ?? Infinity;
     this.predicate = props.predicate;

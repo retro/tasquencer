@@ -13,6 +13,10 @@ import { Marking } from './Marking.js';
 import { Task } from './Task.js';
 
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
   object,
   infer U
 >
@@ -24,13 +28,14 @@ export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
 // TODO: figure out if workflow should end when end condition is reached even
 // if there are tokens elsewhere
 export class Workflow<
+  _R = never,
+  _E = never,
   _Context extends object = object,
   _WorkflowTaskActivitiesOutputs extends Record<
     string,
     TB.ActivityOutput
   > = Record<string, TB.ActivityOutput>
 > {
-  //net: Net;
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};
   private startCondition?: Condition;
@@ -99,7 +104,6 @@ export class Workflow<
       const activeTasks = Object.values(workflowState.tasks).reduce<Task[]>(
         (acc, taskData) => {
           if (taskData.state === 'active') {
-            console.log(taskData.name);
             const task = self.tasks[taskData.name];
             task && acc.push(task);
           }

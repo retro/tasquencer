@@ -37,7 +37,9 @@ type QueueItem =
   | { type: 'activate'; taskName: string; input: unknown }
   | { type: 'complete'; taskName: string; input: unknown };
 export class Interpreter<
-  TasksActivitiesOutputs extends Record<string, ActivityOutput>
+  TasksActivitiesOutputs extends Record<string, ActivityOutput>,
+  R = never,
+  E = never
 > {
   constructor(
     private workflow: Workflow,
@@ -46,10 +48,11 @@ export class Interpreter<
     private queue: Queue.Queue<QueueItem>
   ) {}
   // TODO: Check if workflow was already started
-  start() {
+  private _start() {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(self.workflow.initialize());
+
       const startCondition = yield* $(self.workflow.getStartCondition());
       yield* $(
         Effect.succeed(startCondition),
@@ -61,6 +64,17 @@ export class Interpreter<
       yield* $(self.runQueue());
     });
   }
+
+  start(): Effect.Effect<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Effect.Effect.Context<ReturnType<Interpreter<any>['_start']>> | R,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Effect.Effect.Error<ReturnType<Interpreter<any>['_start']>> | E,
+    void
+  > {
+    return this._start();
+  }
+
   resume() {
     const { workflow } = this;
     return Effect.gen(function* ($) {
@@ -198,16 +212,27 @@ export class Interpreter<
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
+
 export function make<
   W extends Workflow,
-  C extends W extends Workflow<infer WC> ? WC : object
+  R extends WorkflowR<W> = WorkflowR<W>,
+  E extends WorkflowE<W> = WorkflowE<W>,
+  C extends WorkflowContext<W> = WorkflowContext<W>
 >(workflow: W, context: C) {
   return Effect.gen(function* ($) {
     const stateManager = yield* $(StateManager);
     const queue = yield* $(Queue.unbounded<QueueItem>());
 
     return new Interpreter<
-      WorkflowTasksActivitiesOutputs<W>
+      WorkflowTasksActivitiesOutputs<W>,
+      R,
+      E
     >(workflow, stateManager, context, queue);
   });
 }

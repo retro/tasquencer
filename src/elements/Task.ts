@@ -124,16 +124,16 @@ export class Task {
               activateTask,
               context,
               input: undefined,
-            })
+            }) as Effect.Effect<never, never, unknown>
           );
           yield* $(self.workflow.stateManager.enableTask(self));
           const result = yield* $(
-            self.activities.onEnable.callbacks.procedure({
+            self.activities.onEnable.callbacks.fn({
               ...activityContext,
               activateTask,
               context,
               input: beforeResult,
-            })
+            }) as Effect.Effect<never, never, unknown>
           );
           yield* $(
             self.activities.onEnable.callbacks.after({
@@ -141,7 +141,7 @@ export class Task {
               activateTask,
               context,
               input: result,
-            })
+            }) as Effect.Effect<never, never, unknown>
           );
         }
       }
@@ -159,22 +159,22 @@ export class Task {
             ...activityContext,
             context,
             input: undefined,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
         yield* $(self.workflow.stateManager.disableTask(self));
         const result = yield* $(
-          self.activities.onDisable.callbacks.procedure({
+          self.activities.onDisable.callbacks.fn({
             ...activityContext,
             context,
             input: beforeResult,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
         yield* $(
           self.activities.onDisable.callbacks.after({
             ...activityContext,
             context,
             input: result,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
       }
     });
@@ -197,18 +197,18 @@ export class Task {
             completeTask,
             context,
             input,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
 
         yield* $(self.workflow.stateManager.activateTask(self));
 
         const result = yield* $(
-          self.activities.onActivate.callbacks.procedure({
+          self.activities.onActivate.callbacks.fn({
             ...activityContext,
             completeTask,
             context,
             input: beforeResult,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
 
         const preSet = Object.values(self.preSet);
@@ -223,7 +223,7 @@ export class Task {
             completeTask,
             context,
             input: result,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
       }
     });
@@ -241,17 +241,17 @@ export class Task {
             ...activityContext,
             context,
             input,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
 
         yield* $(self.workflow.stateManager.completeTask(self));
 
         const result = yield* $(
-          self.activities.onComplete.callbacks.procedure({
+          self.activities.onComplete.callbacks.fn({
             ...activityContext,
             context,
             input: beforeResult,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
 
         yield* $(self.cancelCancellationRegion(context));
@@ -263,7 +263,7 @@ export class Task {
             ...activityContext,
             context,
             input: result,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
       }
     });
@@ -280,22 +280,22 @@ export class Task {
             ...activityContext,
             context,
             input: undefined,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
         yield* $(self.workflow.stateManager.cancelTask(self));
         const result = yield* $(
-          self.activities.onCancel.callbacks.procedure({
+          self.activities.onCancel.callbacks.fn({
             ...activityContext,
             context,
             input: beforeResult,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
         yield* $(
           self.activities.onCancel.callbacks.after({
             ...activityContext,
             context,
             input: result,
-          })
+          }) as Effect.Effect<never, never, unknown>
         );
       }
     });

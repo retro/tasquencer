@@ -178,6 +178,10 @@ export class OrXorTaskFlowBuilder<
 
       for (const [conditionName, props] of Object.entries(toConditions)) {
         const condition = yield* $(workflow.getCondition(conditionName));
+        // Cast props as TaskToConditionFlowProps because we capture the
+        // real type signature elsewhere, which will be used by the
+        // Interpreter to generate the real return type from the entry points
+        // (activateTask and completeTask)
         const flow = new TaskToConditionFlow(
           task,
           condition,
@@ -199,6 +203,10 @@ export class OrXorTaskFlowBuilder<
 
         workflow.addCondition(condition);
 
+        // Cast props as TaskToConditionFlowProps because we capture the
+        // real type signature elsewhere, which will be used by the
+        // Interpreter to generate the real return type from the entry points
+        // (activateTask and completeTask)
         const leftFlow = new TaskToConditionFlow(
           task,
           condition,

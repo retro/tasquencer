@@ -6,7 +6,60 @@ type ActivityTypeWithInput = 'activate' | 'complete';
 type ActivityTypeWithoutInput = 'disable' | 'enable' | 'cancel';
 export type ActivityType = ActivityTypeWithInput | ActivityTypeWithoutInput;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyEffect = Effect.Effect<never, never, any>;
+type AnyEffect = Effect.Effect<any, any, any>;
+
+export type ActivityReturnEffect<
+  T extends ActivityBuilder<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Effect.Effect<any, any, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Effect.Effect<any, any, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Effect.Effect<any, any, any>
+  >
+> = T extends ActivityBuilder<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  infer BRT,
+  infer FRT,
+  infer ART
+>
+  ? Effect.Effect<
+      | (unknown extends Effect.Effect.Context<BRT>
+          ? never
+          : Effect.Effect.Context<BRT>)
+      | (unknown extends Effect.Effect.Context<FRT>
+          ? never
+          : Effect.Effect.Context<FRT>)
+      | (unknown extends Effect.Effect.Context<ART>
+          ? never
+          : Effect.Effect.Context<ART>),
+      | (unknown extends Effect.Effect.Error<BRT>
+          ? never
+          : Effect.Effect.Error<BRT>)
+      | (unknown extends Effect.Effect.Error<FRT>
+          ? never
+          : Effect.Effect.Error<FRT>)
+      | (unknown extends Effect.Effect.Error<ART>
+          ? never
+          : Effect.Effect.Error<ART>),
+      Effect.Effect.Success<ART>
+    >
+  : never;
 
 interface DefaultActivityContext {
   getTaskId: () => Effect.Effect<never, never, string>;
@@ -30,22 +83,10 @@ interface ActivityCallbacks {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   before: (...args: any[]) => AnyEffect;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  procedure: (...args: any[]) => AnyEffect;
+  fn: (...args: any[]) => AnyEffect;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   after: (...args: any[]) => AnyEffect;
 }
-
-export type ActivityOutput<T> = T extends ActivityBuilder<
-  ActivityType,
-  object,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any,
-  infer O
->
-  ? O
-  : never;
 
 export type ActivityUserContext<T> = T extends ActivityBuilder<
   ActivityType,
@@ -55,28 +96,32 @@ export type ActivityUserContext<T> = T extends ActivityBuilder<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  any
+  Effect.Effect<any, any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Effect.Effect<any, any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Effect.Effect<any, any, any>
 >
   ? C
   : never;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SuccessReturnType<T extends (...args: any[]) => AnyEffect> =
-  Effect.Effect.Success<ReturnType<T>>;
-
 export class ActivityBuilder<
   AT extends ActivityType,
   C extends object, // User context
-  PI, // Procedure input
+  FI, // Fn input
   AI, // After input
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  O // Output
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  BRT extends Effect.Effect<any, any, any>, // Before return type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  FRT extends Effect.Effect<any, any, any>, // Fn return type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  ART extends Effect.Effect<any, any, any> // After return type
 > {
   readonly callbacks: ActivityCallbacks = {} as ActivityCallbacks;
   constructor(private readonly activityType: AT) {}
   initialize() {
     return this.before(({ input }) => Effect.succeed(input))
-      .procedure(({ input }) => Effect.succeed(input))
+      .fn(({ input }) => Effect.succeed(input))
       .after(({ input }) => Effect.succeed(input));
   }
   before<
@@ -85,35 +130,57 @@ export class ActivityBuilder<
         context: C;
         input: AT extends ActivityTypeWithInput ? unknown : undefined;
       }
-    ) => Effect.Effect<never, never, unknown>
+    ) => Effect.Effect<unknown, unknown, unknown>
   >(
     cb: CB
   ): ActivityBuilder<
     AT,
     C,
-    SuccessReturnType<CB>,
-    SuccessReturnType<CB>,
-    SuccessReturnType<CB>
+    Effect.Effect.Success<ReturnType<CB>>,
+    Effect.Effect.Success<ReturnType<CB>>,
+    ReturnType<CB>,
+    ReturnType<CB>,
+    ReturnType<CB>
   > {
     this.callbacks.before = cb;
     return this;
   }
-  procedure<
+  fn<
     CB extends (
-      payload: ActivityContext[AT] & { context: C; input: PI }
-    ) => Effect.Effect<never, never, unknown>
+      payload: ActivityContext[AT] & { context: C; input: FI }
+    ) => Effect.Effect<unknown, unknown, unknown>
   >(
     cb: CB
-  ): ActivityBuilder<AT, C, PI, SuccessReturnType<CB>, SuccessReturnType<CB>> {
-    this.callbacks.procedure = cb;
+  ): ActivityBuilder<
+    AT,
+    C,
+    Effect.Effect.Success<BRT>,
+    Effect.Effect.Success<ReturnType<CB>>,
+    BRT,
+    ReturnType<CB>,
+    ReturnType<CB>
+  > {
+    this.callbacks.fn = cb;
     return this;
   }
 
   after<
     CB extends (
       payload: ActivityContext[AT] & { context: C; input: AI }
-    ) => Effect.Effect<never, never, unknown>
-  >(cb: CB): ActivityBuilder<AT, C, PI, AI, SuccessReturnType<CB>> {
+    ) => Effect.Effect<unknown, unknown, unknown>
+  >(
+    cb: CB
+  ): ActivityBuilder<
+    AT,
+    C,
+    FI,
+    unknown extends Effect.Effect.Success<FRT>
+      ? Effect.Effect.Success<BRT>
+      : Effect.Effect.Success<FRT>,
+    BRT,
+    FRT,
+    ReturnType<CB>
+  > {
     this.callbacks.after = cb;
     return this;
   }
@@ -122,9 +189,15 @@ export class ActivityBuilder<
 function activityBuilder<AT extends ActivityType, C extends object>(
   activityType: AT & ActivityType
 ) {
-  return new ActivityBuilder<AT, C, unknown, unknown, unknown>(
-    activityType
-  ).initialize();
+  return new ActivityBuilder<
+    AT,
+    C,
+    unknown,
+    unknown,
+    Effect.Effect<unknown, unknown, unknown>,
+    Effect.Effect<unknown, unknown, unknown>,
+    Effect.Effect<unknown, unknown, unknown>
+  >(activityType).initialize();
 }
 
 function makeActivityBuilder<AT extends ActivityType>(activityType: AT) {
@@ -136,8 +209,20 @@ function makeActivityBuilder<AT extends ActivityType>(activityType: AT) {
 type MakeActivityBuilderType<
   T extends ActivityType,
   C extends object
+> = ActivityBuilder<
+  T,
+  C,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-> = ActivityBuilder<T, C, any, any, any>;
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Effect.Effect<any, any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Effect.Effect<any, any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Effect.Effect<any, any, any>
+>;
 
 export type OnDisableActivity<C extends object = object> =
   MakeActivityBuilderType<'disable', C>;

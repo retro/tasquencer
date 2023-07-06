@@ -42,10 +42,10 @@ export class WorkflowBuilder<
   WBTasksWithOrXorSplit = never,
   WBConnectedTasks = never,
   WBConnectedConditions = never,
-  WBTasksActivitiesOutputs extends Record<string, TB.ActivityOutput> = Record<
+  WBTasksActivitiesOutputs extends Record<
     string,
-    TB.ActivityOutput
-  >
+    TB.ActivitiesReturnEffect
+  > = Record<string, TB.ActivitiesReturnEffect>
 > {
   readonly name: string;
   definition: WorkflowBuilderDefinition;
@@ -181,7 +181,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.ActivityOutput;
+      [tn in TN]: TB.ActivitiesReturnEffect;
     }
   >;
   task(

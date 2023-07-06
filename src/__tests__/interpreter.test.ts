@@ -504,7 +504,7 @@ it('can run workflow with activities', () => {
         return 'before';
       })
     )
-    .procedure((payload) =>
+    .fn((payload) =>
       Effect.gen(function* ($) {
         const name = yield* $(payload.getTaskName());
         log.push({
@@ -541,7 +541,7 @@ it('can run workflow with activities', () => {
         return `${payload.input}:before`;
       })
     )
-    .procedure((payload) =>
+    .fn((payload) =>
       Effect.gen(function* ($) {
         const name = yield* $(payload.getTaskName());
         log.push({
@@ -579,7 +579,7 @@ it('can run workflow with activities', () => {
         return `${payload.input}:before`;
       })
     )
-    .procedure((payload) =>
+    .fn((payload) =>
       Effect.gen(function* ($) {
         const name = yield* $(payload.getTaskName());
         log.push({
@@ -990,8 +990,8 @@ it('can auto activate and auto complete tasks', () => {
     .startCondition('start')
     .task('A', (t) =>
       t
-        .onEnable((a) => a.procedure(({ activateTask }) => activateTask()))
-        .onActivate((a) => a.procedure(({ completeTask }) => completeTask()))
+        .onEnable((a) => a.fn(({ activateTask }) => activateTask()))
+        .onActivate((a) => a.fn(({ completeTask }) => completeTask()))
     )
     .endCondition('end')
     .connectCondition('start', (to) => to.task('A'))

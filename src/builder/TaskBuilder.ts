@@ -82,9 +82,9 @@ export type InitializedTaskBuilder<C extends object = object> = TaskBuilder<
   undefined
 >;
 
-export interface ActivityOutput {
-  onActivate: unknown;
-  onComplete: unknown;
+export interface ActivitiesReturnEffect {
+  onActivate: Effect.Effect<unknown, unknown, unknown>;
+  onComplete: Effect.Effect<unknown, unknown, unknown>;
 }
 
 export class TaskBuilder<
@@ -92,7 +92,7 @@ export class TaskBuilder<
   TA extends TaskActivities,
   JT extends JoinType | undefined,
   ST extends SplitType | undefined,
-  AO extends ActivityOutput = ActivityOutput
+  ARE extends ActivitiesReturnEffect = ActivitiesReturnEffect
 > {
   joinType: JoinType | undefined;
   splitType: SplitType | undefined;
@@ -101,19 +101,19 @@ export class TaskBuilder<
 
   withJoinType<T extends JoinType | undefined>(
     joinType: T
-  ): TaskBuilder<C, TA, T, ST, AO> {
+  ): TaskBuilder<C, TA, T, ST, ARE> {
     this.joinType = joinType;
     return this;
   }
 
   withSplitType<T extends SplitType | undefined>(
     splitType: T
-  ): TaskBuilder<C, TA, JT, T, AO> {
+  ): TaskBuilder<C, TA, JT, T, ARE> {
     this.splitType = splitType;
     return this;
   }
 
-  withConstructor(Constructor: typeof Task): TaskBuilder<C, TA, JT, ST, AO> {
+  withConstructor(Constructor: typeof Task): TaskBuilder<C, TA, JT, ST, ARE> {
     this.Constructor = Constructor;
     return this;
   }
@@ -132,7 +132,7 @@ export class TaskBuilder<
       | ((
           onDisable: AB.OnDisableActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO> {
+  ): TaskBuilder<C, TA, JT, ST, ARE> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onDisable = input;
     } else {
@@ -147,7 +147,7 @@ export class TaskBuilder<
       | ((
           onEnable: AB.OnEnableActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO> {
+  ): TaskBuilder<C, TA, JT, ST, ARE> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onEnable = input;
     } else {
@@ -163,7 +163,7 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    Omit<AO, 'onActivate'> & { onActivate: AB.ActivityOutput<A> }
+    Omit<ARE, 'onActivate'> & { onActivate: AB.ActivityReturnEffect<A> }
   >;
 
   onActivate<
@@ -175,7 +175,9 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    Omit<AO, 'onActivate'> & { onActivate: AB.ActivityOutput<ReturnType<A>> }
+    Omit<ARE, 'onActivate'> & {
+      onActivate: AB.ActivityReturnEffect<ReturnType<A>>;
+    }
   >;
 
   onActivate<A extends AB.OnActivateActivity<C>>(
@@ -184,7 +186,7 @@ export class TaskBuilder<
       | ((
           onActivate: AB.OnActivateActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO> {
+  ): TaskBuilder<C, TA, JT, ST, ARE> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onActivate = input;
     } else {
@@ -200,7 +202,7 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    Omit<AO, 'onComplete'> & { onComplete: AB.ActivityOutput<A> }
+    Omit<ARE, 'onComplete'> & { onComplete: AB.ActivityReturnEffect<A> }
   >;
 
   onComplete<
@@ -212,7 +214,9 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    Omit<AO, 'onComplete'> & { onComplete: AB.ActivityOutput<ReturnType<A>> }
+    Omit<ARE, 'onComplete'> & {
+      onComplete: AB.ActivityReturnEffect<ReturnType<A>>;
+    }
   >;
 
   onComplete<A extends AB.OnCompleteActivity<C>>(
@@ -221,7 +225,7 @@ export class TaskBuilder<
       | ((
           onComplete: AB.OnCompleteActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO> {
+  ): TaskBuilder<C, TA, JT, ST, ARE> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onComplete = input;
     } else {
@@ -236,7 +240,7 @@ export class TaskBuilder<
       | ((
           onCancel: AB.OnCancelActivity<C>
         ) => A & ActivityBuilderWithValidContext<C, A>)
-  ): TaskBuilder<C, TA, JT, ST, AO> {
+  ): TaskBuilder<C, TA, JT, ST, ARE> {
     if (input instanceof AB.ActivityBuilder) {
       this.activities.onCancel = input;
     } else {

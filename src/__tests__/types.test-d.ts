@@ -83,6 +83,7 @@ it('can correctly infer predicate types', () => {
     );
 
     const start = interpreter.start();
+
     assertType<
       Effect.Effect<
         PredicateService,

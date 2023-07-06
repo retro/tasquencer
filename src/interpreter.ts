@@ -4,7 +4,7 @@ import * as Effect from '@effect/io/Effect';
 import * as Queue from '@effect/io/Queue';
 import * as Match from '@effect/match';
 
-import { ActivityOutput } from './builder/TaskBuilder.js';
+import { ActivitiesReturnEffect } from './builder/TaskBuilder.js';
 import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
@@ -33,11 +33,22 @@ export type onCancel = (
 ) => Effect.Effect<never, never, void>;
 export const onCancel = Context.Tag<onCancel>();*/
 
+type MergedReturnEffect<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends (...args: any[]) => Effect.Effect<any, any, any>,
+  R,
+  E
+> = Effect.Effect<
+  Effect.Effect.Context<ReturnType<T>> | R,
+  Effect.Effect.Error<ReturnType<T>> | E,
+  Effect.Effect.Success<ReturnType<T>>
+>;
+
 type QueueItem =
   | { type: 'activate'; taskName: string; input: unknown }
   | { type: 'complete'; taskName: string; input: unknown };
 export class Interpreter<
-  TasksActivitiesOutputs extends Record<string, ActivityOutput>,
+  TasksActivitiesOutputs extends Record<string, ActivitiesReturnEffect>,
   R = never,
   E = never
 > {
@@ -65,12 +76,10 @@ export class Interpreter<
     });
   }
 
-  start(): Effect.Effect<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Effect.Effect.Context<ReturnType<Interpreter<any>['_start']>> | R,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Effect.Effect.Error<ReturnType<Interpreter<any>['_start']>> | E,
-    void
+  start(): MergedReturnEffect<
+    Interpreter<TasksActivitiesOutputs>['_start'],
+    R,
+    E
   > {
     return this._start();
   }
@@ -100,10 +109,7 @@ export class Interpreter<
     });
   }
 
-  activateTask<T extends keyof TasksActivitiesOutputs, I>(
-    taskName: T & string,
-    input?: I
-  ) {
+  _activateTask(taskName: string, input?: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -113,12 +119,33 @@ export class Interpreter<
 
       yield* $(self.runQueue());
 
-      return output as unknown extends I
-        ? undefined
-        : unknown extends TasksActivitiesOutputs[T]['onActivate']
-        ? I
-        : TasksActivitiesOutputs[T]['onActivate'];
+      return output;
     });
+  }
+
+  activateTask<T extends keyof TasksActivitiesOutputs, I>(
+    taskName: T & string,
+    input?: I
+  ) {
+    return this._activateTask(taskName, input) as unknown as Effect.Effect<
+      R | unknown extends Effect.Effect.Context<
+        TasksActivitiesOutputs[T]['onActivate']
+      >
+        ? never
+        : Effect.Effect.Context<TasksActivitiesOutputs[T]['onActivate']>,
+      E | unknown extends Effect.Effect.Error<
+        TasksActivitiesOutputs[T]['onActivate']
+      >
+        ? never
+        : Effect.Effect.Error<TasksActivitiesOutputs[T]['onActivate']>,
+      unknown extends I
+        ? undefined
+        : unknown extends Effect.Effect.Success<
+            TasksActivitiesOutputs[T]['onActivate']
+          >
+        ? I
+        : Effect.Effect.Success<TasksActivitiesOutputs[T]['onActivate']>
+    >;
   }
 
   private completeTaskWithoutRunningQueue(taskName: string, input: unknown) {
@@ -139,10 +166,7 @@ export class Interpreter<
     });
   }
 
-  completeTask<T extends keyof TasksActivitiesOutputs, I>(
-    taskName: T & string,
-    input?: I
-  ) {
+  _completeTask(taskName: string, input?: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -152,12 +176,33 @@ export class Interpreter<
 
       yield* $(self.runQueue());
 
-      return output as unknown extends I
-        ? undefined
-        : unknown extends TasksActivitiesOutputs[T]['onComplete']
-        ? I
-        : TasksActivitiesOutputs[T]['onComplete'];
+      return output;
     });
+  }
+
+  completeTask<T extends keyof TasksActivitiesOutputs, I>(
+    taskName: T & string,
+    input?: I
+  ) {
+    return this._completeTask(taskName, input) as unknown as Effect.Effect<
+      R | unknown extends Effect.Effect.Context<
+        TasksActivitiesOutputs[T]['onComplete']
+      >
+        ? never
+        : Effect.Effect.Context<TasksActivitiesOutputs[T]['onComplete']>,
+      E | unknown extends Effect.Effect.Error<
+        TasksActivitiesOutputs[T]['onComplete']
+      >
+        ? never
+        : Effect.Effect.Error<TasksActivitiesOutputs[T]['onComplete']>,
+      unknown extends I
+        ? undefined
+        : unknown extends Effect.Effect.Success<
+            TasksActivitiesOutputs[T]['onComplete']
+          >
+        ? I
+        : Effect.Effect.Success<TasksActivitiesOutputs[T]['onComplete']>
+    >;
   }
 
   private getTaskActionsService() {

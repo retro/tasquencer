@@ -4,7 +4,7 @@ import * as Effect from '@effect/io/Effect';
 import * as Queue from '@effect/io/Queue';
 import * as Match from '@effect/match';
 
-import { ActivitiesReturnEffect } from './builder/TaskBuilder.js';
+import { ActivitiesReturnType } from './builder/TaskBuilder.js';
 import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
@@ -48,7 +48,7 @@ type QueueItem =
   | { type: 'activate'; taskName: string; input: unknown }
   | { type: 'complete'; taskName: string; input: unknown };
 export class Interpreter<
-  TasksActivitiesOutputs extends Record<string, ActivitiesReturnEffect>,
+  TasksActivitiesOutputs extends Record<string, ActivitiesReturnType>,
   R = never,
   E = never
 > {
@@ -128,23 +128,13 @@ export class Interpreter<
     input?: I
   ) {
     return this._activateTask(taskName, input) as unknown as Effect.Effect<
-      R | unknown extends Effect.Effect.Context<
-        TasksActivitiesOutputs[T]['onActivate']
-      >
-        ? never
-        : Effect.Effect.Context<TasksActivitiesOutputs[T]['onActivate']>,
-      E | unknown extends Effect.Effect.Error<
-        TasksActivitiesOutputs[T]['onActivate']
-      >
-        ? never
-        : Effect.Effect.Error<TasksActivitiesOutputs[T]['onActivate']>,
+      R,
+      E,
       unknown extends I
         ? undefined
-        : unknown extends Effect.Effect.Success<
-            TasksActivitiesOutputs[T]['onActivate']
-          >
+        : unknown extends TasksActivitiesOutputs[T]['onActivate']
         ? I
-        : Effect.Effect.Success<TasksActivitiesOutputs[T]['onActivate']>
+        : TasksActivitiesOutputs[T]['onActivate']
     >;
   }
 
@@ -185,23 +175,13 @@ export class Interpreter<
     input?: I
   ) {
     return this._completeTask(taskName, input) as unknown as Effect.Effect<
-      R | unknown extends Effect.Effect.Context<
-        TasksActivitiesOutputs[T]['onComplete']
-      >
-        ? never
-        : Effect.Effect.Context<TasksActivitiesOutputs[T]['onComplete']>,
-      E | unknown extends Effect.Effect.Error<
-        TasksActivitiesOutputs[T]['onComplete']
-      >
-        ? never
-        : Effect.Effect.Error<TasksActivitiesOutputs[T]['onComplete']>,
+      R,
+      E,
       unknown extends I
         ? undefined
-        : unknown extends Effect.Effect.Success<
-            TasksActivitiesOutputs[T]['onComplete']
-          >
+        : unknown extends TasksActivitiesOutputs[T]['onComplete']
         ? I
-        : Effect.Effect.Success<TasksActivitiesOutputs[T]['onComplete']>
+        : TasksActivitiesOutputs[T]['onComplete']
     >;
   }
 

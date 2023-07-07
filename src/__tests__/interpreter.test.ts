@@ -1,3 +1,4 @@
+import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 import { expect, it } from 'vitest';
 
@@ -5,6 +6,11 @@ import * as Builder from '../builder.js';
 import * as Interpreter from '../interpreter.js';
 import { createMemory } from '../stateManager/memory.js';
 import { IdGenerator, StateManager } from '../stateManager/types.js';
+import {
+  OnActivatePayload,
+  OnCompletePayload,
+  OnEnablePayload,
+} from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {
@@ -486,123 +492,62 @@ it('can run resume a workflow', () => {
 it('can run workflow with activities', () => {
   const log: {
     name: string;
-    activityPhase: 'before' | 'procedure' | 'after';
+    activityPhase: 'before' | 'after';
     taskPhase: 'disable' | 'enable' | 'activate' | 'complete' | 'cancel';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input?: any;
   }[] = [];
 
-  const onEnableActivity = Builder.onEnable()
-    .before((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'before',
-          taskPhase: 'enable',
-        });
-        return 'before';
-      })
-    )
-    .fn((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'procedure',
-          taskPhase: 'enable',
-          input: payload.input,
-        });
-        return `${payload.input}:procedure`;
-      })
-    )
-    .after((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'after',
-          taskPhase: 'enable',
-          input: payload.input,
-        });
-      })
-    );
+  const onEnableActivity = (payload: OnEnablePayload) =>
+    Effect.gen(function* ($) {
+      const name = yield* $(payload.getTaskName());
+      log.push({
+        name,
+        activityPhase: 'before',
+        taskPhase: 'enable',
+      });
+      yield* $(payload.enableTask());
+      log.push({
+        name,
+        activityPhase: 'after',
+        taskPhase: 'enable',
+      });
+      return 'onEnable';
+    });
 
-  const onActivateActivity = Builder.onActivate()
-    .before((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'before',
-          taskPhase: 'activate',
-          input: payload.input,
-        });
-        return `${payload.input}:before`;
-      })
-    )
-    .fn((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'procedure',
-          taskPhase: 'activate',
-          input: payload.input,
-        });
-        return `${payload.input}:procedure`;
-      })
-    )
-    .after((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'after',
-          taskPhase: 'activate',
-          input: payload.input,
-        });
-        return `${payload.input}:after`;
-      })
-    );
+  const onActivateActivity = (payload: OnActivatePayload) =>
+    Effect.gen(function* ($) {
+      const name = yield* $(payload.getTaskName());
+      log.push({
+        name,
+        activityPhase: 'before',
+        taskPhase: 'activate',
+      });
+      yield* $(payload.activateTask());
+      log.push({
+        name,
+        activityPhase: 'after',
+        taskPhase: 'activate',
+      });
+      return `onActivate: ${payload.input}`;
+    });
 
-  const onCompleteActivity = Builder.onComplete()
-    .before((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'before',
-          taskPhase: 'complete',
-          input: payload.input,
-        });
-        return `${payload.input}:before`;
-      })
-    )
-    .fn((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'procedure',
-          taskPhase: 'complete',
-          input: payload.input,
-        });
-        return `${payload.input}:procedure`;
-      })
-    )
-    .after((payload) =>
-      Effect.gen(function* ($) {
-        const name = yield* $(payload.getTaskName());
-        log.push({
-          name,
-          activityPhase: 'after',
-          taskPhase: 'complete',
-          input: payload.input,
-        });
-        return `${payload.input}:after`;
-      })
-    );
+  const onCompleteActivity = (payload: OnCompletePayload) =>
+    Effect.gen(function* ($) {
+      const name = yield* $(payload.getTaskName());
+      log.push({
+        name,
+        activityPhase: 'before',
+        taskPhase: 'complete',
+      });
+      yield* $(payload.completeTask());
+      log.push({
+        name,
+        activityPhase: 'after',
+        taskPhase: 'complete',
+      });
+      return `onComplete: ${payload.input}`;
+    });
 
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
@@ -665,19 +610,16 @@ it('can run workflow with activities', () => {
     );
 
     yield* $(interpreter.start());
+
     const res1 = yield* $(
       interpreter.activateTask('scan_goods', 'activate scan_goods user input')
     );
-    expect(res1).toEqual(
-      'activate scan_goods user input:before:procedure:after'
-    );
+    expect(res1).toEqual('onActivate: activate scan_goods user input');
 
     const res2 = yield* $(
       interpreter.completeTask('scan_goods', 'complete scan_goods user input')
     );
-    expect(res2).toEqual(
-      'complete scan_goods user input:before:procedure:after'
-    );
+    expect(res2).toEqual('onComplete: complete scan_goods user input');
 
     yield* $(interpreter.activateTask('pay'));
     yield* $(interpreter.completeTask('pay'));
@@ -692,110 +634,26 @@ it('can run workflow with activities', () => {
 
     expect(log).toEqual([
       { name: 'scan_goods', activityPhase: 'before', taskPhase: 'enable' },
-      {
-        name: 'scan_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'enable',
-        input: 'before',
-      },
-      {
-        name: 'scan_goods',
-        activityPhase: 'after',
-        taskPhase: 'enable',
-        input: 'before:procedure',
-      },
+      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'enable' },
       {
         name: 'scan_goods',
         activityPhase: 'before',
         taskPhase: 'activate',
-        input: 'activate scan_goods user input',
       },
-      {
-        name: 'scan_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'activate',
-        input: 'activate scan_goods user input:before',
-      },
-      {
-        name: 'scan_goods',
-        activityPhase: 'after',
-        taskPhase: 'activate',
-        input: 'activate scan_goods user input:before:procedure',
-      },
+      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'activate' },
       {
         name: 'scan_goods',
         activityPhase: 'before',
         taskPhase: 'complete',
-        input: 'complete scan_goods user input',
-      },
-      {
-        name: 'scan_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'complete',
-        input: 'complete scan_goods user input:before',
       },
       { name: 'pay', activityPhase: 'before', taskPhase: 'enable' },
-      {
-        name: 'pay',
-        activityPhase: 'procedure',
-        taskPhase: 'enable',
-        input: 'before',
-      },
-      {
-        name: 'pay',
-        activityPhase: 'after',
-        taskPhase: 'enable',
-        input: 'before:procedure',
-      },
-      {
-        name: 'scan_goods',
-        activityPhase: 'after',
-        taskPhase: 'complete',
-        input: 'complete scan_goods user input:before:procedure',
-      },
-      {
-        name: 'pay',
-        activityPhase: 'before',
-        taskPhase: 'activate',
-        input: undefined,
-      },
-      {
-        name: 'pay',
-        activityPhase: 'procedure',
-        taskPhase: 'activate',
-        input: 'undefined:before',
-      },
-      {
-        name: 'pay',
-        activityPhase: 'after',
-        taskPhase: 'activate',
-        input: 'undefined:before:procedure',
-      },
-      {
-        name: 'pay',
-        activityPhase: 'before',
-        taskPhase: 'complete',
-        input: undefined,
-      },
-      {
-        name: 'pay',
-        activityPhase: 'procedure',
-        taskPhase: 'complete',
-        input: 'undefined:before',
-      },
+      { name: 'pay', activityPhase: 'after', taskPhase: 'enable' },
+      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'complete' },
+      { name: 'pay', activityPhase: 'before', taskPhase: 'activate' },
+      { name: 'pay', activityPhase: 'after', taskPhase: 'activate' },
+      { name: 'pay', activityPhase: 'before', taskPhase: 'complete' },
       { name: 'pack_goods', activityPhase: 'before', taskPhase: 'enable' },
-      {
-        name: 'pack_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'enable',
-        input: 'before',
-      },
-      {
-        name: 'pack_goods',
-        activityPhase: 'after',
-        taskPhase: 'enable',
-        input: 'before:procedure',
-      },
+      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'enable' },
       {
         name: 'issue_receipt',
         activityPhase: 'before',
@@ -803,142 +661,63 @@ it('can run workflow with activities', () => {
       },
       {
         name: 'issue_receipt',
-        activityPhase: 'procedure',
-        taskPhase: 'enable',
-        input: 'before',
-      },
-      {
-        name: 'issue_receipt',
         activityPhase: 'after',
         taskPhase: 'enable',
-        input: 'before:procedure',
       },
-      {
-        name: 'pay',
-        activityPhase: 'after',
-        taskPhase: 'complete',
-        input: 'undefined:before:procedure',
-      },
+      { name: 'pay', activityPhase: 'after', taskPhase: 'complete' },
       {
         name: 'pack_goods',
         activityPhase: 'before',
         taskPhase: 'activate',
-        input: undefined,
       },
-      {
-        name: 'pack_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'activate',
-        input: 'undefined:before',
-      },
-      {
-        name: 'pack_goods',
-        activityPhase: 'after',
-        taskPhase: 'activate',
-        input: 'undefined:before:procedure',
-      },
+      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'activate' },
       {
         name: 'issue_receipt',
         activityPhase: 'before',
         taskPhase: 'activate',
-        input: undefined,
-      },
-      {
-        name: 'issue_receipt',
-        activityPhase: 'procedure',
-        taskPhase: 'activate',
-        input: 'undefined:before',
       },
       {
         name: 'issue_receipt',
         activityPhase: 'after',
         taskPhase: 'activate',
-        input: 'undefined:before:procedure',
       },
       {
         name: 'pack_goods',
         activityPhase: 'before',
         taskPhase: 'complete',
-        input: undefined,
       },
-      {
-        name: 'pack_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'complete',
-        input: 'undefined:before',
-      },
-      {
-        name: 'pack_goods',
-        activityPhase: 'after',
-        taskPhase: 'complete',
-        input: 'undefined:before:procedure',
-      },
+      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'complete' },
       {
         name: 'issue_receipt',
         activityPhase: 'before',
         taskPhase: 'complete',
-        input: undefined,
-      },
-      {
-        name: 'issue_receipt',
-        activityPhase: 'procedure',
-        taskPhase: 'complete',
-        input: 'undefined:before',
       },
       { name: 'check_goods', activityPhase: 'before', taskPhase: 'enable' },
-      {
-        name: 'check_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'enable',
-        input: 'before',
-      },
-      {
-        name: 'check_goods',
-        activityPhase: 'after',
-        taskPhase: 'enable',
-        input: 'before:procedure',
-      },
+      { name: 'check_goods', activityPhase: 'after', taskPhase: 'enable' },
       {
         name: 'issue_receipt',
         activityPhase: 'after',
         taskPhase: 'complete',
-        input: 'undefined:before:procedure',
       },
       {
         name: 'check_goods',
         activityPhase: 'before',
         taskPhase: 'activate',
-        input: undefined,
-      },
-      {
-        name: 'check_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'activate',
-        input: 'undefined:before',
       },
       {
         name: 'check_goods',
         activityPhase: 'after',
         taskPhase: 'activate',
-        input: 'undefined:before:procedure',
       },
       {
         name: 'check_goods',
         activityPhase: 'before',
         taskPhase: 'complete',
-        input: undefined,
-      },
-      {
-        name: 'check_goods',
-        activityPhase: 'procedure',
-        taskPhase: 'complete',
-        input: 'undefined:before',
       },
       {
         name: 'check_goods',
         activityPhase: 'after',
         taskPhase: 'complete',
-        input: 'undefined:before:procedure',
       },
     ]);
 
@@ -990,8 +769,18 @@ it('can auto activate and auto complete tasks', () => {
     .startCondition('start')
     .task('A', (t) =>
       t
-        .onEnable((a) => a.fn(({ activateTask }) => activateTask()))
-        .onActivate((a) => a.fn(({ completeTask }) => completeTask()))
+        .onEnable(({ enableTask }) =>
+          pipe(
+            enableTask(),
+            Effect.flatMap(({ activateTask }) => activateTask())
+          )
+        )
+        .onActivate(({ activateTask }) =>
+          pipe(
+            activateTask(),
+            Effect.flatMap(({ completeTask }) => completeTask())
+          )
+        )
     )
     .endCondition('end')
     .connectCondition('start', (to) => to.task('A'))

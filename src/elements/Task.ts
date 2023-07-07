@@ -1,11 +1,12 @@
 import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
-import { TaskActivities } from '../builder/TaskBuilder.js';
 import {
+  DefaultActivityPayload,
   JoinType,
   SplitType,
   TaskActionsService,
+  TaskActivities,
   TaskState,
 } from '../types.js';
 import { Condition } from './Condition.js';
@@ -94,12 +95,12 @@ export class Task {
     });
   }
 
-  getActivityContext() {
+  getActivityContext(): DefaultActivityPayload {
     return {
       getTaskId: () => Effect.succeed(this.id),
       getTaskName: () => Effect.succeed(this.name),
       getWorkflowId: () => Effect.succeed(this.workflow.id),
-      getTaskState: () => Effect.succeed(this.getState()),
+      getTaskState: () => this.getState(),
     };
   }
 
@@ -118,31 +119,26 @@ export class Task {
             return taskActionsService.activateTask(self.name, input);
           };
 
-          const beforeResult = yield* $(
-            self.activities.onEnable.callbacks.before({
-              ...activityContext,
-              activateTask,
-              context,
-              input: undefined,
-            }) as Effect.Effect<never, never, unknown>
+          const performEnable = yield* $(
+            Effect.once(self.workflow.stateManager.enableTask(self))
           );
-          yield* $(self.workflow.stateManager.enableTask(self));
+
           const result = yield* $(
-            self.activities.onEnable.callbacks.fn({
+            self.activities.onEnable({
               ...activityContext,
-              activateTask,
               context,
-              input: beforeResult,
+              enableTask() {
+                return pipe(
+                  performEnable,
+                  Effect.map(() => ({ activateTask }))
+                );
+              },
             }) as Effect.Effect<never, never, unknown>
           );
-          yield* $(
-            self.activities.onEnable.callbacks.after({
-              ...activityContext,
-              activateTask,
-              context,
-              input: result,
-            }) as Effect.Effect<never, never, unknown>
-          );
+
+          yield* $(performEnable);
+
+          return result;
         }
       }
     });
@@ -154,28 +150,24 @@ export class Task {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'disabled')) {
         const activityContext = self.getActivityContext();
-        const beforeResult = yield* $(
-          self.activities.onDisable.callbacks.before({
-            ...activityContext,
-            context,
-            input: undefined,
-          }) as Effect.Effect<never, never, unknown>
+
+        const performDisable = yield* $(
+          Effect.once(self.workflow.stateManager.disableTask(self))
         );
-        yield* $(self.workflow.stateManager.disableTask(self));
+
         const result = yield* $(
-          self.activities.onDisable.callbacks.fn({
+          self.activities.onDisable({
             ...activityContext,
             context,
-            input: beforeResult,
+            disableTask() {
+              return performDisable;
+            },
           }) as Effect.Effect<never, never, unknown>
         );
-        yield* $(
-          self.activities.onDisable.callbacks.after({
-            ...activityContext,
-            context,
-            input: result,
-          }) as Effect.Effect<never, never, unknown>
-        );
+
+        yield* $(performDisable);
+
+        return result;
       }
     });
   }
@@ -191,40 +183,36 @@ export class Task {
           return taskActionsService.completeTask(self.name, input);
         };
 
-        const beforeResult = yield* $(
-          self.activities.onActivate.callbacks.before({
-            ...activityContext,
-            completeTask,
-            context,
-            input,
-          }) as Effect.Effect<never, never, unknown>
+        const performActivate = yield* $(
+          Effect.once(
+            Effect.gen(function* ($) {
+              yield* $(self.workflow.stateManager.activateTask(self));
+              const preSet = Object.values(self.preSet);
+              const updates = preSet.map((condition) =>
+                condition.decrementMarking(context)
+              );
+              yield* $(Effect.allParDiscard(updates));
+            })
+          )
         );
-
-        yield* $(self.workflow.stateManager.activateTask(self));
 
         const result = yield* $(
-          self.activities.onActivate.callbacks.fn({
+          self.activities.onActivate({
             ...activityContext,
-            completeTask,
             context,
-            input: beforeResult,
+            input,
+            activateTask() {
+              return pipe(
+                performActivate,
+                Effect.map(() => ({ completeTask }))
+              );
+            },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        const preSet = Object.values(self.preSet);
-        const updates = preSet.map((condition) =>
-          condition.decrementMarking(context)
-        );
-        yield* $(Effect.allParDiscard(updates));
+        yield* $(performActivate);
 
-        return yield* $(
-          self.activities.onActivate.callbacks.after({
-            ...activityContext,
-            completeTask,
-            context,
-            input: result,
-          }) as Effect.Effect<never, never, unknown>
-        );
+        return result;
       }
     });
   }
@@ -235,36 +223,36 @@ export class Task {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'completed')) {
         const activityContext = self.getActivityContext();
+        const taskActionsService = yield* $(TaskActionsService);
 
-        const beforeResult = yield* $(
-          self.activities.onComplete.callbacks.before({
+        const performComplete = yield* $(
+          Effect.once(
+            Effect.gen(function* ($) {
+              yield* $(self.workflow.stateManager.completeTask(self));
+              yield* $(self.cancelCancellationRegion(context));
+              yield* $(self.produceTokensInOutgoingFlows(context));
+              yield* $(self.enablePostTasks(context));
+            })
+          )
+        );
+
+        const result = yield* $(
+          self.activities.onComplete({
             ...activityContext,
             context,
             input,
+            completeTask() {
+              return pipe(
+                performComplete,
+                Effect.provideService(TaskActionsService, taskActionsService)
+              );
+            },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(self.workflow.stateManager.completeTask(self));
+        yield* $(performComplete);
 
-        const result = yield* $(
-          self.activities.onComplete.callbacks.fn({
-            ...activityContext,
-            context,
-            input: beforeResult,
-          }) as Effect.Effect<never, never, unknown>
-        );
-
-        yield* $(self.cancelCancellationRegion(context));
-        yield* $(self.produceTokensInOutgoingFlows(context));
-        yield* $(self.enablePostTasks(context));
-
-        return yield* $(
-          self.activities.onComplete.callbacks.after({
-            ...activityContext,
-            context,
-            input: result,
-          }) as Effect.Effect<never, never, unknown>
-        );
+        return result;
       }
     });
   }
@@ -275,28 +263,24 @@ export class Task {
       const state = yield* $(self.getState());
       if (isValidTransition(state, 'canceled')) {
         const activityContext = self.getActivityContext();
-        const beforeResult = yield* $(
-          self.activities.onCancel.callbacks.before({
-            ...activityContext,
-            context,
-            input: undefined,
-          }) as Effect.Effect<never, never, unknown>
+
+        const performCancel = yield* $(
+          Effect.once(self.workflow.stateManager.cancelTask(self))
         );
-        yield* $(self.workflow.stateManager.cancelTask(self));
+
         const result = yield* $(
-          self.activities.onCancel.callbacks.fn({
+          self.activities.onCancel({
             ...activityContext,
             context,
-            input: beforeResult,
+            cancelTask() {
+              return performCancel;
+            },
           }) as Effect.Effect<never, never, unknown>
         );
-        yield* $(
-          self.activities.onCancel.callbacks.after({
-            ...activityContext,
-            context,
-            input: result,
-          }) as Effect.Effect<never, never, unknown>
-        );
+
+        yield* $(performCancel);
+
+        return result;
       }
     });
   }

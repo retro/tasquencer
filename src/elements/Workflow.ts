@@ -33,8 +33,8 @@ export class Workflow<
   _Context extends object = object,
   _WorkflowTaskActivitiesOutputs extends Record<
     string,
-    TB.ActivitiesReturnEffect
-  > = Record<string, TB.ActivitiesReturnEffect>
+    TB.ActivitiesReturnType
+  > = Record<string, TB.ActivitiesReturnType>
 > {
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};

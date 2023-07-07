@@ -7,6 +7,7 @@ import {
   TaskFlowBuilder,
 } from './builder/FlowBuilder.js';
 import { AnyTaskBuilder } from './builder/TaskBuilder.js';
+import { WorkflowNotInitialized } from './errors.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -70,3 +71,68 @@ export interface TaskActionsService {
   ): Effect.Effect<never, never, void>;
 }
 export const TaskActionsService = Context.Tag<TaskActionsService>();
+
+export interface DefaultActivityPayload {
+  getTaskId: () => Effect.Effect<never, never, string>;
+  getTaskName: () => Effect.Effect<never, never, string>;
+  getWorkflowId: () => Effect.Effect<never, never, string>;
+  getTaskState: () => Effect.Effect<never, WorkflowNotInitialized, TaskState>;
+}
+
+export type OnDisablePayload<C extends object = object> =
+  DefaultActivityPayload & {
+    context: C;
+    disableTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
+  };
+
+export type OnEnablePayload<C extends object = object> =
+  DefaultActivityPayload & {
+    context: C;
+    enableTask: () => Effect.Effect<
+      never,
+      WorkflowNotInitialized,
+      { activateTask: (input?: unknown) => Effect.Effect<never, never, void> }
+    >;
+  };
+
+export type OnActivatePayload<C extends object = object> =
+  DefaultActivityPayload & {
+    context: C;
+    input: unknown;
+    activateTask: () => Effect.Effect<
+      never,
+      WorkflowNotInitialized,
+      { completeTask: (input?: unknown) => Effect.Effect<never, never, void> }
+    >;
+  };
+
+export type OnCompletePayload<C extends object = object> =
+  DefaultActivityPayload & {
+    context: C;
+    input: unknown;
+    completeTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
+  };
+
+export type OnCancelPayload<C extends object = object> =
+  DefaultActivityPayload & {
+    context: C;
+    cancelTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
+  };
+
+export interface TaskActivities<C extends object = object> {
+  onDisable: (
+    payload: OnDisablePayload<C>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+  onEnable: (
+    payload: OnEnablePayload<C>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+  onActivate: (
+    payload: OnActivatePayload<C>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+  onComplete: (
+    payload: OnCompletePayload<C>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+  onCancel: (
+    payload: OnCancelPayload<C>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+}

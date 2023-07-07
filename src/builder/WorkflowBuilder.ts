@@ -44,8 +44,8 @@ export class WorkflowBuilder<
   WBConnectedConditions = never,
   WBTasksActivitiesOutputs extends Record<
     string,
-    TB.ActivitiesReturnEffect
-  > = Record<string, TB.ActivitiesReturnEffect>
+    { onComplete: unknown; onActivate: unknown }
+  > = Record<string, { onComplete: unknown; onActivate: unknown }>
 > {
   readonly name: string;
   definition: WorkflowBuilderDefinition;
@@ -131,15 +131,17 @@ export class WorkflowBuilder<
     task: T & TaskWithValidContext<WBContext, T>
   ): WorkflowBuilder<
     WBContext,
-    R,
-    E,
+    R | TB.TaskBuilderR<T>,
+    E | TB.TaskBuilderE<T>,
     WBTasks | TN,
     WBConditions,
     WBCancellationRegions,
     WBTasksWithOrXorSplit | X,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs & { [tn in TN]: TB.TaskBuilderActivityOutputs<T> }
+    WBTasksActivitiesOutputs & {
+      [tn in TN]: TB.TaskBuilderActivitiesReturnType<T>;
+    }
   >;
   task<
     TN extends string,
@@ -156,8 +158,8 @@ export class WorkflowBuilder<
     task: T
   ): WorkflowBuilder<
     WBContext,
-    R,
-    E,
+    R | TB.TaskBuilderR<ReturnType<T>>,
+    E | TB.TaskBuilderE<ReturnType<T>>,
     WBTasks | TN,
     WBConditions,
     WBCancellationRegions,
@@ -165,7 +167,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.TaskBuilderActivityOutputs<ReturnType<T>>;
+      [tn in TN]: TB.TaskBuilderActivitiesReturnType<ReturnType<T>>;
     }
   >;
   task<TN extends string>(
@@ -181,7 +183,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.ActivitiesReturnEffect;
+      [tn in TN]: TB.ActivitiesReturnType;
     }
   >;
   task(

@@ -1,12 +1,15 @@
-name: Typescript Library Starter
+name: Publish
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 env:
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 jobs:
-  typescript-library-starter:
+  publish:
     runs-on: ubuntu-latest
 
     concurrency:

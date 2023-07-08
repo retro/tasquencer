@@ -1,3 +1,9 @@
+/* This code was ported from the original YAWL codebase
+   (https://github.com/yawlfoundation/yawl/blob/master/src/org/yawlfoundation/yawl/elements/e2wfoj/E2WFOJNet.java)
+
+   Although the original code is licensed under the LGPL, the authors of the original code gave the 
+   permission to relicense it under the MIT license for the purposes of this codebase.
+*/
 import { Condition } from './elements/Condition.js';
 import { Marking } from './elements/Marking.js';
 import { Task } from './elements/Task.js';

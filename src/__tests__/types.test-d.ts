@@ -5,6 +5,7 @@ import { assertType, it } from 'vitest';
 
 import * as Builder from '../builder.js';
 import {
+  EndConditionDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
   TaskNotActivatedError,
@@ -91,6 +92,7 @@ it('can correctly infer predicate types', () => {
         | TaskDoesNotExist
         | WorkflowNotInitialized
         | StartConditionDoesNotExist
+        | EndConditionDoesNotExist
         | TaskNotEnabledError
         | TaskNotActivatedError,
         void

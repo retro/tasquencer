@@ -2,7 +2,7 @@ import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import {
-  DefaultActivityPayload,
+  DefaultTaskActivityPayload,
   JoinType,
   SplitType,
   TaskActionsService,
@@ -27,7 +27,9 @@ function isValidTransition(
 ): to is keyof typeof VALID_STATE_TRANSITIONS {
   return VALID_STATE_TRANSITIONS[from].has(to);
 }
-
+// TODO: handle case where task is completed and prev condition(s)
+// have positive marking, so it should transition to enabled again
+// TODO: add onExecute
 export class Task {
   readonly workflow: Workflow;
   readonly preSet: Record<string, Condition> = {};
@@ -95,7 +97,7 @@ export class Task {
     });
   }
 
-  getActivityContext(): DefaultActivityPayload {
+  getActivityContext(): DefaultTaskActivityPayload {
     return {
       getTaskId: () => Effect.succeed(this.id),
       getTaskName: () => Effect.succeed(this.name),

@@ -14,6 +14,9 @@ export interface JSInterpreterState {
 
 export type WorkflowState = Record<string, WorkflowItem>;
 export interface WorkflowItem {
+  id: string;
+  name: string;
+  state: 'running' | 'done' | 'canceled';
   tasks: Record<string, TaskItem>;
   conditions: Record<string, ConditionItem>;
 }
@@ -30,9 +33,15 @@ export interface TaskItem {
   state: TaskState;
 }
 
-export interface StateManager {
-  initializeWorkflow(workflow: Workflow): Effect.Effect<never, never, void>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyWorkflow = Workflow<any, any, any, any, any>;
 
+export interface StateManager {
+  initializeWorkflow(workflow: AnyWorkflow): Effect.Effect<never, never, void>;
+  updateWorkflowState(
+    workflow: AnyWorkflow,
+    state: 'canceled' | 'done'
+  ): Effect.Effect<never, WorkflowNotInitialized, void>;
   incrementConditionMarking(
     condition: Condition
   ): Effect.Effect<never, WorkflowNotInitialized, void>;
@@ -56,7 +65,7 @@ export interface StateManager {
   ): Effect.Effect<never, WorkflowNotInitialized, TaskState>;
 
   getWorkflowState(
-    workflowOrId: Workflow | string
+    workflowOrId: AnyWorkflow | string
   ): Effect.Effect<never, WorkflowNotInitialized, WorkflowItem>;
 }
 

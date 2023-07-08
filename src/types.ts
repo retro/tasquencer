@@ -7,7 +7,14 @@ import {
   TaskFlowBuilder,
 } from './builder/FlowBuilder.js';
 import { AnyTaskBuilder } from './builder/TaskBuilder.js';
-import { WorkflowNotInitialized } from './errors.js';
+import {
+  EndConditionDoesNotExist,
+  StartConditionDoesNotExist,
+  TaskDoesNotExist,
+  TaskNotActivatedError,
+  TaskNotEnabledError,
+  WorkflowNotInitialized,
+} from './errors.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -72,21 +79,43 @@ export interface TaskActionsService {
 }
 export const TaskActionsService = Context.Tag<TaskActionsService>();
 
-export interface DefaultActivityPayload {
+export interface DefaultTaskActivityPayload {
   getTaskId: () => Effect.Effect<never, never, string>;
   getTaskName: () => Effect.Effect<never, never, string>;
   getWorkflowId: () => Effect.Effect<never, never, string>;
   getTaskState: () => Effect.Effect<never, WorkflowNotInitialized, TaskState>;
 }
 
-export type OnDisablePayload<C extends object = object> =
-  DefaultActivityPayload & {
+export interface WorkflowOnStartPayload<C> {
+  context: C;
+  input: unknown;
+  getWorkflowId: () => Effect.Effect<never, never, string>;
+  startWorkflow(): Effect.Effect<
+    never,
+    | StartConditionDoesNotExist
+    | EndConditionDoesNotExist
+    | WorkflowNotInitialized
+    | TaskDoesNotExist
+    | TaskNotEnabledError
+    | TaskNotActivatedError,
+    void
+  >;
+}
+
+export interface WorkflowOnEndPayload<C> {
+  context: C;
+  getWorkflowId: () => Effect.Effect<never, never, string>;
+  endWorkflow(): Effect.Effect<never, WorkflowNotInitialized, void>;
+}
+
+export type TaskOnDisablePayload<C extends object = object> =
+  DefaultTaskActivityPayload & {
     context: C;
     disableTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
   };
 
-export type OnEnablePayload<C extends object = object> =
-  DefaultActivityPayload & {
+export type TaskOnEnablePayload<C extends object = object> =
+  DefaultTaskActivityPayload & {
     context: C;
     enableTask: () => Effect.Effect<
       never,
@@ -95,8 +124,8 @@ export type OnEnablePayload<C extends object = object> =
     >;
   };
 
-export type OnActivatePayload<C extends object = object> =
-  DefaultActivityPayload & {
+export type TaskOnActivatePayload<C extends object = object> =
+  DefaultTaskActivityPayload & {
     context: C;
     input: unknown;
     activateTask: () => Effect.Effect<
@@ -106,33 +135,33 @@ export type OnActivatePayload<C extends object = object> =
     >;
   };
 
-export type OnCompletePayload<C extends object = object> =
-  DefaultActivityPayload & {
+export type TaskOnCompletePayload<C extends object = object> =
+  DefaultTaskActivityPayload & {
     context: C;
     input: unknown;
     completeTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
   };
 
-export type OnCancelPayload<C extends object = object> =
-  DefaultActivityPayload & {
+export type TaskOnCancelPayload<C extends object = object> =
+  DefaultTaskActivityPayload & {
     context: C;
     cancelTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
   };
 
 export interface TaskActivities<C extends object = object> {
   onDisable: (
-    payload: OnDisablePayload<C>
+    payload: TaskOnDisablePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onEnable: (
-    payload: OnEnablePayload<C>
+    payload: TaskOnEnablePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onActivate: (
-    payload: OnActivatePayload<C>
+    payload: TaskOnActivatePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onComplete: (
-    payload: OnCompletePayload<C>
+    payload: TaskOnCompletePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onCancel: (
-    payload: OnCancelPayload<C>
+    payload: TaskOnCancelPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
 }

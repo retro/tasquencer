@@ -10,84 +10,107 @@ import {
   WorkflowTasksActivitiesOutputs,
 } from './elements/Workflow.js';
 import { TaskNotActivatedError, TaskNotEnabledError } from './errors.js';
-import { StateManager } from './stateManager/types.js';
 import { TaskActionsService } from './types.js';
-
-/*export type onStart = (
-  state: InterpreterState
-) => Effect.Effect<never, never, void>;
-export const onStart = Context.Tag<onStart>();
-
-export type onActivate = (
-  state: InterpreterState
-) => Effect.Effect<never, never, void>;
-export const onActivate = Context.Tag<onActivate>();
-
-export type onComplete = (
-  state: InterpreterState
-) => Effect.Effect<never, never, void>;
-export const onComplete = Context.Tag<onComplete>();
-
-export type onCancel = (
-  state: InterpreterState
-) => Effect.Effect<never, never, void>;
-export const onCancel = Context.Tag<onCancel>();*/
-
-type MergedReturnEffect<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends (...args: any[]) => Effect.Effect<any, any, any>,
-  R,
-  E
-> = Effect.Effect<
-  Effect.Effect.Context<ReturnType<T>> | R,
-  Effect.Effect.Error<ReturnType<T>> | E,
-  Effect.Effect.Success<ReturnType<T>>
->;
 
 type QueueItem =
   | { type: 'activate'; taskName: string; input: unknown }
   | { type: 'complete'; taskName: string; input: unknown };
+
+// TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Interpreter<
   TasksActivitiesOutputs extends Record<string, ActivitiesReturnType>,
+  OnStartReturnType = unknown,
   R = never,
   E = never
 > {
   constructor(
     private workflow: Workflow,
-    private stateManager: StateManager,
     private context: object,
     private queue: Queue.Queue<QueueItem>
   ) {}
   // TODO: Check if workflow was already started
-  private _start() {
+  private _start(input: unknown) {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.initialize());
+      const performStart = yield* $(
+        Effect.once(
+          Effect.gen(function* ($) {
+            yield* $(self.workflow.initialize());
 
-      const startCondition = yield* $(self.workflow.getStartCondition());
-      yield* $(
-        Effect.succeed(startCondition),
-        Effect.tap((s) => s.incrementMarking()),
-        Effect.tap((s) => s.enableTasks(self.context)),
-        Effect.provideService(TaskActionsService, self.getTaskActionsService())
+            const startCondition = yield* $(self.workflow.getStartCondition());
+            yield* $(
+              Effect.succeed(startCondition),
+              Effect.tap((s) => s.incrementMarking()),
+              Effect.tap((s) => s.enableTasks(self.context)),
+              Effect.provideService(
+                TaskActionsService,
+                self.getTaskActionsService()
+              )
+            );
+
+            yield* $(self.runQueue());
+            yield* $(self.maybeEnd());
+          })
+        )
       );
 
-      yield* $(self.runQueue());
+      const result = yield* $(
+        self.workflow.onStart({
+          context: self.context,
+          input,
+          getWorkflowId() {
+            return Effect.succeed(self.workflow.id);
+          },
+          startWorkflow() {
+            return performStart;
+          },
+        }) as Effect.Effect<never, never, unknown>
+      );
+
+      yield* $(performStart);
+
+      return result;
     });
   }
 
-  start(): MergedReturnEffect<
-    Interpreter<TasksActivitiesOutputs>['_start'],
-    R,
-    E
-  > {
-    return this._start();
+  start<I>(input?: I) {
+    return this._start(input) as Effect.Effect<
+      | Effect.Effect.Context<
+          ReturnType<Interpreter<TasksActivitiesOutputs>['_start']>
+        >
+      | R,
+      | Effect.Effect.Error<
+          ReturnType<Interpreter<TasksActivitiesOutputs>['_start']>
+        >
+      | E,
+      unknown extends I
+        ? undefined
+        : unknown extends OnStartReturnType
+        ? I
+        : OnStartReturnType
+    >;
   }
 
-  resume() {
-    const { workflow } = this;
+  private maybeEnd() {
+    const { workflow, context } = this;
     return Effect.gen(function* ($) {
-      yield* $(workflow.resume());
+      if (yield* $(workflow.isEndReached())) {
+        const performEnd = yield* $(Effect.once(workflow.end()));
+
+        yield* $(
+          workflow.onEnd({
+            context,
+            getWorkflowId() {
+              return Effect.succeed(workflow.id);
+            },
+            endWorkflow() {
+              return performEnd;
+            },
+          }) as Effect.Effect<never, never, unknown>
+        );
+
+        yield* $(performEnd);
+      }
     });
   }
 
@@ -165,6 +188,7 @@ export class Interpreter<
       );
 
       yield* $(self.runQueue());
+      yield* $(self.maybeEnd());
 
       return output;
     });
@@ -237,27 +261,36 @@ export class Interpreter<
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type WorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
+type WorkflowOnStartReturnType<T> = T extends Workflow<
+  any,
+  any,
+  any,
+  any,
+  infer R
+>
+  ? R
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function make<
-  W extends Workflow,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
   E extends WorkflowE<W> = WorkflowE<W>,
   C extends WorkflowContext<W> = WorkflowContext<W>
 >(workflow: W, context: C) {
   return Effect.gen(function* ($) {
-    const stateManager = yield* $(StateManager);
     const queue = yield* $(Queue.unbounded<QueueItem>());
 
     return new Interpreter<
       WorkflowTasksActivitiesOutputs<W>,
+      WorkflowOnStartReturnType<W>,
       R,
       E
-    >(workflow, stateManager, context, queue);
+    >(workflow, context, queue);
   });
 }

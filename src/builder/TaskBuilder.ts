@@ -4,19 +4,15 @@ import { Task } from '../elements/Task.js';
 import { Workflow } from '../elements/Workflow.js';
 import {
   JoinType,
-  OnActivatePayload,
-  OnCancelPayload,
-  OnCompletePayload,
-  OnDisablePayload,
-  OnEnablePayload,
   SplitType,
   TaskActivities,
+  TaskOnActivatePayload,
+  TaskOnCancelPayload,
+  TaskOnCompletePayload,
+  TaskOnDisablePayload,
+  TaskOnEnablePayload,
 } from '../types.js';
 import { IdProvider } from './IdProvider.js';
-
-/*type ActivityBuilderWithValidContext<C, A> = C extends AB.ActivityUserContext<A>
-  ? A
-  : never;*/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderUserContext<T> = T extends TaskBuilder<
@@ -154,7 +150,7 @@ export class TaskBuilder<
 
   onDisable<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: OnDisablePayload<C>) => Effect.Effect<any, any, any>
+    F extends (payload: TaskOnDisablePayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -172,7 +168,7 @@ export class TaskBuilder<
 
   onEnable<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: OnEnablePayload<C>) => Effect.Effect<any, any, any>
+    F extends (payload: TaskOnEnablePayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -189,8 +185,10 @@ export class TaskBuilder<
   }
 
   onActivate<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: OnActivatePayload<C>) => Effect.Effect<any, any, any>
+    F extends (
+      payload: TaskOnActivatePayload<C>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -207,8 +205,10 @@ export class TaskBuilder<
   }
 
   onComplete<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: OnCompletePayload<C>) => Effect.Effect<any, any, any>
+    F extends (
+      payload: TaskOnCompletePayload<C>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -226,7 +226,7 @@ export class TaskBuilder<
 
   onCancel<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: OnCancelPayload<C>) => Effect.Effect<any, any, any>
+    F extends (payload: TaskOnCancelPayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<

@@ -18,8 +18,11 @@ import {
 
 type WorkflowStateRef = Ref.Ref<WorkflowState>;
 
-function getInitialWorkflowState(): WorkflowItem {
+function getInitialWorkflowState(id: string, name: string): WorkflowItem {
   return {
+    id,
+    name,
+    state: 'running',
     tasks: {},
     conditions: {},
   };
@@ -94,7 +97,25 @@ export class Memory implements StateManager {
     return Effect.gen(function* ($) {
       yield* $(
         updateStoreRef(storeRef, (draft) => {
-          draft[workflow.id] = getInitialWorkflowState();
+          draft[workflow.id] = getInitialWorkflowState(
+            workflow.id,
+            workflow.name
+          );
+        })
+      );
+    });
+  }
+
+  updateWorkflowState(workflow: Workflow, state: 'canceled' | 'done') {
+    const { storeRef } = this;
+    return Effect.gen(function* ($) {
+      // We want to error out if the workflow is not initialized
+      yield* $(getWorkflowState(storeRef, workflow));
+
+      yield* $(
+        updateStoreRef(storeRef, (draft) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          draft[workflow.id]!.state = state;
         })
       );
     });
@@ -222,6 +243,9 @@ export class Memory implements StateManager {
           : getWorkflowState(storeRef, workflowOrId)
       );
       return {
+        id: workflowState.id,
+        name: workflowState.name,
+        state: workflowState.state,
         tasks: workflowState.tasks,
         conditions: workflowState.conditions,
       };

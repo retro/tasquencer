@@ -4,44 +4,56 @@ import * as TB from '../builder/TaskBuilder.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
+  EndConditionDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
 } from '../errors.js';
 import { StateManager } from '../stateManager/types.js';
+import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
 import { Task } from './Task.js';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   object,
   infer U
 >
   ? U
   : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
-// TODO: implement onStart and onEnd activities
 // TODO: persist workflow state (running, done) and name
-// TODO: figure out if workflow should end when end condition is reached even
-// if there are tokens elsewhere
+// TODO: implement cancel workflow
+
 export class Workflow<
   _R = never,
   _E = never,
-  _Context extends object = object,
+  Context extends object = object,
   _WorkflowTaskActivitiesOutputs extends Record<
     string,
     TB.ActivitiesReturnType
-  > = Record<string, TB.ActivitiesReturnType>
+  > = Record<string, TB.ActivitiesReturnType>,
+  _OnStartReturnType = unknown
 > {
   readonly tasks: Record<string, Task> = {};
   readonly conditions: Record<string, Condition> = {};
   private startCondition?: Condition;
   private endCondition?: Condition;
 
-  constructor(readonly id: string, readonly stateManager: StateManager) {}
+  constructor(
+    readonly id: string,
+    readonly name: string,
+    readonly stateManager: StateManager,
+    readonly onStart: (
+      payload: WorkflowOnStartPayload<Context>
+    ) => Effect.Effect<unknown, unknown, unknown>,
+    readonly onEnd: (
+      payload: WorkflowOnEndPayload<Context>
+    ) => Effect.Effect<unknown, unknown, unknown>
+  ) {}
 
   addTask(task: Task) {
     this.tasks[task.name] = task;
@@ -70,15 +82,24 @@ export class Workflow<
   initialize(): Effect.Effect<never, never, void> {
     return this.stateManager.initializeWorkflow(this);
   }
-  resume() {
-    return Effect.unit();
+
+  end() {
+    return this.stateManager.updateWorkflowState(this, 'done');
   }
+
   getStartCondition() {
     const startCondition = this.startCondition;
     if (startCondition) {
       return Effect.succeed(startCondition);
     }
     return Effect.fail(StartConditionDoesNotExist());
+  }
+  getEndCondition() {
+    const endCondition = this.endCondition;
+    if (endCondition) {
+      return Effect.succeed(endCondition);
+    }
+    return Effect.fail(EndConditionDoesNotExist());
   }
   getCondition(name: string) {
     const condition = this.conditions[name];
@@ -133,6 +154,19 @@ export class Workflow<
       e2wfojnet.restrictNet(task);
 
       return e2wfojnet.orJoinEnabled(marking, task);
+    });
+  }
+  isEndReached() {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const endCondition = yield* $(self.getEndCondition());
+      const endConditionMarking = yield* $(endCondition.getMarking());
+
+      if (endConditionMarking > 0) {
+        return true;
+      }
+
+      return false;
     });
   }
 }

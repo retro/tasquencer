@@ -7,9 +7,9 @@ import * as Interpreter from '../interpreter.js';
 import { createMemory } from '../stateManager/memory.js';
 import { IdGenerator, StateManager } from '../stateManager/types.js';
 import {
-  OnActivatePayload,
-  OnCompletePayload,
-  OnEnablePayload,
+  TaskOnActivatePayload,
+  TaskOnCompletePayload,
+  TaskOnEnablePayload,
 } from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
@@ -65,6 +65,9 @@ it('can run simple net with and-split and and-join', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'enabled' },
       },
@@ -78,6 +81,9 @@ it('can run simple net with and-split and and-join', () => {
     const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'active' },
       },
@@ -91,6 +97,9 @@ it('can run simple net with and-split and and-join', () => {
     const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'enabled' },
@@ -110,6 +119,9 @@ it('can run simple net with and-split and and-join', () => {
     const res4 = yield* $(interpreter.getWorkflowState());
 
     expect(res4).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'active' },
@@ -129,6 +141,9 @@ it('can run simple net with and-split and and-join', () => {
     const res5 = yield* $(interpreter.getWorkflowState());
 
     expect(res5).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -160,6 +175,9 @@ it('can run simple net with and-split and and-join', () => {
     const res6 = yield* $(interpreter.getWorkflowState());
 
     expect(res6).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -189,6 +207,9 @@ it('can run simple net with and-split and and-join', () => {
     const res7 = yield* $(interpreter.getWorkflowState());
 
     expect(res7).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -220,6 +241,9 @@ it('can run simple net with and-split and and-join', () => {
     const res8 = yield* $(interpreter.getWorkflowState());
 
     expect(res8).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -251,6 +275,9 @@ it('can run simple net with and-split and and-join', () => {
     const res9 = yield* $(interpreter.getWorkflowState());
 
     expect(res9).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -287,6 +314,9 @@ it('can run simple net with and-split and and-join', () => {
     const res10 = yield* $(interpreter.getWorkflowState());
 
     expect(res10).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -329,6 +359,9 @@ it('can run simple net with and-split and and-join', () => {
     const res11 = yield* $(interpreter.getWorkflowState());
 
     expect(res11).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -371,6 +404,9 @@ it('can run simple net with and-split and and-join', () => {
     const res12 = yield* $(interpreter.getWorkflowState());
 
     expect(res12).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'done',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -471,6 +507,9 @@ it('can run resume a workflow', () => {
     // the conditions and tasks that were persisted have their state and ID
     // restored.
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-6': { id: 'task-6', name: 'pay', state: 'enabled' },
@@ -498,7 +537,7 @@ it('can run workflow with activities', () => {
     input?: any;
   }[] = [];
 
-  const onEnableActivity = (payload: OnEnablePayload) =>
+  const onEnableActivity = (payload: TaskOnEnablePayload) =>
     Effect.gen(function* ($) {
       const name = yield* $(payload.getTaskName());
       log.push({
@@ -515,7 +554,7 @@ it('can run workflow with activities', () => {
       return 'onEnable';
     });
 
-  const onActivateActivity = (payload: OnActivatePayload) =>
+  const onActivateActivity = (payload: TaskOnActivatePayload) =>
     Effect.gen(function* ($) {
       const name = yield* $(payload.getTaskName());
       log.push({
@@ -532,7 +571,7 @@ it('can run workflow with activities', () => {
       return `onActivate: ${payload.input}`;
     });
 
-  const onCompleteActivity = (payload: OnCompletePayload) =>
+  const onCompleteActivity = (payload: TaskOnCompletePayload) =>
     Effect.gen(function* ($) {
       const name = yield* $(payload.getTaskName());
       log.push({
@@ -630,8 +669,6 @@ it('can run workflow with activities', () => {
     yield* $(interpreter.activateTask('check_goods'));
     yield* $(interpreter.completeTask('check_goods'));
 
-    const workflowRes = yield* $(interpreter.getWorkflowState());
-
     expect(log).toEqual([
       { name: 'scan_goods', activityPhase: 'before', taskPhase: 'enable' },
       { name: 'scan_goods', activityPhase: 'after', taskPhase: 'enable' },
@@ -721,7 +758,12 @@ it('can run workflow with activities', () => {
       },
     ]);
 
+    const workflowRes = yield* $(interpreter.getWorkflowState());
+
     expect(workflowRes).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'done',
       tasks: {
         'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
         'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
@@ -809,6 +851,9 @@ it('can auto activate and auto complete tasks', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'name',
+      state: 'done',
       tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -857,6 +902,9 @@ it('supports deferred choice pattern', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'deferred-choice',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'task_1', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'task_2', state: 'enabled' },
@@ -872,6 +920,9 @@ it('supports deferred choice pattern', () => {
     const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'deferred-choice',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'task_1', state: 'completed' },
         'task-3': { id: 'task-3', name: 'task_2', state: 'disabled' },
@@ -893,6 +944,9 @@ it('supports deferred choice pattern', () => {
     const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'deferred-choice',
+      state: 'done',
       tasks: {
         'task-1': { id: 'task-1', name: 'task_1', state: 'completed' },
         'task-3': { id: 'task-3', name: 'task_2', state: 'disabled' },
@@ -956,6 +1010,9 @@ it('supports xor join', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'xor-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'enabled' },
       },
@@ -970,6 +1027,9 @@ it('supports xor join', () => {
     const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'xor-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'enabled' },
@@ -988,6 +1048,9 @@ it('supports xor join', () => {
     const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'xor-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'disabled' },
@@ -1011,7 +1074,7 @@ it('supports xor join', () => {
 });
 
 it('supports interleaved parallel routing pattern', () => {
-  const workflowDefinition = Builder.workflow('xor-join')
+  const workflowDefinition = Builder.workflow('interleaved-parallel')
     .startCondition('start')
     .condition('mutex')
     .task('initial_task')
@@ -1057,6 +1120,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'enabled' },
       },
@@ -1071,6 +1137,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'enabled' },
@@ -1097,6 +1166,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'active' },
@@ -1123,6 +1195,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res4 = yield* $(interpreter.getWorkflowState());
 
     expect(res4).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1155,6 +1230,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res5 = yield* $(interpreter.getWorkflowState());
 
     expect(res5).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1187,6 +1265,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res6 = yield* $(interpreter.getWorkflowState());
 
     expect(res6).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1224,6 +1305,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res7 = yield* $(interpreter.getWorkflowState());
 
     expect(res7).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1261,6 +1345,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res8 = yield* $(interpreter.getWorkflowState());
 
     expect(res8).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1304,6 +1391,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res9 = yield* $(interpreter.getWorkflowState());
 
     expect(res9).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1347,6 +1437,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res10 = yield* $(interpreter.getWorkflowState());
 
     expect(res10).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1397,6 +1490,9 @@ it('supports interleaved parallel routing pattern', () => {
     const res11 = yield* $(interpreter.getWorkflowState());
 
     expect(res11).toEqual({
+      id: 'workflow-1',
+      name: 'interleaved-parallel',
+      state: 'done',
       tasks: {
         'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
@@ -1472,14 +1568,14 @@ it('supports xor join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const workflow = yield* $(
+    const workflow1 = yield* $(
       workflowDefinition.build(),
       Effect.provideService(StateManager, stateManager),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
     const interpreter1 = yield* $(
-      Interpreter.make(workflow, { foo: 'B' }),
+      Interpreter.make(workflow1, { foo: 'B' }),
       Effect.provideService(StateManager, stateManager)
     );
 
@@ -1490,6 +1586,9 @@ it('supports xor join', () => {
     const res1_1 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_1).toEqual({
+      id: 'workflow-1',
+      name: 'xor-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -1500,8 +1599,14 @@ it('supports xor join', () => {
       },
     });
 
+    const workflow2 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
     const interpreter2 = yield* $(
-      Interpreter.make(workflow, { foo: 'C' }),
+      Interpreter.make(workflow2, { foo: 'C' }),
       Effect.provideService(StateManager, stateManager)
     );
 
@@ -1512,18 +1617,27 @@ it('supports xor join', () => {
     const res2_1 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_1).toEqual({
+      id: 'workflow-2',
+      name: 'xor-join',
+      state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
+        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'C', state: 'enabled' },
       },
       conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
-        'condition-4': { id: 'condition-4', name: 'implicit:A->C', marking: 1 },
+        'condition-6': { id: 'condition-6', name: 'start', marking: 0 },
+        'condition-9': { id: 'condition-9', name: 'implicit:A->C', marking: 1 },
       },
     });
 
+    const workflow3 = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
     const interpreter3 = yield* $(
-      Interpreter.make(workflow, { foo: 'not a match' }),
+      Interpreter.make(workflow3, { foo: 'not a match' }),
       Effect.provideService(StateManager, stateManager)
     );
 
@@ -1534,13 +1648,20 @@ it('supports xor join', () => {
     const res3_1 = yield* $(interpreter3.getWorkflowState());
 
     expect(res3_1).toEqual({
+      id: 'workflow-3',
+      name: 'xor-join',
+      state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
+        'task-9': { id: 'task-9', name: 'A', state: 'completed' },
+        'task-12': { id: 'task-12', name: 'D', state: 'enabled' },
       },
       conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
-        'condition-5': { id: 'condition-5', name: 'implicit:A->D', marking: 1 },
+        'condition-11': { id: 'condition-11', name: 'start', marking: 0 },
+        'condition-15': {
+          id: 'condition-15',
+          name: 'implicit:A->D',
+          marking: 1,
+        },
       },
     });
   });
@@ -1602,6 +1723,9 @@ it('supports or split and or join', () => {
     const res1_1 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_1).toEqual({
+      id: 'workflow-1',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: { 'task-1': { id: 'task-1', name: 'register', state: 'enabled' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
@@ -1614,6 +1738,9 @@ it('supports or split and or join', () => {
     const res1_2 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_2).toEqual({
+      id: 'workflow-1',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'register', state: 'completed' },
         'task-2': { id: 'task-2', name: 'book_flight', state: 'enabled' },
@@ -1646,6 +1773,9 @@ it('supports or split and or join', () => {
     const res1_3 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_3).toEqual({
+      id: 'workflow-1',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'register', state: 'completed' },
         'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
@@ -1683,6 +1813,9 @@ it('supports or split and or join', () => {
     const res1_4 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_4).toEqual({
+      id: 'workflow-1',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'register', state: 'completed' },
         'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
@@ -1725,6 +1858,9 @@ it('supports or split and or join', () => {
     const res1_5 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_5).toEqual({
+      id: 'workflow-1',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'register', state: 'completed' },
         'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
@@ -1789,6 +1925,9 @@ it('supports or split and or join', () => {
     const res2_1 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_1).toEqual({
+      id: 'workflow-2',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-6': { id: 'task-6', name: 'register', state: 'completed' },
         'task-7': { id: 'task-7', name: 'book_flight', state: 'enabled' },
@@ -1815,6 +1954,9 @@ it('supports or split and or join', () => {
     const res2_2 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_2).toEqual({
+      id: 'workflow-2',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-6': { id: 'task-6', name: 'register', state: 'completed' },
         'task-7': { id: 'task-7', name: 'book_flight', state: 'completed' },
@@ -1846,6 +1988,9 @@ it('supports or split and or join', () => {
     const res2_3 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_3).toEqual({
+      id: 'workflow-2',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-6': { id: 'task-6', name: 'register', state: 'completed' },
         'task-7': { id: 'task-7', name: 'book_flight', state: 'completed' },
@@ -1899,6 +2044,9 @@ it('supports or split and or join', () => {
     const res3_1 = yield* $(interpreter3.getWorkflowState());
 
     expect(res3_1).toEqual({
+      id: 'workflow-3',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-11': { id: 'task-11', name: 'register', state: 'completed' },
         'task-13': { id: 'task-13', name: 'book_hotel', state: 'enabled' },
@@ -1919,6 +2067,9 @@ it('supports or split and or join', () => {
     const res3_2 = yield* $(interpreter3.getWorkflowState());
 
     expect(res3_2).toEqual({
+      id: 'workflow-3',
+      name: 'or-split-and-or-join',
+      state: 'running',
       tasks: {
         'task-11': { id: 'task-11', name: 'register', state: 'completed' },
         'task-13': { id: 'task-13', name: 'book_hotel', state: 'completed' },
@@ -1945,7 +2096,7 @@ it('supports or split and or join', () => {
 
 it('supports multiple or splits and or joins (1)', () => {
   const workflowDefinition = Builder.workflow<{ isTaskDEnabled: boolean }>(
-    'xor-join'
+    'multiple-or-join-1'
   )
     .startCondition('start')
     .task('A', (t) => t.withSplitType('and'))
@@ -1990,6 +2141,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res1_1 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_1).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
@@ -2002,6 +2156,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res1_2 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_2).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2020,6 +2177,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res1_3 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_3).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2039,6 +2199,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res1_4 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_4).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2061,6 +2224,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res1_5 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_5).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2085,6 +2251,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res1_6 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_6).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2121,6 +2290,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res2_1 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_1).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: { 'task-7': { id: 'task-7', name: 'A', state: 'enabled' } },
       conditions: {
         'condition-10': { id: 'condition-10', name: 'start', marking: 1 },
@@ -2133,6 +2305,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res2_2 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_2).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-7': { id: 'task-7', name: 'A', state: 'completed' },
         'task-8': { id: 'task-8', name: 'B', state: 'enabled' },
@@ -2159,6 +2334,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res2_3 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_3).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-7': { id: 'task-7', name: 'A', state: 'completed' },
         'task-8': { id: 'task-8', name: 'B', state: 'completed' },
@@ -2190,6 +2368,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res2_4 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_4).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-7': { id: 'task-7', name: 'A', state: 'completed' },
         'task-8': { id: 'task-8', name: 'B', state: 'completed' },
@@ -2227,6 +2408,9 @@ it('supports multiple or splits and or joins (1)', () => {
     const res2_5 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_5).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-1',
+      state: 'running',
       tasks: {
         'task-7': { id: 'task-7', name: 'A', state: 'completed' },
         'task-8': { id: 'task-8', name: 'B', state: 'completed' },
@@ -2275,7 +2459,7 @@ it('supports multiple or splits and or joins (1)', () => {
 
 it('supports multiple or splits and or joins (2)', () => {
   const workflowDefinition = Builder.workflow<{ isBToCEnabled: boolean }>(
-    'or-split-or-join'
+    'multiple-or-join-2'
   )
     .startCondition('start')
     .task('A', (t) => t.withSplitType('and'))
@@ -2316,6 +2500,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res1_1 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_1).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
@@ -2328,6 +2515,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res1_2 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_2).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2345,6 +2535,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res1_3 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_3).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2364,6 +2557,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res1_4 = yield* $(interpreter1.getWorkflowState());
 
     expect(res1_4).toEqual({
+      id: 'workflow-1',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2395,6 +2591,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res2_1 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_1).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: { 'task-5': { id: 'task-5', name: 'A', state: 'enabled' } },
       conditions: {
         'condition-8': { id: 'condition-8', name: 'start', marking: 1 },
@@ -2407,6 +2606,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res2_2 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_2).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: {
         'task-5': { id: 'task-5', name: 'A', state: 'completed' },
         'task-6': { id: 'task-6', name: 'B', state: 'enabled' },
@@ -2432,6 +2634,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res2_3 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_3).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: {
         'task-5': { id: 'task-5', name: 'A', state: 'completed' },
         'task-6': { id: 'task-6', name: 'B', state: 'completed' },
@@ -2463,6 +2668,9 @@ it('supports multiple or splits and or joins (2)', () => {
     const res2_4 = yield* $(interpreter2.getWorkflowState());
 
     expect(res2_4).toEqual({
+      id: 'workflow-2',
+      name: 'multiple-or-join-2',
+      state: 'running',
       tasks: {
         'task-5': { id: 'task-5', name: 'A', state: 'completed' },
         'task-6': { id: 'task-6', name: 'B', state: 'completed' },
@@ -2551,6 +2759,9 @@ it('supports or joins and cancellation regions', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
@@ -2563,6 +2774,9 @@ it('supports or joins and cancellation regions', () => {
     const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2581,6 +2795,9 @@ it('supports or joins and cancellation regions', () => {
     const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2600,6 +2817,9 @@ it('supports or joins and cancellation regions', () => {
     const res4 = yield* $(interpreter.getWorkflowState());
 
     expect(res4).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2623,6 +2843,9 @@ it('supports or joins and cancellation regions', () => {
     const res5 = yield* $(interpreter.getWorkflowState());
 
     expect(res5).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2647,6 +2870,9 @@ it('supports or joins and cancellation regions', () => {
     const res6 = yield* $(interpreter.getWorkflowState());
 
     expect(res6).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2671,6 +2897,9 @@ it('supports or joins and cancellation regions', () => {
     const res7 = yield* $(interpreter.getWorkflowState());
 
     expect(res7).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'disabled' },
@@ -2697,6 +2926,9 @@ it('supports or joins and cancellation regions', () => {
     const res8 = yield* $(interpreter.getWorkflowState());
 
     expect(res8).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'disabled' },
@@ -2774,6 +3006,9 @@ it('supports or joins, loops and cancellation regions', () => {
     const res1 = yield* $(interpreter.getWorkflowState());
 
     expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
@@ -2786,6 +3021,9 @@ it('supports or joins, loops and cancellation regions', () => {
     const res2 = yield* $(interpreter.getWorkflowState());
 
     expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2802,6 +3040,9 @@ it('supports or joins, loops and cancellation regions', () => {
     const res3 = yield* $(interpreter.getWorkflowState());
 
     expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2821,6 +3062,9 @@ it('supports or joins, loops and cancellation regions', () => {
     const res4 = yield* $(interpreter.getWorkflowState());
 
     expect(res4).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'completed' },
@@ -2842,6 +3086,9 @@ it('supports or joins, loops and cancellation regions', () => {
     const res5 = yield* $(interpreter.getWorkflowState());
 
     expect(res5).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'running',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2863,6 +3110,9 @@ it('supports or joins, loops and cancellation regions', () => {
     const res6 = yield* $(interpreter.getWorkflowState());
 
     expect(res6).toEqual({
+      id: 'workflow-1',
+      name: 'or-join-cancellation-region',
+      state: 'done',
       tasks: {
         'task-1': { id: 'task-1', name: 'A', state: 'completed' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
@@ -2878,6 +3128,259 @@ it('supports or joins, loops and cancellation regions', () => {
         'condition-5': { id: 'condition-5', name: 'end', marking: 1 },
       },
     });
+  });
+
+  Effect.runSync(program);
+});
+
+it('calls onStart and onEnd activities (1)', () => {
+  const log: {
+    workflowId: string;
+    workflowPhase: 'end' | 'start';
+    activityPhase: 'before' | 'after';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value: any;
+  }[] = [];
+  const workflowDefinition = Builder.workflow('name')
+    .startCondition('start')
+    .task('A')
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.condition('end'))
+    .onStart(({ getWorkflowId, input, startWorkflow }) =>
+      Effect.gen(function* ($) {
+        const workflowId = yield* $(getWorkflowId());
+        log.push({
+          workflowId,
+          workflowPhase: 'start',
+          activityPhase: 'before',
+          value: input,
+        });
+        yield* $(startWorkflow());
+        log.push({
+          workflowId,
+          workflowPhase: 'start',
+          activityPhase: 'after',
+          value: input,
+        });
+        return `from onStart activity: ${input}`;
+      })
+    )
+    .onEnd(({ getWorkflowId, endWorkflow }) =>
+      Effect.gen(function* ($) {
+        const workflowId = yield* $(getWorkflowId());
+        log.push({
+          workflowId,
+          workflowPhase: 'end',
+          activityPhase: 'before',
+          value: undefined,
+        });
+        yield* $(endWorkflow());
+        log.push({
+          workflowId,
+          workflowPhase: 'end',
+          activityPhase: 'after',
+          value: undefined,
+        });
+      })
+    );
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    const start = yield* $(interpreter.start('starting'));
+
+    expect(start).toEqual(`from onStart activity: starting`);
+
+    yield* $(interpreter.activateTask('A'));
+    yield* $(interpreter.completeTask('A'));
+
+    const res1 = yield* $(interpreter.getWorkflowState());
+
+    expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'name',
+      state: 'done',
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
+      },
+    });
+
+    expect(log).toEqual([
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'start',
+        activityPhase: 'before',
+        value: 'starting',
+      },
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'start',
+        activityPhase: 'after',
+        value: 'starting',
+      },
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'end',
+        activityPhase: 'before',
+        value: undefined,
+      },
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'end',
+        activityPhase: 'after',
+        value: undefined,
+      },
+    ]);
+  });
+
+  Effect.runSync(program);
+});
+
+it('calls onStart and onEnd activities (2)', () => {
+  const log: {
+    workflowId: string;
+    workflowPhase: 'end' | 'start';
+    activityPhase: 'before' | 'after';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value: any;
+  }[] = [];
+  const workflowDefinition = Builder.workflow('name')
+    .startCondition('start')
+    .task('A', (t) =>
+      t
+        .onEnable(({ enableTask }) =>
+          pipe(
+            enableTask(),
+            Effect.flatMap(({ activateTask }) => activateTask())
+          )
+        )
+        .onActivate(({ activateTask }) =>
+          pipe(
+            activateTask(),
+            Effect.flatMap(({ completeTask }) => completeTask())
+          )
+        )
+    )
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('A'))
+    .connectTask('A', (to) => to.condition('end'))
+    .onStart(({ getWorkflowId, input, startWorkflow }) =>
+      Effect.gen(function* ($) {
+        const workflowId = yield* $(getWorkflowId());
+        log.push({
+          workflowId,
+          workflowPhase: 'start',
+          activityPhase: 'before',
+          value: input,
+        });
+        yield* $(startWorkflow());
+        log.push({
+          workflowId,
+          workflowPhase: 'start',
+          activityPhase: 'after',
+          value: input,
+        });
+        return `from onStart activity: ${input}`;
+      })
+    )
+    .onEnd(({ getWorkflowId, endWorkflow }) =>
+      Effect.gen(function* ($) {
+        const workflowId = yield* $(getWorkflowId());
+        log.push({
+          workflowId,
+          workflowPhase: 'end',
+          activityPhase: 'before',
+          value: undefined,
+        });
+        yield* $(endWorkflow());
+        log.push({
+          workflowId,
+          workflowPhase: 'end',
+          activityPhase: 'after',
+          value: undefined,
+        });
+      })
+    );
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    const start = yield* $(interpreter.start('starting'));
+
+    expect(start).toEqual(`from onStart activity: starting`);
+
+    const res1 = yield* $(interpreter.getWorkflowState());
+
+    expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'name',
+      state: 'done',
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
+      },
+    });
+
+    expect(log).toEqual([
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'start',
+        activityPhase: 'before',
+        value: 'starting',
+      },
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'end',
+        activityPhase: 'before',
+        value: undefined,
+      },
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'end',
+        activityPhase: 'after',
+        value: undefined,
+      },
+      {
+        workflowId: 'workflow-1',
+        workflowPhase: 'start',
+        activityPhase: 'after',
+        value: 'starting',
+      },
+    ]);
   });
 
   Effect.runSync(program);

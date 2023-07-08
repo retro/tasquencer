@@ -11,6 +11,8 @@ import type {
   ConditionNode,
   NotExtends,
   WorkflowBuilderDefinition,
+  WorkflowOnEndPayload,
+  WorkflowOnStartPayload,
 } from '../types.js';
 import {
   ConditionFlowBuilder,
@@ -31,6 +33,10 @@ type IsXorOrOrJoinSplit<T> = T extends never
   ? true
   : never;
 
+type TasksActivitiesOutputs = Record<
+  string,
+  { onComplete: unknown; onActivate: unknown }
+>;
 // TODO: implement invariant checking
 export class WorkflowBuilder<
   WBContext extends object,
@@ -42,13 +48,17 @@ export class WorkflowBuilder<
   WBTasksWithOrXorSplit = never,
   WBConnectedTasks = never,
   WBConnectedConditions = never,
-  WBTasksActivitiesOutputs extends Record<
-    string,
-    { onComplete: unknown; onActivate: unknown }
-  > = Record<string, { onComplete: unknown; onActivate: unknown }>
+  WBTasksActivitiesOutputs extends TasksActivitiesOutputs = TasksActivitiesOutputs,
+  OnStartReturnType = unknown
 > {
   readonly name: string;
-  definition: WorkflowBuilderDefinition;
+  readonly definition: WorkflowBuilderDefinition;
+  onStartFn?: (
+    payload: WorkflowOnStartPayload<WBContext>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+  onEndFn?: (
+    payload: WorkflowOnEndPayload<WBContext>
+  ) => Effect.Effect<unknown, unknown, unknown>;
 
   constructor(name: string) {
     this.name = name;
@@ -67,6 +77,12 @@ export class WorkflowBuilder<
     return this;
   }
 
+  initialize() {
+    return this.onStart(({ input }) => Effect.succeed(input)).onEnd(() =>
+      Effect.unit()
+    );
+  }
+
   condition<CN extends string>(
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
@@ -79,7 +95,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   > {
     return this.addConditionUnsafe(conditionName);
   }
@@ -96,7 +113,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   > {
     this.definition.startCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -114,7 +132,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   > {
     this.definition.endCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -141,7 +160,8 @@ export class WorkflowBuilder<
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
       [tn in TN]: TB.TaskBuilderActivitiesReturnType<T>;
-    }
+    },
+    OnStartReturnType
   >;
   task<
     TN extends string,
@@ -168,7 +188,8 @@ export class WorkflowBuilder<
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
       [tn in TN]: TB.TaskBuilderActivitiesReturnType<ReturnType<T>>;
-    }
+    },
+    OnStartReturnType
   >;
   task<TN extends string>(
     taskName: string & NotExtends<WBTasks | WBConditions, TN>
@@ -184,7 +205,8 @@ export class WorkflowBuilder<
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
       [tn in TN]: TB.ActivitiesReturnType;
-    }
+    },
+    OnStartReturnType
   >;
   task(
     taskName: string,
@@ -218,7 +240,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
     return this;
@@ -239,7 +262,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions | CN,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   > {
     this.definition.flows.conditions[conditionName] = builder(
       new ConditionFlowBuilder(conditionName)
@@ -271,7 +295,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks | TN,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   >;
 
   connectTask<TN extends WBTasks>(
@@ -289,7 +314,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks | TN,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
   >;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -320,8 +346,52 @@ export class WorkflowBuilder<
     }
     return this;
   }
+  onStart<
+    F extends (
+      payload: WorkflowOnStartPayload<WBContext>
+    ) => Effect.Effect<unknown, unknown, unknown>
+  >(
+    f: F
+  ): WorkflowBuilder<
+    WBContext,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs,
+    Effect.Effect.Success<ReturnType<F>>
+  > {
+    this.onStartFn = f;
+    return this;
+  }
+  onEnd<
+    F extends (
+      payload: WorkflowOnEndPayload<WBContext>
+    ) => Effect.Effect<unknown, unknown, unknown>
+  >(
+    f: F
+  ): WorkflowBuilder<
+    WBContext,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
+  > {
+    this.onEndFn = f;
+    return this;
+  }
   build(prevId?: string) {
-    const { definition } = this;
+    const { name, definition, onStartFn, onEndFn } = this;
 
     return Effect.gen(function* ($) {
       const stateManager = yield* $(StateManager);
@@ -344,12 +414,18 @@ export class WorkflowBuilder<
             onActivate: WBTasksActivitiesOutputs[K]['onActivate'];
             onComplete: WBTasksActivitiesOutputs[K]['onComplete'];
           };
-        }
-      >(workflowId, stateManager);
+        },
+        OnStartReturnType
+        // non-null assertion is ok here, because onStartFn and onEndFn are set
+        // in the initialize method which is automatically called by the `workflow`
+        // entrypoint
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      >(workflowId, name, stateManager, onStartFn!, onEndFn!);
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow
-        yield* $(taskBuilder.build(workflow, taskName, idProvider));
+        // This casting is ok, because task doesn't care about Workflow generics
+        yield* $(taskBuilder.build(workflow as Workflow, taskName, idProvider));
       }
 
       for (const [conditionName, conditionNode] of Object.entries(
@@ -359,7 +435,8 @@ export class WorkflowBuilder<
           yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           conditionNode,
-          workflow
+          // This casting is ok, because condition doesn't care about Workflow generics
+          workflow as Workflow
         );
 
         workflow.addCondition(condition);
@@ -386,11 +463,13 @@ export class WorkflowBuilder<
       for (const [, conditionFlows] of Object.entries(
         definition.flows.conditions
       )) {
-        yield* $(conditionFlows.build(workflow));
+        // This casting is ok, because condition flow doesn't care about Workflow generics
+        yield* $(conditionFlows.build(workflow as Workflow));
       }
 
       for (const [, taskFlows] of Object.entries(definition.flows.tasks)) {
-        yield* $(taskFlows.build(workflow, idProvider));
+        // This casting is ok, because task flow doesn't care about Workflow generics
+        yield* $(taskFlows.build(workflow as Workflow, idProvider));
       }
 
       for (const [taskName, cancellationRegion] of Object.entries(
@@ -416,5 +495,5 @@ export class WorkflowBuilder<
 }
 
 export function workflow<C extends object>(name: string) {
-  return new WorkflowBuilder<C, never, never>(name);
+  return new WorkflowBuilder<C, never, never>(name).initialize();
 }

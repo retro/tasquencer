@@ -11,7 +11,7 @@
     "esbuild",
     "fixedsize",
     "Gilleland",
-    "tasquencer",
+    "gjuchault",
     "graphviz",
     "millis",
     "nminusr",
@@ -24,6 +24,7 @@
     "remeda",
     "rmrf",
     "socio",
+    "tasquencer",
     "WFOJ",
     "wfojnet",
     "wsts"

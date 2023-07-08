@@ -1,3 +1,4 @@
+import { pipe } from '@effect/data/Function';
 import * as Effect from '@effect/io/Effect';
 
 import * as TB from '../builder/TaskBuilder.js';
@@ -7,6 +8,7 @@ import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
+  WorkflowNotInitialized,
 } from '../errors.js';
 import { StateManager } from '../stateManager/types.js';
 import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
@@ -24,9 +26,6 @@ export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
   ? U
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
-
-// TODO: persist workflow state (running, done) and name
-// TODO: implement cancel workflow
 
 export class Workflow<
   _R = never,
@@ -83,8 +82,24 @@ export class Workflow<
     return this.stateManager.initializeWorkflow(this);
   }
 
-  end() {
+  end(): Effect.Effect<never, WorkflowNotInitialized, void> {
     return this.stateManager.updateWorkflowState(this, 'done');
+  }
+
+  cancel(context: object) {
+    return pipe(
+      Effect.allDiscard([
+        Effect.allPar(
+          Object.values(this.tasks).map((task) => task.cancel(context))
+        ),
+        Effect.allPar(
+          Object.values(this.conditions).map((condition) =>
+            condition.cancel(context)
+          )
+        ),
+      ]),
+      Effect.tap(() => this.stateManager.updateWorkflowState(this, 'canceled'))
+    );
   }
 
   getStartCondition() {

@@ -3385,3 +3385,160 @@ it('calls onStart and onEnd activities (2)', () => {
 
   Effect.runSync(program);
 });
+
+it('can supports workflow cancellation', () => {
+  const workflowDefinition = Builder.workflow('checkout')
+    .startCondition('start')
+    .task('scan_goods')
+    .task('pay', (t) => t.withSplitType('and'))
+    .task('pack_goods')
+    .task('issue_receipt')
+    .task('check_goods', (t) => t.withJoinType('and'))
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('scan_goods'))
+    .connectTask('scan_goods', (to) => to.task('pay'))
+    .connectTask('pay', (to) => to.task('pack_goods').task('issue_receipt'))
+    .connectTask('pack_goods', (to) => to.task('check_goods'))
+    .connectTask('issue_receipt', (to) => to.task('check_goods'))
+    .connectTask('check_goods', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter.start());
+
+    const res1 = yield* $(interpreter.getWorkflowState());
+
+    expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
+      },
+    });
+
+    yield* $(interpreter.activateTask('scan_goods'));
+
+    const res2 = yield* $(interpreter.getWorkflowState());
+
+    expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'active' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+      },
+    });
+
+    yield* $(interpreter.completeTask('scan_goods'));
+
+    const res3 = yield* $(interpreter.getWorkflowState());
+
+    expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:scan_goods->pay',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter.activateTask('pay'));
+
+    const res4 = yield* $(interpreter.getWorkflowState());
+
+    expect(res4).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'active' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:scan_goods->pay',
+          marking: 0,
+        },
+      },
+    });
+
+    yield* $(interpreter.cancelWorkflow());
+
+    const res5 = yield* $(interpreter.getWorkflowState());
+
+    expect(res5).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'canceled',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'canceled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:scan_goods->pay',
+          marking: 0,
+        },
+        'condition-2': { id: 'condition-2', name: 'end', marking: 0 },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:pay->pack_goods',
+          marking: 0,
+        },
+        'condition-5': {
+          id: 'condition-5',
+          name: 'implicit:pay->issue_receipt',
+          marking: 0,
+        },
+        'condition-6': {
+          id: 'condition-6',
+          name: 'implicit:pack_goods->check_goods',
+          marking: 0,
+        },
+        'condition-7': {
+          id: 'condition-7',
+          name: 'implicit:issue_receipt->check_goods',
+          marking: 0,
+        },
+      },
+    });
+  });
+
+  Effect.runSync(program);
+});

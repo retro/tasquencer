@@ -227,6 +227,26 @@ export class Interpreter<
     };
   }
 
+  private _cancelWorkflow() {
+    return this.workflow.cancel(this.context);
+  }
+
+  cancelWorkflow() {
+    return this._cancelWorkflow() as Effect.Effect<
+      | Effect.Effect.Context<
+          ReturnType<Interpreter<TasksActivitiesOutputs>['_cancelWorkflow']>
+        >
+      | R,
+      | Effect.Effect.Error<
+          ReturnType<Interpreter<TasksActivitiesOutputs>['_cancelWorkflow']>
+        >
+      | E,
+      Effect.Effect.Success<
+        ReturnType<Interpreter<TasksActivitiesOutputs>['_cancelWorkflow']>
+      >
+    >;
+  }
+
   private runQueue() {
     const self = this;
     return Effect.gen(function* ($) {

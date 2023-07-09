@@ -29,7 +29,7 @@ function isValidTransition(
 }
 // TODO: handle case where task is completed and prev condition(s)
 // have positive marking, so it should transition to enabled again
-// TODO: add onExecute
+
 export class Task {
   readonly workflow: Workflow;
   readonly preSet: Record<string, Condition> = {};
@@ -215,6 +215,29 @@ export class Task {
         yield* $(performActivate);
 
         return result;
+      }
+    });
+  }
+
+  execute(context: object, input: unknown = undefined) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getState());
+      if (state === 'active') {
+        const activityContext = self.getActivityContext();
+        const taskActionsService = yield* $(TaskActionsService);
+        const completeTask = (input?: unknown) => {
+          return taskActionsService.completeTask(self.name, input);
+        };
+
+        return yield* $(
+          self.activities.onExecute({
+            ...activityContext,
+            context,
+            input,
+            completeTask,
+          }) as Effect.Effect<never, never, unknown>
+        );
       }
     });
   }

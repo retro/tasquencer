@@ -9,7 +9,7 @@ import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
 } from './elements/Workflow.js';
-import { TaskNotActivatedError, TaskNotEnabledError } from './errors.js';
+import { TaskNotActiveError, TaskNotEnabledError } from './errors.js';
 import { TaskActionsService } from './types.js';
 
 type QueueItem =
@@ -168,7 +168,7 @@ export class Interpreter<
       const task = yield* $(self.workflow.getTask(taskName));
       const isActive = yield* $(task.isActive());
       if (!isActive) {
-        yield* $(Effect.fail(TaskNotActivatedError()));
+        yield* $(Effect.fail(TaskNotActiveError()));
       }
       const output: unknown = yield* $(
         task.complete(self.context, input),
@@ -206,6 +206,42 @@ export class Interpreter<
         : unknown extends TasksActivitiesOutputs[T]['onComplete']
         ? I
         : TasksActivitiesOutputs[T]['onComplete']
+    >;
+  }
+
+  _executeTask(taskName: string, input?: unknown) {
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      const task = yield* $(self.workflow.getTask(taskName));
+      const isActive = yield* $(task.isActive());
+      if (!isActive) {
+        yield* $(Effect.fail(TaskNotActiveError()));
+      }
+      const output: unknown = yield* $(
+        task.execute(self.context, input),
+        Effect.provideService(TaskActionsService, self.getTaskActionsService())
+      );
+
+      yield* $(self.runQueue());
+      yield* $(self.maybeEnd());
+
+      return output;
+    });
+  }
+
+  executeTask<T extends keyof TasksActivitiesOutputs, I>(
+    taskName: T & string,
+    input?: I
+  ) {
+    return this._executeTask(taskName, input) as unknown as Effect.Effect<
+      R,
+      E,
+      unknown extends I
+        ? undefined
+        : unknown extends TasksActivitiesOutputs[T]['onExecute']
+        ? I
+        : TasksActivitiesOutputs[T]['onExecute']
     >;
   }
 

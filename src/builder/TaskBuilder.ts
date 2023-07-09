@@ -11,6 +11,7 @@ import {
   TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
+  TaskOnExecutePayload,
 } from '../types.js';
 import { IdProvider } from './IdProvider.js';
 
@@ -103,6 +104,7 @@ export type InitializedTaskBuilder<C extends object = object> = TaskBuilder<
 export interface ActivitiesReturnType {
   onActivate: unknown;
   onComplete: unknown;
+  onExecute: unknown;
 }
 
 export class TaskBuilder<
@@ -201,6 +203,26 @@ export class TaskBuilder<
     E | Effect.Effect.Error<ReturnType<F>>
   > {
     this.activities.onActivate = f;
+    return this;
+  }
+
+  onExecute<
+    F extends (
+      payload: TaskOnExecutePayload<C>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    ART & { onExecute: Effect.Effect.Success<ReturnType<F>> },
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.activities.onExecute = f;
     return this;
   }
 

@@ -8,7 +8,7 @@ import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
-  TaskNotActivatedError,
+  TaskNotActiveError,
   TaskNotEnabledError,
   WorkflowNotInitialized,
 } from '../errors.js';
@@ -94,7 +94,7 @@ it('can correctly infer predicate types', () => {
         | StartConditionDoesNotExist
         | EndConditionDoesNotExist
         | TaskNotEnabledError
-        | TaskNotActivatedError,
+        | TaskNotActiveError,
         void
       >
     >(start);

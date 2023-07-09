@@ -86,7 +86,9 @@ export class Workflow<
     return this.stateManager.updateWorkflowState(this, 'done');
   }
 
-  cancel(context: object) {
+  cancel(
+    context: object
+  ): Effect.Effect<never, WorkflowNotInitialized, unknown> {
     return pipe(
       Effect.allDiscard([
         Effect.allPar(

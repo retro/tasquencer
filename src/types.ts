@@ -11,7 +11,7 @@ import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
-  TaskNotActivatedError,
+  TaskNotActiveError,
   TaskNotEnabledError,
   WorkflowNotInitialized,
 } from './errors.js';
@@ -97,7 +97,7 @@ export interface WorkflowOnStartPayload<C> {
     | WorkflowNotInitialized
     | TaskDoesNotExist
     | TaskNotEnabledError
-    | TaskNotActivatedError,
+    | TaskNotActiveError,
     void
   >;
 }
@@ -135,6 +135,15 @@ export type TaskOnActivatePayload<C extends object = object> =
     >;
   };
 
+export type TaskOnExecutePayload<C extends object = object> =
+  DefaultTaskActivityPayload & {
+    context: C;
+    input: unknown;
+    completeTask: (
+      input?: unknown
+    ) => Effect.Effect<never, WorkflowNotInitialized, void>;
+  };
+
 export type TaskOnCompletePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
@@ -157,6 +166,9 @@ export interface TaskActivities<C extends object = object> {
   ) => Effect.Effect<unknown, unknown, unknown>;
   onActivate: (
     payload: TaskOnActivatePayload<C>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+  onExecute: (
+    payload: TaskOnExecutePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onComplete: (
     payload: TaskOnCompletePayload<C>

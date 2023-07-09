@@ -40,9 +40,8 @@ export const TaskNotEnabledError = Data.tagged<TaskNotEnabledError>(
   'TaskNotEnabledError'
 );
 
-export interface TaskNotActivatedError extends Data.Case {
-  readonly _tag: 'TaskNotActivatedError';
+export interface TaskNotActiveError extends Data.Case {
+  readonly _tag: 'TaskNotActiveError';
 }
-export const TaskNotActivatedError = Data.tagged<TaskNotActivatedError>(
-  'TaskNotActivatedError'
-);
+export const TaskNotActiveError =
+  Data.tagged<TaskNotActiveError>('TaskNotActiveError');

@@ -5,8 +5,8 @@
   "module": "build/index.js",
   "exports": {
     ".": {
-      "import": "./build/index.js",
-      "types": "./build/src/index.d.ts"
+      "types": "./build/src/index.d.ts",
+      "import": "./build/index.js"
     }
   },
   "types": "./build/src/index.d.ts",

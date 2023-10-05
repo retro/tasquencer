@@ -1,5 +1,4 @@
-import * as Effect from '@effect/io/Effect';
-import * as Ref from '@effect/io/Ref';
+import { Effect, Ref } from 'effect';
 import { type Draft, create } from 'mutative';
 
 import type { Condition } from '../elements/Condition.js';

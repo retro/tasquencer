@@ -1,7 +1,3 @@
-import * as Effect from '@effect/io/Effect';
-
-import { Task } from '../elements/Task.js';
-import { Workflow } from '../elements/Workflow.js';
 import {
   JoinType,
   SplitType,
@@ -13,7 +9,11 @@ import {
   TaskOnEnablePayload,
   TaskOnExecutePayload,
 } from '../types.js';
+
+import { Effect } from 'effect';
 import { IdProvider } from './IdProvider.js';
+import { Task } from '../elements/Task.js';
+import { Workflow } from '../elements/Workflow.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderUserContext<T> = T extends TaskBuilder<
@@ -143,11 +143,11 @@ export class TaskBuilder<
   }
 
   initialize() {
-    return this.onDisable(() => Effect.unit())
-      .onEnable(() => Effect.unit())
+    return this.onDisable(() => Effect.unit)
+      .onEnable(() => Effect.unit)
       .onActivate(({ input }) => Effect.succeed(input))
       .onComplete(({ input }) => Effect.succeed(input))
-      .onCancel(() => Effect.unit());
+      .onCancel(() => Effect.unit);
   }
 
   onDisable<

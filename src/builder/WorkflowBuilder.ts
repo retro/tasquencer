@@ -1,12 +1,11 @@
-import * as Effect from '@effect/io/Effect';
+import * as TB from './TaskBuilder.js';
 
-import { Condition } from '../elements/Condition.js';
-import { Workflow } from '../elements/Workflow.js';
 import {
-  EndConditionDoesNotExist,
-  StartConditionDoesNotExist,
-} from '../errors.js';
-import { IdGenerator, StateManager } from '../stateManager/types.js';
+  ConditionFlowBuilder,
+  OrXorTaskFlowBuilder,
+  TaskFlowBuilder,
+  ValidOrXorTaskFlow,
+} from './FlowBuilder.js';
 import type {
   ConditionNode,
   NotExtends,
@@ -15,13 +14,15 @@ import type {
   WorkflowOnStartPayload,
 } from '../types.js';
 import {
-  ConditionFlowBuilder,
-  OrXorTaskFlowBuilder,
-  TaskFlowBuilder,
-  ValidOrXorTaskFlow,
-} from './FlowBuilder.js';
+  EndConditionDoesNotExist,
+  StartConditionDoesNotExist,
+} from '../errors.js';
+import { IdGenerator, StateManager } from '../stateManager/types.js';
+
+import { Condition } from '../elements/Condition.js';
+import { Effect } from 'effect';
 import { IdProvider } from './IdProvider.js';
-import * as TB from './TaskBuilder.js';
+import { Workflow } from '../elements/Workflow.js';
 
 type TaskWithValidContext<C, T> = C extends TB.TaskBuilderUserContext<T>
   ? T
@@ -78,8 +79,8 @@ export class WorkflowBuilder<
   }
 
   initialize() {
-    return this.onStart(({ input }) => Effect.succeed(input)).onEnd(() =>
-      Effect.unit()
+    return this.onStart(({ input }) => Effect.succeed(input)).onEnd(
+      () => Effect.unit
     );
   }
 

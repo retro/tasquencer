@@ -1,7 +1,7 @@
-import * as Effect from '@effect/io/Effect';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 
 import { ConditionNode } from '../types.js';
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+import { Effect } from 'effect';
 import { Task } from './Task.js';
 import { Workflow } from './Workflow.js';
 
@@ -62,17 +62,26 @@ export class Condition {
 
   enableTasks(context: object) {
     const tasks = Object.values(this.postSet);
-    return Effect.allParDiscard(tasks.map((task) => task.enable(context)));
+    return Effect.all(
+      tasks.map((task) => task.enable(context)),
+      { discard: true, batching: true }
+    );
   }
 
   disableTasks(context: object) {
     const tasks = Object.values(this.postSet);
-    return Effect.allParDiscard(tasks.map((task) => task.disable(context)));
+    return Effect.all(
+      tasks.map((task) => task.disable(context)),
+      { discard: true, batching: true }
+    );
   }
 
   cancelTasks(context: object) {
     const tasks = Object.values(this.postSet);
-    return Effect.allParDiscard(tasks.map((task) => task.cancel(context)));
+    return Effect.all(
+      tasks.map((task) => task.cancel(context)),
+      { discard: true, batching: true }
+    );
   }
 
   cancel(context: object) {

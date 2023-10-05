@@ -1,4 +1,4 @@
-import * as Data from '@effect/data/Data';
+import { Data } from 'effect';
 
 export interface TaskDoesNotExist extends Data.Case {
   readonly _tag: 'TaskDoesNotExist';

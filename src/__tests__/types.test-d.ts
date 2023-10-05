@@ -1,9 +1,7 @@
-import * as Context from '@effect/data/Context';
-import * as Data from '@effect/data/Data';
-import * as Effect from '@effect/io/Effect';
-import { assertType, it } from 'vitest';
-
 import * as Builder from '../builder.js';
+import * as Interpreter from '../interpreter.js';
+
+import { Context, Data, Effect } from 'effect';
 import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
@@ -12,9 +10,10 @@ import {
   TaskNotEnabledError,
   WorkflowNotInitialized,
 } from '../errors.js';
-import * as Interpreter from '../interpreter.js';
-import { createMemory } from '../stateManager/memory.js';
 import { IdGenerator, StateManager } from '../stateManager/types.js';
+import { assertType, it } from 'vitest';
+
+import { createMemory } from '../stateManager/memory.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {

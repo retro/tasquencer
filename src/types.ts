@@ -1,12 +1,9 @@
-import * as Context from '@effect/data/Context';
-import * as Effect from '@effect/io/Effect';
-
 import {
   ConditionFlowBuilder,
   OrXorTaskFlowBuilder,
   TaskFlowBuilder,
 } from './builder/FlowBuilder.js';
-import { AnyTaskBuilder } from './builder/TaskBuilder.js';
+import { Context, Effect } from 'effect';
 import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
@@ -15,6 +12,8 @@ import {
   TaskNotEnabledError,
   WorkflowNotInitialized,
 } from './errors.js';
+
+import { AnyTaskBuilder } from './builder/TaskBuilder.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];

@@ -1,6 +1,6 @@
-import * as Effect from '@effect/io/Effect';
-
 import { IdGenerator, WorkflowItem } from '../stateManager/types.js';
+
+import { Effect } from 'effect';
 
 interface WorkflowState {
   tasks: Record<string, string>;

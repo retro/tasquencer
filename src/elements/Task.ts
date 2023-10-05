@@ -1,6 +1,4 @@
-import { pipe } from '@effect/data/Function';
-import * as Effect from '@effect/io/Effect';
-
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import {
   DefaultTaskActivityPayload,
   JoinType,
@@ -9,8 +7,9 @@ import {
   TaskActivities,
   TaskState,
 } from '../types.js';
+import { Effect, pipe } from 'effect';
+
 import { Condition } from './Condition.js';
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
 const VALID_STATE_TRANSITIONS = {
@@ -193,7 +192,7 @@ export class Task {
               const updates = preSet.map((condition) =>
                 condition.decrementMarking(context)
               );
-              yield* $(Effect.allParDiscard(updates));
+              yield* $(Effect.all(updates, { discard: true, batching: true }));
             })
           )
         );
@@ -333,10 +332,13 @@ export class Task {
       this.cancellationRegion.conditions
     ).map((c) => c.cancel(context));
 
-    return Effect.allDiscard([
-      Effect.allParDiscard(taskUpdates),
-      Effect.allParDiscard(conditionUpdates),
-    ]);
+    return Effect.all(
+      [
+        Effect.all(taskUpdates, { batching: true, discard: true }),
+        Effect.all(conditionUpdates, { batching: true, discard: true }),
+      ],
+      { discard: true }
+    );
   }
 
   private produceTokensInOutgoingFlows(context: object) {
@@ -363,7 +365,7 @@ export class Task {
         }
       });
     });
-    return Effect.allParDiscard(updates);
+    return Effect.all(updates, { batching: true, discard: true });
   }
 
   private produceXorSplitTokensInOutgoingFlows(context: object) {
@@ -389,7 +391,7 @@ export class Task {
     const updates = Array.from(this.outgoingFlows).map((flow) => {
       return flow.nextElement.incrementMarking();
     });
-    return Effect.allParDiscard(updates);
+    return Effect.all(updates, { batching: true, discard: true });
   }
 
   private isJoinSatisfied() {
@@ -411,10 +413,11 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const markings = yield* $(
-        Effect.allPar(
+        Effect.all(
           Array.from(self.incomingFlows).map((flow) =>
             flow.priorElement.getMarking()
-          )
+          ),
+          { batching: true }
         )
       );
       return markings.filter((m) => m > 0).length === 1 ? true : false;
@@ -425,10 +428,11 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const markings = yield* $(
-        Effect.allPar(
+        Effect.all(
           Array.from(self.incomingFlows).map((flow) =>
             flow.priorElement.getMarking()
-          )
+          ),
+          { batching: true }
         )
       );
 
@@ -439,10 +443,11 @@ export class Task {
   }
 
   private enablePostTasks(context: object) {
-    return Effect.allDiscard(
+    return Effect.all(
       Array.from(this.outgoingFlows).map((flow) =>
         flow.nextElement.enableTasks(context)
-      )
+      ),
+      { discard: true }
     );
   }
 }

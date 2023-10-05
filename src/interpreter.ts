@@ -1,15 +1,13 @@
-import { pipe } from '@effect/data/Function';
-import * as Option from '@effect/data/Option';
-import * as Effect from '@effect/io/Effect';
-import * as Queue from '@effect/io/Queue';
 import * as Match from '@effect/match';
 
-import { ActivitiesReturnType } from './builder/TaskBuilder.js';
+import { Effect, Option, Queue, pipe } from 'effect';
+import { TaskNotActiveError, TaskNotEnabledError } from './errors.js';
 import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
 } from './elements/Workflow.js';
-import { TaskNotActiveError, TaskNotEnabledError } from './errors.js';
+
+import { ActivitiesReturnType } from './builder/TaskBuilder.js';
 import { TaskActionsService } from './types.js';
 
 type QueueItem =

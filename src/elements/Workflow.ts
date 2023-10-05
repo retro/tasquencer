@@ -1,8 +1,5 @@
-import { pipe } from '@effect/data/Function';
-import * as Effect from '@effect/io/Effect';
-
 import * as TB from '../builder/TaskBuilder.js';
-import { E2WFOJNet } from '../e2wfojnet.js';
+
 import {
   ConditionDoesNotExist,
   EndConditionDoesNotExist,
@@ -10,10 +7,13 @@ import {
   TaskDoesNotExist,
   WorkflowNotInitialized,
 } from '../errors.js';
-import { StateManager } from '../stateManager/types.js';
+import { Effect, pipe } from 'effect';
 import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
+
 import { Condition } from './Condition.js';
+import { E2WFOJNet } from '../e2wfojnet.js';
 import { Marking } from './Marking.js';
+import { StateManager } from '../stateManager/types.js';
 import { Task } from './Task.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -90,16 +90,21 @@ export class Workflow<
     context: object
   ): Effect.Effect<never, WorkflowNotInitialized, unknown> {
     return pipe(
-      Effect.allDiscard([
-        Effect.allPar(
-          Object.values(this.tasks).map((task) => task.cancel(context))
-        ),
-        Effect.allPar(
-          Object.values(this.conditions).map((condition) =>
-            condition.cancel(context)
-          )
-        ),
-      ]),
+      Effect.all(
+        [
+          Effect.all(
+            Object.values(this.tasks).map((task) => task.cancel(context)),
+            { batching: true }
+          ),
+          Effect.all(
+            Object.values(this.conditions).map((condition) =>
+              condition.cancel(context)
+            ),
+            { batching: true }
+          ),
+        ],
+        { discard: true }
+      ),
       Effect.tap(() => this.stateManager.updateWorkflowState(this, 'canceled'))
     );
   }

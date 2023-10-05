@@ -176,3 +176,36 @@ export interface TaskActivities<C extends object = object> {
     payload: TaskOnCancelPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
+
+export interface JSONTask {
+  name: string;
+  splitType?: SplitType;
+  joinType?: JoinType;
+}
+
+export interface JSONCondition {
+  name: string;
+  isImplicit?: boolean;
+}
+
+export interface JSONTaskFlow {
+  to: string;
+  predicate?: boolean;
+  order?: number;
+  isDefault?: boolean;
+}
+
+export interface JSONConditionFlow {
+  to: string;
+}
+export interface JSONWorkflow {
+  name: string;
+  startCondition?: string;
+  endCondition?: string;
+  tasks: JSONTask[];
+  conditions: JSONCondition[];
+  flows: {
+    tasks: Record<string, JSONTaskFlow[]>;
+    conditions: Record<string, JSONConditionFlow[]>;
+  };
+}

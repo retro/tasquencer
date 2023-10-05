@@ -1,6 +1,6 @@
-import { IdGenerator, WorkflowItem } from '../stateManager/types.js';
-
 import { Effect } from 'effect';
+
+import { IdGenerator, WorkflowItem } from '../stateManager/types.js';
 
 interface WorkflowState {
   tasks: Record<string, string>;

@@ -1,13 +1,13 @@
+import { Effect } from 'effect';
+
+import { Condition } from '../elements/Condition.js';
 import {
   ConditionToTaskFlow,
   TaskToConditionFlow,
   TaskToConditionFlowProps,
 } from '../elements/Flow.js';
-
-import { Condition } from '../elements/Condition.js';
-import { Effect } from 'effect';
-import { IdProvider } from './IdProvider.js';
 import { Workflow } from '../elements/Workflow.js';
+import { IdProvider } from './IdProvider.js';
 
 type AnyFlowPredicate = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

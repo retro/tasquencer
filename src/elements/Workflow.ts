@@ -1,5 +1,7 @@
-import * as TB from '../builder/TaskBuilder.js';
+import { Effect, pipe } from 'effect';
 
+import * as TB from '../builder/TaskBuilder.js';
+import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
   EndConditionDoesNotExist,
@@ -7,13 +9,10 @@ import {
   TaskDoesNotExist,
   WorkflowNotInitialized,
 } from '../errors.js';
-import { Effect, pipe } from 'effect';
-import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
-
-import { Condition } from './Condition.js';
-import { E2WFOJNet } from '../e2wfojnet.js';
-import { Marking } from './Marking.js';
 import { StateManager } from '../stateManager/types.js';
+import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
+import { Condition } from './Condition.js';
+import { Marking } from './Marking.js';
 import { Task } from './Task.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

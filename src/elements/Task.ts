@@ -1,4 +1,5 @@
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+import { Effect, pipe } from 'effect';
+
 import {
   DefaultTaskActivityPayload,
   JoinType,
@@ -7,9 +8,8 @@ import {
   TaskActivities,
   TaskState,
 } from '../types.js';
-import { Effect, pipe } from 'effect';
-
 import { Condition } from './Condition.js';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
 const VALID_STATE_TRANSITIONS = {

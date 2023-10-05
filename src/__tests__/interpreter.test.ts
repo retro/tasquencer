@@ -1,16 +1,15 @@
+import { Effect, pipe } from 'effect';
+import { expect, it } from 'vitest';
+
 import * as Builder from '../builder.js';
 import * as Interpreter from '../interpreter.js';
-
-import { Effect, pipe } from 'effect';
+import { createMemory } from '../stateManager/memory.js';
 import { IdGenerator, StateManager } from '../stateManager/types.js';
 import {
   TaskOnActivatePayload,
   TaskOnCompletePayload,
   TaskOnEnablePayload,
 } from '../types.js';
-import { expect, it } from 'vitest';
-
-import { createMemory } from '../stateManager/memory.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {

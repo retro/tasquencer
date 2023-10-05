@@ -1,7 +1,7 @@
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+import { Effect } from 'effect';
 
 import { ConditionNode } from '../types.js';
-import { Effect } from 'effect';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Task } from './Task.js';
 import { Workflow } from './Workflow.js';
 

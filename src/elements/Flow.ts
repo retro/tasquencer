@@ -1,5 +1,6 @@
-import { Condition } from './Condition.js';
 import { Effect } from 'effect';
+
+import { Condition } from './Condition.js';
 import { Task } from './Task.js';
 
 export class ConditionToTaskFlow {

@@ -2,9 +2,9 @@ import { Context, Effect } from 'effect';
 
 import type { Condition } from '../elements/Condition.js';
 import type { Task } from '../elements/Task.js';
-import { TaskState } from '../types.js';
 import { Workflow } from '../elements/Workflow.js';
 import type { WorkflowNotInitialized } from '../errors.js';
+import { TaskState } from '../types.js';
 
 export interface JSInterpreterState {
   markings: Record<string, number>;

@@ -7,6 +7,7 @@ import {
   TaskToConditionFlowProps,
 } from '../elements/Flow.js';
 import { Workflow } from '../elements/Workflow.js';
+import { JSONCondition, JSONConditionFlow, JSONTaskFlow } from '../types.js';
 import { IdProvider } from './IdProvider.js';
 
 type AnyFlowPredicate = (
@@ -28,6 +29,14 @@ export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
     : never
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+interface JSONFlow {
+  conditions: JSONCondition[];
+  flows: {
+    tasks: Record<string, JSONTaskFlow[]>;
+    conditions: Record<string, JSONConditionFlow[]>;
+  };
+}
 
 export class ConditionFlowBuilder<BNTasks> {
   private readonly from: string;
@@ -51,6 +60,19 @@ export class ConditionFlowBuilder<BNTasks> {
         condition.addOutgoingFlow(flow);
       }
     });
+  }
+  toJSONSerializable(): JSONFlow {
+    return {
+      conditions: [],
+      flows: {
+        tasks: {},
+        conditions: {
+          [this.from]: Array.from(this.to).map((to) => ({
+            to,
+          })),
+        },
+      },
+    };
   }
 }
 
@@ -101,6 +123,38 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
         toTask.addIncomingFlow(rightFlow);
       }
     });
+  }
+  toJSONSerializable(): JSONFlow {
+    const conditions: JSONCondition[] = [];
+    const conditionsFlows: Record<string, JSONConditionFlow[]> = {};
+    const taskFlows: JSONTaskFlow[] = [];
+
+    for (const conditionName of Object.keys(this.toConditions)) {
+      taskFlows.push({ to: conditionName });
+    }
+
+    for (const toTaskName of Object.keys(this.toTasks)) {
+      const conditionName = `implicit:${this.from}->${toTaskName}`;
+      conditions.push({ name: conditionName, isImplicit: true });
+
+      const leftFlow = { to: conditionName };
+      const rightFlow = { to: toTaskName };
+
+      taskFlows.push(leftFlow);
+
+      conditionsFlows[conditionName] ||= [];
+      conditionsFlows[conditionName]?.push(rightFlow);
+    }
+
+    return {
+      conditions,
+      flows: {
+        conditions: conditionsFlows,
+        tasks: {
+          [this.from]: taskFlows,
+        },
+      },
+    };
   }
 }
 
@@ -245,5 +299,68 @@ export class OrXorTaskFlowBuilder<
         task.addOutgoingFlow(flow);
       }
     });
+  }
+  toJSONSerializable(): JSONFlow {
+    const conditions: JSONCondition[] = [];
+    const conditionsFlows: Record<string, JSONConditionFlow[]> = {};
+    const taskFlows: JSONTaskFlow[] = [];
+
+    for (const [conditionName, conditionFlow] of Object.entries(
+      this.toConditions
+    )) {
+      taskFlows.push({
+        to: conditionName,
+        order: conditionFlow.order,
+        predicate: !!conditionFlow.predicate,
+      });
+    }
+
+    for (const [toTaskName, props] of Object.entries(this.toTasks)) {
+      const conditionName = `implicit:${this.from}->${toTaskName}`;
+      conditions.push({ name: conditionName, isImplicit: true });
+
+      const leftFlow = {
+        to: conditionName,
+        order: props.order,
+        predicate: !!props.predicate,
+      };
+      const rightFlow = { to: toTaskName };
+
+      taskFlows.push(leftFlow);
+
+      conditionsFlows[conditionName] ||= [];
+      conditionsFlows[conditionName]?.push(rightFlow);
+    }
+
+    if (this.toDefault?.type === 'task') {
+      const conditionName = `implicit:${this.from}->${this.toDefault.name}`;
+      conditions.push({ name: conditionName, isImplicit: true });
+
+      const leftFlow = {
+        to: conditionName,
+        isDefault: true,
+      };
+      const rightFlow = { to: this.toDefault.name };
+
+      taskFlows.push(leftFlow);
+
+      conditionsFlows[conditionName] ||= [];
+      conditionsFlows[conditionName]?.push(rightFlow);
+    } else if (this.toDefault?.type === 'condition') {
+      taskFlows.push({
+        to: this.toDefault.name,
+        isDefault: true,
+      });
+    }
+
+    return {
+      conditions,
+      flows: {
+        conditions: conditionsFlows,
+        tasks: {
+          [this.from]: taskFlows,
+        },
+      },
+    };
   }
 }

@@ -280,6 +280,12 @@ export class TaskBuilder<
       workflow.addTask(task);
     });
   }
+  toJSONSerializable() {
+    return {
+      joinType: this.joinType,
+      splitType: this.splitType,
+    };
+  }
 }
 
 export function task<C extends object = object>() {

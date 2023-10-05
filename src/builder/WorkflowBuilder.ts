@@ -9,6 +9,7 @@ import {
 import { IdGenerator, StateManager } from '../stateManager/types.js';
 import type {
   ConditionNode,
+  JSONWorkflow,
   NotExtends,
   WorkflowBuilderDefinition,
   WorkflowOnEndPayload,
@@ -492,6 +493,50 @@ export class WorkflowBuilder<
 
       return workflow;
     });
+  }
+  toJSONSerializable() {
+    const jsonWorkflow: JSONWorkflow = {
+      name: this.name,
+      startCondition: this.definition.startCondition,
+      endCondition: this.definition.endCondition,
+      tasks: Object.entries(this.definition.tasks).map(([name, task]) => ({
+        name,
+        ...task.toJSONSerializable(),
+      })),
+      conditions: Object.entries(this.definition.conditions).map(
+        ([name, condition]) => ({ name, isImplicit: condition.isImplicit })
+      ),
+      flows: {
+        tasks: {},
+        conditions: {},
+      },
+    };
+
+    const allFlows = [
+      ...Object.values(this.definition.flows.tasks),
+      ...Object.values(this.definition.flows.conditions),
+    ];
+
+    for (const flow of allFlows) {
+      const jsonFlow = flow.toJSONSerializable();
+      for (const condition of jsonFlow.conditions) {
+        jsonWorkflow.conditions.push(condition);
+      }
+      for (const [taskName, taskFlows] of Object.entries(
+        jsonFlow.flows.tasks
+      )) {
+        jsonWorkflow.flows.tasks[taskName] ||= [];
+        jsonWorkflow.flows.tasks[taskName]?.push(...taskFlows);
+      }
+      for (const [conditionName, conditionFlows] of Object.entries(
+        jsonFlow.flows.conditions
+      )) {
+        jsonWorkflow.flows.conditions[conditionName] ||= [];
+        jsonWorkflow.flows.conditions[conditionName]?.push(...conditionFlows);
+      }
+    }
+
+    return jsonWorkflow;
   }
 }
 

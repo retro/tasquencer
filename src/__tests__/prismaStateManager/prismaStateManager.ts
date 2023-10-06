@@ -118,9 +118,10 @@ export class PrismaStateManager implements StateManager {
 
       yield* $(
         Effect.promise(() => {
-          return prisma.condition.update({
+          return prisma.condition.updateMany({
             where: {
               id: condition.id,
+              marking: { lt: 0 },
             },
             data: {
               marking: 0,

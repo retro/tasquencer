@@ -1,0 +1,38 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:/tmp/tasquencer_test.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Workflow {
+  id         String      @id @default(uuid())
+  name       String
+  state      String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  tasks      Task[]
+  conditions Condition[]
+}
+
+model Task {
+  id         String   @id @default(uuid())
+  state      String
+  name       String
+  workflowId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+}
+
+model Condition {
+  id         String   @id @default(uuid())
+  name       String
+  marking    Int
+  workflowId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflow   Workflow @relation(fields: [workflowId], references: [id])
+}

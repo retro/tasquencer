@@ -203,43 +203,11 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
+    yield* $(interpreter.activateTask('issue_receipt'));
+
     const res7 = yield* $(interpreter.getWorkflowState());
 
     expect(res7).toEqual({
-      id: 'workflow-1',
-      name: 'checkout',
-      state: 'running',
-      tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
-        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
-      },
-      conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
-        'condition-3': {
-          id: 'condition-3',
-          name: 'implicit:scan_goods->pay',
-          marking: 0,
-        },
-        'condition-4': {
-          id: 'condition-4',
-          name: 'implicit:pay->pack_goods',
-          marking: 0,
-        },
-        'condition-5': {
-          id: 'condition-5',
-          name: 'implicit:pay->issue_receipt',
-          marking: 1,
-        },
-      },
-    });
-
-    yield* $(interpreter.activateTask('issue_receipt'));
-
-    const res8 = yield* $(interpreter.getWorkflowState());
-
-    expect(res8).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -271,9 +239,9 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('pack_goods'));
 
-    const res9 = yield* $(interpreter.getWorkflowState());
+    const res8 = yield* $(interpreter.getWorkflowState());
 
-    expect(res9).toEqual({
+    expect(res8).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -310,9 +278,9 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('issue_receipt'));
 
-    const res10 = yield* $(interpreter.getWorkflowState());
+    const res9 = yield* $(interpreter.getWorkflowState());
 
-    expect(res10).toEqual({
+    expect(res9).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -355,9 +323,9 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.activateTask('check_goods'));
 
-    const res11 = yield* $(interpreter.getWorkflowState());
+    const res10 = yield* $(interpreter.getWorkflowState());
 
-    expect(res11).toEqual({
+    expect(res10).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -400,9 +368,9 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.completeTask('check_goods'));
 
-    const res12 = yield* $(interpreter.getWorkflowState());
+    const res11 = yield* $(interpreter.getWorkflowState());
 
-    expect(res12).toEqual({
+    expect(res11).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'done',
@@ -3639,6 +3607,180 @@ it('supports task execution', () => {
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
       },
     });
+  });
+
+  Effect.runSync(program);
+});
+
+it('supports cancellation of tasks that are activated', () => {
+  let taskACancelled = false;
+  const workflowDefinition = Builder.workflow('name')
+    .startCondition('start')
+    .task('init', (t) =>
+      t
+        .withSplitType('and')
+        .onEnable(({ enableTask }) =>
+          pipe(
+            enableTask(),
+            Effect.flatMap(({ activateTask }) => activateTask())
+          )
+        )
+        .onActivate(({ activateTask }) =>
+          pipe(
+            activateTask(),
+            Effect.flatMap(({ completeTask }) => completeTask())
+          )
+        )
+    )
+    .task('A', (t) =>
+      t.onCancel(({ cancelTask }) =>
+        Effect.gen(function* ($) {
+          taskACancelled = true;
+          yield* $(cancelTask());
+        })
+      )
+    )
+    .task('cancelA')
+    .task('finalize', (t) =>
+      t
+        .withJoinType('xor')
+        .onEnable(({ enableTask }) =>
+          pipe(
+            enableTask(),
+            Effect.flatMap(({ activateTask }) => activateTask())
+          )
+        )
+        .onActivate(({ activateTask }) =>
+          pipe(
+            activateTask(),
+            Effect.flatMap(({ completeTask }) => completeTask())
+          )
+        )
+    )
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('init'))
+    .connectTask('init', (to) => to.task('A').task('cancelA'))
+    .connectTask('cancelA', (to) => to.task('finalize'))
+    .connectTask('A', (to) => to.task('finalize'))
+    .connectTask('finalize', (to) => to.condition('end'))
+    .cancellationRegion('finalize', { tasks: ['A', 'cancelA'] });
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+    const stateManager = yield* $(
+      createMemory(),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const workflow = yield* $(
+      workflowDefinition.build(),
+      Effect.provideService(StateManager, stateManager),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    const interpreter = yield* $(
+      Interpreter.make(workflow, {}),
+      Effect.provideService(StateManager, stateManager)
+    );
+
+    yield* $(interpreter.start('starting'));
+
+    const res1 = yield* $(interpreter.getWorkflowState());
+
+    expect(res1).toEqual({
+      id: 'workflow-1',
+      name: 'name',
+      state: 'running',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'init', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'A', state: 'enabled' },
+        'task-3': { id: 'task-3', name: 'cancelA', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:init->A',
+          marking: 1,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:init->cancelA',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter.activateTask('A'));
+
+    const res2 = yield* $(interpreter.getWorkflowState());
+
+    expect(res2).toEqual({
+      id: 'workflow-1',
+      name: 'name',
+      state: 'running',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'init', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'A', state: 'active' },
+        'task-3': { id: 'task-3', name: 'cancelA', state: 'enabled' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:init->A',
+          marking: 0,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:init->cancelA',
+          marking: 1,
+        },
+      },
+    });
+
+    yield* $(interpreter.activateTask('cancelA'));
+    yield* $(interpreter.completeTask('cancelA'));
+
+    const res3 = yield* $(interpreter.getWorkflowState());
+
+    expect(res3).toEqual({
+      id: 'workflow-1',
+      name: 'name',
+      state: 'done',
+      tasks: {
+        'task-1': { id: 'task-1', name: 'init', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'A', state: 'canceled' },
+        'task-3': { id: 'task-3', name: 'cancelA', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'finalize', state: 'completed' },
+      },
+      conditions: {
+        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
+        'condition-3': {
+          id: 'condition-3',
+          name: 'implicit:init->A',
+          marking: 0,
+        },
+        'condition-4': {
+          id: 'condition-4',
+          name: 'implicit:init->cancelA',
+          marking: 0,
+        },
+        'condition-5': {
+          id: 'condition-5',
+          name: 'implicit:cancelA->finalize',
+          marking: 0,
+        },
+        'condition-6': {
+          id: 'condition-6',
+          name: 'implicit:A->finalize',
+          marking: 0,
+        },
+        'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
+      },
+    });
+
+    expect(taskACancelled).toEqual(true);
   });
 
   Effect.runSync(program);

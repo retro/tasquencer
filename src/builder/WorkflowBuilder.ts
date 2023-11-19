@@ -494,6 +494,23 @@ export class WorkflowBuilder<
       return workflow;
     });
   }
+
+  clone(): WorkflowBuilder<
+    WBContext,
+    R,
+    E,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs,
+    OnStartReturnType
+  > {
+    return Object.assign(Object.create(this), { ...this });
+  }
+
   toJSONSerializable() {
     const jsonWorkflow: JSONWorkflow = {
       name: this.name,

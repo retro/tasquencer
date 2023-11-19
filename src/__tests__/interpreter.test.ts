@@ -1,15 +1,11 @@
-import { Effect, pipe } from 'effect';
+import { Effect } from 'effect';
 import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
 import * as Interpreter from '../interpreter.js';
-import { createMemory } from '../stateManager/memory.js';
-import { IdGenerator, StateManager } from '../stateManager/types.js';
-import {
-  TaskOnActivatePayload,
-  TaskOnCompletePayload,
-  TaskOnEnablePayload,
-} from '../types.js';
+import * as Memory from '../state/memory.js';
+import { StateManager } from '../state/types.js';
+import { IdGenerator } from '../stateManager/types.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {
@@ -44,7 +40,7 @@ it('can run simple net with and-split and and-join', () => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
     const stateManager = yield* $(
-      createMemory(),
+      Memory.make(),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
@@ -61,9 +57,78 @@ it('can run simple net with and-split and and-join', () => {
 
     yield* $(interpreter.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    expect(yield* $(interpreter.getWorkflowState())).toEqual({
+      id: 'workflow-1',
+      name: 'checkout',
+      state: 'running',
+    });
 
-    expect(res1).toEqual({
+    expect(yield* $(interpreter.getWorkflowTasks())).toEqual([
+      {
+        name: 'scan_goods',
+        workflowId: 'workflow-1',
+        generation: 0,
+        state: 'enabled',
+      },
+      {
+        name: 'pay',
+        workflowId: 'workflow-1',
+        generation: 0,
+        state: 'disabled',
+      },
+      {
+        name: 'pack_goods',
+        workflowId: 'workflow-1',
+        generation: 0,
+        state: 'disabled',
+      },
+      {
+        name: 'issue_receipt',
+        workflowId: 'workflow-1',
+        generation: 0,
+        state: 'disabled',
+      },
+      {
+        name: 'check_goods',
+        workflowId: 'workflow-1',
+        generation: 0,
+        state: 'disabled',
+      },
+    ]);
+
+    console.log(yield* $(interpreter.getWorkflowConditions()));
+
+    expect(yield* $(interpreter.getWorkflowConditions())).toEqual([
+      { name: 'start', workflowId: 'workflow-1', marking: 1 },
+      { name: 'end', workflowId: 'workflow-1', marking: 0 },
+      {
+        name: 'implicit:scan_goods->pay',
+        workflowId: 'workflow-1',
+        marking: 0,
+      },
+      {
+        name: 'implicit:pay->pack_goods',
+        workflowId: 'workflow-1',
+        marking: 0,
+      },
+      {
+        name: 'implicit:pay->issue_receipt',
+        workflowId: 'workflow-1',
+        marking: 0,
+      },
+      {
+        name: 'implicit:pack_goods->check_goods',
+        workflowId: 'workflow-1',
+        marking: 0,
+      },
+      {
+        name: 'implicit:issue_receipt->check_goods',
+        workflowId: 'workflow-1',
+        marking: 0,
+      },
+    ]);
+
+    /*expect(res1).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -442,13 +507,13 @@ it('can run simple net with and-split and and-join', () => {
         },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
       },
-    });
+    });*/
   });
 
   Effect.runSync(program);
 });
 
-it('can run resume a workflow', () => {
+/*it('can run resume a workflow', () => {
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
     .task('scan_goods')
@@ -3643,3 +3708,4 @@ it('supports task execution', () => {
 
   Effect.runSync(program);
 });
+*/

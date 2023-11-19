@@ -252,11 +252,11 @@ export class Memory implements StateManager {
   }
 }
 
-export function createMemory() {
+/*export function createMemory() {
   return Effect.gen(function* ($) {
     const idGenerator = yield* $(IdGenerator);
     const storeRef = yield* $(Ref.make({}));
 
     return new Memory(storeRef, idGenerator);
   });
-}
+}*/

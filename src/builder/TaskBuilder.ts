@@ -13,7 +13,6 @@ import {
   TaskOnEnablePayload,
   TaskOnExecutePayload,
 } from '../types.js';
-import { IdProvider } from './IdProvider.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderUserContext<T> = T extends TaskBuilder<
@@ -264,21 +263,19 @@ export class TaskBuilder<
     return this;
   }
 
-  build(workflow: Workflow, name: string, idProvider: IdProvider) {
+  build(workflow: Workflow, name: string) {
     const { splitType, joinType, activities, Constructor } = this;
-    return Effect.gen(function* ($) {
-      const task = new Constructor(
-        yield* $(idProvider.getTaskId(name)),
-        name,
-        workflow,
-        activities as unknown as TaskActivities,
-        {
-          splitType,
-          joinType,
-        }
-      );
-      workflow.addTask(task);
-    });
+
+    const task = new Constructor(
+      name,
+      workflow,
+      activities as unknown as TaskActivities,
+      {
+        splitType,
+        joinType,
+      }
+    );
+    workflow.addTask(task);
   }
 }
 

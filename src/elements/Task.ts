@@ -1,5 +1,6 @@
 import { Effect, pipe } from 'effect';
 
+import { TaskName, isValidTaskTransition } from '../state/types.js';
 import {
   DefaultTaskActivityPayload,
   JoinType,
@@ -12,20 +13,6 @@ import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
-const VALID_STATE_TRANSITIONS = {
-  disabled: new Set(['enabled']),
-  enabled: new Set(['active', 'disabled']),
-  active: new Set(['completed', 'canceled']),
-  completed: new Set(['enabled']),
-  canceled: new Set(['enabled']),
-};
-
-function isValidTransition(
-  from: TaskState,
-  to: TaskState
-): to is keyof typeof VALID_STATE_TRANSITIONS {
-  return VALID_STATE_TRANSITIONS[from].has(to);
-}
 // TODO: handle case where task is completed and prev condition(s)
 // have positive marking, so it should transition to enabled again
 
@@ -39,21 +26,18 @@ export class Task {
     tasks: Record<string, Task>;
     conditions: Record<string, Condition>;
   } = { tasks: {}, conditions: {} };
-  readonly id: string;
-  readonly name: string;
+  readonly name: TaskName;
   readonly activities: TaskActivities;
   readonly splitType: SplitType | undefined;
   readonly joinType: JoinType | undefined;
 
   constructor(
-    id: string,
     name: string,
     workflow: Workflow,
     activities: TaskActivities,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
-    this.id = id;
-    this.name = name;
+    this.name = TaskName(name);
     this.workflow = workflow;
     this.activities = activities;
     this.splitType = props?.splitType;
@@ -92,13 +76,17 @@ export class Task {
   getState() {
     const self = this;
     return Effect.gen(function* ($) {
-      return yield* $(self.workflow.stateManager.getTaskState(self));
+      return yield* $(
+        self.workflow.stateManager.getWorkflowTaskState(
+          self.workflow.id,
+          self.name
+        )
+      );
     });
   }
 
   getActivityContext(): DefaultTaskActivityPayload {
     return {
-      getTaskId: () => Effect.succeed(this.id),
       getTaskName: () => Effect.succeed(this.name),
       getWorkflowId: () => Effect.succeed(this.workflow.id),
       getTaskState: () => this.getState(),
@@ -111,7 +99,7 @@ export class Task {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
 
-      if (isValidTransition(state, 'enabled')) {
+      if (isValidTaskTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
           const activityContext = self.getActivityContext();
@@ -121,7 +109,12 @@ export class Task {
           };
 
           const performEnable = yield* $(
-            Effect.once(self.workflow.stateManager.enableTask(self))
+            Effect.once(
+              self.workflow.stateManager.enableWorkflowTask(
+                self.workflow.id,
+                self.name
+              )
+            )
           );
 
           const result = yield* $(
@@ -149,11 +142,16 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTransition(state, 'disabled')) {
+      if (isValidTaskTransition(state, 'disabled')) {
         const activityContext = self.getActivityContext();
 
         const performDisable = yield* $(
-          Effect.once(self.workflow.stateManager.disableTask(self))
+          Effect.once(
+            self.workflow.stateManager.disableWorkflowTask(
+              self.workflow.id,
+              self.name
+            )
+          )
         );
 
         const result = yield* $(
@@ -173,11 +171,11 @@ export class Task {
     });
   }
 
-  activate(context: object, input: unknown = undefined) {
+  fire(context: object, input: unknown = undefined) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTransition(state, 'active')) {
+      if (isValidTaskTransition(state, 'fired')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
         const completeTask = (input?: unknown) => {
@@ -187,7 +185,12 @@ export class Task {
         const performActivate = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
-              yield* $(self.workflow.stateManager.activateTask(self));
+              yield* $(
+                self.workflow.stateManager.fireWorkflowTask(
+                  self.workflow.id,
+                  self.name
+                )
+              );
               const preSet = Object.values(self.preSet);
               const updates = preSet.map((condition) =>
                 condition.decrementMarking(context)
@@ -222,7 +225,7 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (state === 'active') {
+      if (state === 'fired') {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
         const completeTask = (input?: unknown) => {
@@ -245,14 +248,19 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTransition(state, 'completed')) {
+      if (isValidTaskTransition(state, 'completed')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
 
         const performComplete = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
-              yield* $(self.workflow.stateManager.completeTask(self));
+              yield* $(
+                self.workflow.stateManager.completeWorkflowTask(
+                  self.workflow.id,
+                  self.name
+                )
+              );
               yield* $(self.cancelCancellationRegion(context));
               yield* $(self.produceTokensInOutgoingFlows(context));
               yield* $(self.enablePostTasks(context));
@@ -285,11 +293,16 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTransition(state, 'canceled')) {
+      if (isValidTaskTransition(state, 'canceled')) {
         const activityContext = self.getActivityContext();
 
         const performCancel = yield* $(
-          Effect.once(self.workflow.stateManager.cancelTask(self))
+          Effect.once(
+            self.workflow.stateManager.cancelWorkflowTask(
+              self.workflow.id,
+              self.name
+            )
+          )
         );
 
         const result = yield* $(

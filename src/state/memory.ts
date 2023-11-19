@@ -1,138 +1,25 @@
-import { Brand, Data, Effect, Ref } from 'effect';
+import { Effect, Ref } from 'effect';
 
-class TaskDoesNotExist extends Data.TaggedClass('TaskDoesNotExist')<{
-  readonly taskName: string;
-  readonly workflowId: string;
-}> {}
-
-class InvalidTaskStateTransition extends Data.TaggedClass(
-  'InvalidTaskStateTransition'
-)<{
-  readonly taskName: string;
-  readonly workflowId: string;
-  readonly from: string;
-  readonly to: string;
-}> {}
-
-class ConditionDoesNotExist extends Data.TaggedClass('ConditionDoesNotExist')<{
-  readonly conditionName: string;
-  readonly workflowId: string;
-}> {}
-
-class WorkflowDoesNotExist extends Data.TaggedClass('WorkflowDoesNotExist')<{
-  readonly workflowId: string;
-}> {}
-
-class InvalidWorkflowStateTransition extends Data.TaggedClass(
-  'InvalidWorkflowStateTransition'
-)<{
-  readonly workflowId: string;
-  readonly from: string;
-  readonly to: string;
-}> {}
-
-export type WorkflowInstanceId = string & Brand.Brand<'WorkflowInstanceId'>;
-export const WorkflowInstanceId = Brand.refined<WorkflowInstanceId>(
-  (value) => typeof value === 'string',
-  (value) => Brand.error(`Expected string, got ${typeof value}`)
-);
-
-export type TaskName = string & Brand.Brand<'TaskName'>;
-export const TaskName = Brand.refined<TaskName>(
-  (value) => typeof value === 'string',
-  (value) => Brand.error(`Expected string, got ${typeof value}`)
-);
-
-export type ConditionName = string & Brand.Brand<'ConditionName'>;
-export const ConditionName = Brand.refined<ConditionName>(
-  (value) => typeof value === 'string',
-  (value) => Brand.error(`Expected string, got ${typeof value}`)
-);
-
-export type WorkItemId = string & Brand.Brand<'WorkItemId'>;
-export const WorkItemId = Brand.refined<WorkItemId>(
-  (value) => typeof value === 'string',
-  (value) => Brand.error(`Expected string, got ${typeof value}`)
-);
-
-type WorkflowInstanceState = 'running' | 'completed' | 'canceled' | 'failed';
-
-interface WorkflowInstance {
-  id: WorkflowInstanceId;
-  name: string;
-  state: WorkflowInstanceState;
-}
-
-const validWorkflowInstanceTransitions: Record<
-  WorkflowInstanceState,
-  Set<WorkflowInstanceState>
-> = {
-  running: new Set(['completed', 'canceled', 'failed']),
-  completed: new Set(),
-  canceled: new Set(),
-  failed: new Set(),
-};
-
-type TaskInstanceState =
-  | 'enabled'
-  | 'disabled'
-  | 'fired'
-  | 'completed'
-  | 'canceled'
-  | 'failed';
-
-interface TaskInstance {
-  name: TaskName;
-  workflowId: WorkflowInstanceId;
-  generation: number;
-  state: TaskInstanceState;
-}
-
-const validTaskInstanceTransitions: Record<
+import {
+  ConditionDoesNotExist,
+  InvalidTaskStateTransition,
+  InvalidWorkflowStateTransition,
+  TaskDoesNotExist,
+  WorkflowDoesNotExist,
+} from '../errors.js';
+import {
+  ConditionInstance,
+  ConditionName,
+  State,
+  StateManager,
+  TaskInstance,
   TaskInstanceState,
-  Set<TaskInstanceState>
-> = {
-  enabled: new Set(['disabled', 'fired']),
-  disabled: new Set(['enabled']),
-  fired: new Set(['completed', 'canceled', 'failed']),
-  completed: new Set(),
-  canceled: new Set(),
-  failed: new Set(),
-};
-
-interface ConditionInstance {
-  name: ConditionName;
-  workflowId: WorkflowInstanceId;
-  marking: number;
-}
-
-type WorkItemState = 'running' | 'completed' | 'canceled' | 'failed';
-
-interface WorkItem {
-  id: WorkItemId;
-  taskName: TaskName;
-  state: WorkItemState;
-}
-
-const validWorkItemStateTransitions: Record<
-  WorkItemState,
-  Set<WorkItemState>
-> = {
-  running: new Set(['completed', 'canceled', 'failed']),
-  completed: new Set(),
-  canceled: new Set(),
-  failed: new Set(),
-};
-
-interface State {
-  workflows: Record<WorkflowInstanceId, WorkflowInstance>;
-  tasks: Record<TaskName, TaskInstance>;
-  conditions: Record<ConditionName, ConditionInstance>;
-  workItems: Record<WorkItemId, WorkItem>;
-  workflowsToTasks: Record<WorkflowInstanceId, TaskName[]>;
-  workflowsToConditions: Record<WorkflowInstanceId, ConditionName[]>;
-  tasksToWorkItems: Record<TaskName, Record<number, WorkItemId[]>>;
-}
+  TaskName,
+  WorkflowInstanceId,
+  WorkflowInstanceState,
+  validTaskInstanceTransitions,
+  validWorkflowInstanceTransitions,
+} from './types.js';
 
 function getInitialState(): State {
   return {
@@ -146,7 +33,7 @@ function getInitialState(): State {
   };
 }
 
-class StateManager {
+export class Memory implements StateManager {
   private stateRef: Ref.Ref<State>;
 
   constructor(stateRef: Ref.Ref<State>) {
@@ -232,23 +119,31 @@ class StateManager {
 
   getWorkflowTasks(id: WorkflowInstanceId) {
     return Ref.get(this.stateRef).pipe(
-      Effect.map(
-        (state) =>
-          state.workflowsToTasks[id]?.map(
-            (taskName) => state.tasks[taskName]
-          ) ?? []
-      )
+      Effect.map((state) => {
+        const taskNames = state.workflowsToTasks[id] ?? [];
+        return taskNames.reduce<TaskInstance[]>((acc, taskName) => {
+          const task = state.tasks[taskName];
+          if (task) {
+            acc.push(task);
+          }
+          return acc;
+        }, []);
+      })
     );
   }
 
   getWorkflowConditions(id: WorkflowInstanceId) {
     return Ref.get(this.stateRef).pipe(
-      Effect.map(
-        (state) =>
-          state.workflowsToConditions[id]?.map(
-            (conditionName) => state.conditions[conditionName]
-          ) ?? []
-      )
+      Effect.map((state) => {
+        const conditionNames = state.workflowsToConditions[id] ?? [];
+        return conditionNames.reduce<ConditionInstance[]>((acc, name) => {
+          const condition = state.conditions[name];
+          if (condition) {
+            acc.push(condition);
+          }
+          return acc;
+        }, []);
+      })
     );
   }
 
@@ -338,7 +233,7 @@ class StateManager {
     });
   }
 
-  private updateWorkflowTaskState(
+  updateWorkflowTaskState(
     workflowId: WorkflowInstanceId,
     taskName: TaskName,
     taskState: TaskInstanceState
@@ -399,7 +294,7 @@ class StateManager {
     return this.updateWorkflowTaskState(workflowId, taskName, 'failed');
   }
 
-  private updateWorkflowCondition(
+  updateWorkflowCondition(
     workflowId: WorkflowInstanceId,
     conditionName: ConditionName,
     f: (condition: ConditionInstance) => ConditionInstance
@@ -465,6 +360,6 @@ class StateManager {
 export function make() {
   return Effect.gen(function* ($) {
     const stateRef = yield* $(Ref.make(getInitialState()));
-    return new StateManager(stateRef);
+    return new Memory(stateRef);
   });
 }

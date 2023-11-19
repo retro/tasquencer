@@ -1,47 +1,53 @@
 import { Data } from 'effect';
 
-export interface TaskDoesNotExist extends Data.Case {
-  readonly _tag: 'TaskDoesNotExist';
-}
-export const TaskDoesNotExist =
-  Data.tagged<TaskDoesNotExist>('TaskDoesNotExist');
+export class StartConditionDoesNotExist extends Data.TaggedClass(
+  'StartConditionDoesNotExist'
+)<{
+  readonly workflowId: string;
+}> {}
 
-export interface StartConditionDoesNotExist extends Data.Case {
-  readonly _tag: 'StartConditionDoesNotExist';
-}
-export const StartConditionDoesNotExist =
-  Data.tagged<StartConditionDoesNotExist>('StartConditionDoesNotExist');
-
-export interface EndConditionDoesNotExist extends Data.Case {
-  readonly _tag: 'EndConditionDoesNotExist';
-}
-export const EndConditionDoesNotExist = Data.tagged<EndConditionDoesNotExist>(
+export class EndConditionDoesNotExist extends Data.TaggedClass(
   'EndConditionDoesNotExist'
-);
+)<{
+  readonly workflowId: string;
+}> {}
+export class TaskDoesNotExist extends Data.TaggedClass('TaskDoesNotExist')<{
+  readonly taskName: string;
+  readonly workflowId: string;
+}> {}
 
-export interface WorkflowNotInitialized extends Data.Case {
-  readonly _tag: 'WorkflowNotInitialized';
-}
-export const WorkflowNotInitialized = Data.tagged<WorkflowNotInitialized>(
-  'WorkflowNotInitialized'
-);
+export class InvalidTaskStateTransition extends Data.TaggedClass(
+  'InvalidTaskStateTransition'
+)<{
+  readonly taskName: string;
+  readonly workflowId: string;
+  readonly from: string;
+  readonly to: string;
+}> {}
 
-export interface ConditionDoesNotExist extends Data.Case {
-  readonly _tag: 'ConditionDoesNotExist';
-}
-export const ConditionDoesNotExist = Data.tagged<ConditionDoesNotExist>(
+export class InvalidTaskState extends Data.TaggedClass('InvalidTaskState')<{
+  readonly taskName: string;
+  readonly workflowId: string;
+  readonly state: string;
+}> {}
+
+export class ConditionDoesNotExist extends Data.TaggedClass(
   'ConditionDoesNotExist'
-);
+)<{
+  readonly conditionName: string;
+  readonly workflowId: string;
+}> {}
 
-export interface TaskNotEnabledError extends Data.Case {
-  readonly _tag: 'TaskNotEnabledError';
-}
-export const TaskNotEnabledError = Data.tagged<TaskNotEnabledError>(
-  'TaskNotEnabledError'
-);
+export class WorkflowDoesNotExist extends Data.TaggedClass(
+  'WorkflowDoesNotExist'
+)<{
+  readonly workflowId: string;
+}> {}
 
-export interface TaskNotActiveError extends Data.Case {
-  readonly _tag: 'TaskNotActiveError';
-}
-export const TaskNotActiveError =
-  Data.tagged<TaskNotActiveError>('TaskNotActiveError');
+export class InvalidWorkflowStateTransition extends Data.TaggedClass(
+  'InvalidWorkflowStateTransition'
+)<{
+  readonly workflowId: string;
+  readonly from: string;
+  readonly to: string;
+}> {}

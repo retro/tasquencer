@@ -5,15 +5,23 @@ import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
   EndConditionDoesNotExist,
+  InvalidWorkflowStateTransition,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
-  WorkflowNotInitialized,
+  WorkflowDoesNotExist,
 } from '../errors.js';
-import { StateManager } from '../stateManager/types.js';
+import {
+  ConditionName,
+  StateManager,
+  TaskName,
+  WorkflowInstanceId,
+} from '../state/types.js';
 import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
 import { Task } from './Task.js';
+
+('../state/types.js');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
@@ -26,6 +34,13 @@ export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+type OnStart<C> = (
+  payload: WorkflowOnStartPayload<C>
+) => Effect.Effect<unknown, unknown, unknown>;
+
+type OnEnd<C> = (
+  payload: WorkflowOnEndPayload<C>
+) => Effect.Effect<unknown, unknown, unknown>;
 export class Workflow<
   _R = never,
   _E = never,
@@ -40,18 +55,25 @@ export class Workflow<
   readonly conditions: Record<string, Condition> = {};
   private startCondition?: Condition;
   private endCondition?: Condition;
+  readonly id: WorkflowInstanceId;
+  readonly name: string;
+  readonly stateManager: StateManager;
+  readonly onStart: OnStart<Context>;
+  readonly onEnd: OnEnd<Context>;
 
   constructor(
-    readonly id: string,
-    readonly name: string,
-    readonly stateManager: StateManager,
-    readonly onStart: (
-      payload: WorkflowOnStartPayload<Context>
-    ) => Effect.Effect<unknown, unknown, unknown>,
-    readonly onEnd: (
-      payload: WorkflowOnEndPayload<Context>
-    ) => Effect.Effect<unknown, unknown, unknown>
-  ) {}
+    id: string,
+    name: string,
+    stateManager: StateManager,
+    onStart: OnStart<Context>,
+    onEnd: OnEnd<Context>
+  ) {
+    this.id = WorkflowInstanceId(id);
+    this.name = name;
+    this.stateManager = stateManager;
+    this.onStart = onStart;
+    this.onEnd = onEnd;
+  }
 
   addTask(task: Task) {
     this.tasks[task.name] = task;
@@ -66,7 +88,9 @@ export class Workflow<
       this.startCondition = this.conditions[conditionName];
       return Effect.succeed(this.startCondition);
     }
-    return Effect.fail(ConditionDoesNotExist());
+    return Effect.fail(
+      new ConditionDoesNotExist({ workflowId: this.id, conditionName })
+    );
   }
 
   setEndCondition(conditionName: string) {
@@ -74,20 +98,31 @@ export class Workflow<
       this.endCondition = this.conditions[conditionName];
       return Effect.succeed(this.endCondition);
     }
-    return Effect.fail(ConditionDoesNotExist());
+    return Effect.fail(
+      new ConditionDoesNotExist({ workflowId: this.id, conditionName })
+    );
   }
 
   initialize(): Effect.Effect<never, never, void> {
-    return this.stateManager.initializeWorkflow(this);
+    const taskNames = Object.keys(this.tasks).map(TaskName);
+    const conditionNames = Object.keys(this.conditions).map(ConditionName);
+    return this.stateManager.initializeWorkflow({
+      id: this.id,
+      name: this.name,
+      tasks: taskNames,
+      conditions: conditionNames,
+    });
   }
 
-  end(): Effect.Effect<never, WorkflowNotInitialized, void> {
-    return this.stateManager.updateWorkflowState(this, 'done');
+  end(): Effect.Effect<
+    never,
+    InvalidWorkflowStateTransition | WorkflowDoesNotExist,
+    void
+  > {
+    return this.stateManager.updateWorkflowState(this.id, 'completed');
   }
 
-  cancel(
-    context: object
-  ): Effect.Effect<never, WorkflowNotInitialized, unknown> {
+  cancel(context: object) {
     return pipe(
       Effect.all(
         [
@@ -104,7 +139,9 @@ export class Workflow<
         ],
         { discard: true }
       ),
-      Effect.tap(() => this.stateManager.updateWorkflowState(this, 'canceled'))
+      Effect.tap(() =>
+        this.stateManager.updateWorkflowState(this.id, 'canceled')
+      )
     );
   }
 
@@ -113,55 +150,66 @@ export class Workflow<
     if (startCondition) {
       return Effect.succeed(startCondition);
     }
-    return Effect.fail(StartConditionDoesNotExist());
+    return Effect.fail(new StartConditionDoesNotExist({ workflowId: this.id }));
   }
   getEndCondition() {
     const endCondition = this.endCondition;
     if (endCondition) {
       return Effect.succeed(endCondition);
     }
-    return Effect.fail(EndConditionDoesNotExist());
+    return Effect.fail(new EndConditionDoesNotExist({ workflowId: this.id }));
   }
-  getCondition(name: string) {
-    const condition = this.conditions[name];
+  getCondition(conditionName: string) {
+    const condition = this.conditions[conditionName];
     if (condition) {
       return Effect.succeed(condition);
     }
-    return Effect.fail(ConditionDoesNotExist());
+    return Effect.fail(
+      new ConditionDoesNotExist({ workflowId: this.id, conditionName })
+    );
   }
-  getTask(name: string) {
-    const task = this.tasks[name];
+  getTask(taskName: string) {
+    const task = this.tasks[taskName];
     if (task) {
       return Effect.succeed(task);
     }
-    return Effect.fail(TaskDoesNotExist());
+    return Effect.fail(new TaskDoesNotExist({ workflowId: this.id, taskName }));
   }
   getState() {
-    return this.stateManager.getWorkflowState(this.id);
+    return this.stateManager.getWorkflow(this.id);
+  }
+  getTasks() {
+    return this.stateManager.getWorkflowTasks(this.id);
+  }
+  getConditions() {
+    return this.stateManager.getWorkflowConditions(this.id);
   }
   isOrJoinSatisfied(task: Task) {
     const self = this;
     return Effect.gen(function* ($) {
-      const workflowState = yield* $(self.getState());
-      const activeTasks = Object.values(workflowState.tasks).reduce<Task[]>(
-        (acc, taskData) => {
-          if (taskData.state === 'active') {
-            const task = self.tasks[taskData.name];
-            task && acc.push(task);
+      const workflowTasks = yield* $(
+        self.stateManager.getWorkflowTasks(self.id)
+      );
+      const activeTasks = workflowTasks.reduce<Task[]>((acc, taskData) => {
+        if (taskData.state === 'fired') {
+          const task = self.tasks[taskData.name];
+          task && acc.push(task);
+        }
+        return acc;
+      }, []);
+      const workflowConditions = yield* $(
+        self.stateManager.getWorkflowConditions(self.id)
+      );
+      const enabledConditions = workflowConditions.reduce<Condition[]>(
+        (acc, conditionData) => {
+          if (conditionData.marking > 0) {
+            const condition = self.conditions[conditionData.name];
+            condition && acc.push(condition);
           }
           return acc;
         },
         []
       );
-      const enabledConditions = Object.values(workflowState.conditions).reduce<
-        Condition[]
-      >((acc, conditionData) => {
-        if (conditionData.marking > 0) {
-          const condition = self.conditions[conditionData.name];
-          condition && acc.push(condition);
-        }
-        return acc;
-      }, []);
 
       const marking = new Marking(activeTasks, enabledConditions);
 

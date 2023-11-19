@@ -7,13 +7,15 @@ import {
 } from './builder/FlowBuilder.js';
 import { AnyTaskBuilder } from './builder/TaskBuilder.js';
 import {
+  ConditionDoesNotExist,
   EndConditionDoesNotExist,
+  InvalidTaskStateTransition,
+  InvalidWorkflowStateTransition,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
-  TaskNotActiveError,
-  TaskNotEnabledError,
-  WorkflowNotInitialized,
+  WorkflowDoesNotExist,
 } from './errors.js';
+import { TaskInstanceState } from './state/types.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -79,10 +81,9 @@ export interface TaskActionsService {
 export const TaskActionsService = Context.Tag<TaskActionsService>();
 
 export interface DefaultTaskActivityPayload {
-  getTaskId: () => Effect.Effect<never, never, string>;
   getTaskName: () => Effect.Effect<never, never, string>;
   getWorkflowId: () => Effect.Effect<never, never, string>;
-  getTaskState: () => Effect.Effect<never, WorkflowNotInitialized, TaskState>;
+  getTaskState: () => Effect.Effect<never, TaskDoesNotExist, TaskInstanceState>;
 }
 
 export interface WorkflowOnStartPayload<C> {
@@ -91,12 +92,13 @@ export interface WorkflowOnStartPayload<C> {
   getWorkflowId: () => Effect.Effect<never, never, string>;
   startWorkflow(): Effect.Effect<
     never,
+    | TaskDoesNotExist
     | StartConditionDoesNotExist
     | EndConditionDoesNotExist
-    | WorkflowNotInitialized
-    | TaskDoesNotExist
-    | TaskNotEnabledError
-    | TaskNotActiveError,
+    | ConditionDoesNotExist
+    | WorkflowDoesNotExist
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition,
     void
   >;
 }
@@ -104,13 +106,21 @@ export interface WorkflowOnStartPayload<C> {
 export interface WorkflowOnEndPayload<C> {
   context: C;
   getWorkflowId: () => Effect.Effect<never, never, string>;
-  endWorkflow(): Effect.Effect<never, WorkflowNotInitialized, void>;
+  endWorkflow(): Effect.Effect<
+    never,
+    WorkflowDoesNotExist | InvalidWorkflowStateTransition,
+    void
+  >;
 }
 
 export type TaskOnDisablePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
-    disableTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
+    disableTask: () => Effect.Effect<
+      never,
+      TaskDoesNotExist | InvalidTaskStateTransition,
+      void
+    >;
   };
 
 export type TaskOnEnablePayload<C extends object = object> =
@@ -118,8 +128,10 @@ export type TaskOnEnablePayload<C extends object = object> =
     context: C;
     enableTask: () => Effect.Effect<
       never,
-      WorkflowNotInitialized,
-      { activateTask: (input?: unknown) => Effect.Effect<never, never, void> }
+      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      {
+        activateTask: (input?: unknown) => Effect.Effect<never, never, void>;
+      }
     >;
   };
 
@@ -129,7 +141,7 @@ export type TaskOnActivatePayload<C extends object = object> =
     input: unknown;
     activateTask: () => Effect.Effect<
       never,
-      WorkflowNotInitialized,
+      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
       { completeTask: (input?: unknown) => Effect.Effect<never, never, void> }
     >;
   };
@@ -140,20 +152,32 @@ export type TaskOnExecutePayload<C extends object = object> =
     input: unknown;
     completeTask: (
       input?: unknown
-    ) => Effect.Effect<never, WorkflowNotInitialized, void>;
+    ) => Effect.Effect<
+      never,
+      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      void
+    >;
   };
 
 export type TaskOnCompletePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     input: unknown;
-    completeTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
+    completeTask: () => Effect.Effect<
+      never,
+      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      void
+    >;
   };
 
 export type TaskOnCancelPayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
-    cancelTask: () => Effect.Effect<never, WorkflowNotInitialized, void>;
+    cancelTask: () => Effect.Effect<
+      never,
+      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      void
+    >;
   };
 
 export interface TaskActivities<C extends object = object> {

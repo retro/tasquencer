@@ -1,7 +1,8 @@
 import { Effect, Exit } from 'effect';
 import { expect, it } from 'vitest';
 
-import { ConditionName, TaskName, WorkflowInstanceId, make } from './memory.js';
+import { make } from './memory.js';
+import { ConditionName, TaskName, WorkflowInstanceId } from './types.js';
 
 const workflowId = WorkflowInstanceId('workflow1');
 const taskName1 = TaskName('task1');
@@ -21,8 +22,6 @@ it('can initialize read workflow state', () => {
     yield* $(stateManager.initializeWorkflow(workflow));
 
     const workflowState = yield* $(stateManager.getWorkflow(workflow.id));
-
-    console.log(workflowState);
 
     expect(workflowState).toEqual({
       id: 'workflow1',

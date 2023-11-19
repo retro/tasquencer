@@ -1,5 +1,6 @@
 import { Effect } from 'effect';
 
+import { ConditionName } from '../state/types.js';
 import { ConditionNode } from '../types.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Task } from './Task.js';
@@ -10,19 +11,12 @@ export class Condition {
   readonly outgoingFlows = new Set<ConditionToTaskFlow>();
   readonly preSet: Record<string, Task> = {};
   readonly postSet: Record<string, Task> = {};
-  readonly id: string;
-  readonly name: string;
+  readonly name: ConditionName;
   readonly isImplicit: boolean = false;
   readonly workflow: Workflow;
 
-  constructor(
-    id: string,
-    name: string,
-    conditionNode: ConditionNode,
-    workflow: Workflow
-  ) {
-    this.id = id;
-    this.name = name;
+  constructor(name: string, conditionNode: ConditionNode, workflow: Workflow) {
+    this.name = ConditionName(name);
     this.isImplicit = conditionNode.isImplicit ?? false;
     this.workflow = workflow;
   }
@@ -48,14 +42,24 @@ export class Condition {
   incrementMarking() {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.stateManager.incrementConditionMarking(self));
+      yield* $(
+        self.workflow.stateManager.incrementWorkflowConditionMarking(
+          self.workflow.id,
+          self.name
+        )
+      );
     });
   }
 
   decrementMarking(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.stateManager.decrementConditionMarking(self));
+      yield* $(
+        self.workflow.stateManager.decrementWorkflowConditionMarking(
+          self.workflow.id,
+          self.name
+        )
+      );
       yield* $(self.disableTasks(context));
     });
   }
@@ -87,7 +91,12 @@ export class Condition {
   cancel(context: object) {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.stateManager.emptyConditionMarking(self));
+      yield* $(
+        self.workflow.stateManager.emptyWorkflowConditionMarking(
+          self.workflow.id,
+          self.name
+        )
+      );
       yield* $(self.disableTasks(context));
     });
   }
@@ -95,7 +104,13 @@ export class Condition {
   getMarking() {
     const self = this;
     return Effect.gen(function* ($) {
-      return yield* $(self.workflow.stateManager.getConditionMarking(self));
+      const condition = yield* $(
+        self.workflow.stateManager.getWorkflowCondition(
+          self.workflow.id,
+          self.name
+        )
+      );
+      return condition.marking;
     });
   }
 }

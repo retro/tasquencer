@@ -6,7 +6,7 @@ import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
 } from './elements/Workflow.js';
-import { TaskNotActiveError, TaskNotEnabledError } from './errors.js';
+import { InvalidTaskState, InvalidTaskStateTransition } from './errors.js';
 import { TaskActionsService } from './types.js';
 
 type QueueItem =
@@ -116,12 +116,22 @@ export class Interpreter<
 
     return Effect.gen(function* ($) {
       const task = yield* $(self.workflow.getTask(taskName));
+      const taskState = yield* $(task.getState());
       const isEnabled = yield* $(task.isEnabled());
       if (!isEnabled) {
-        yield* $(Effect.fail(TaskNotEnabledError()));
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              workflowId: self.workflow.id,
+              taskName,
+              from: taskState,
+              to: 'fired',
+            })
+          )
+        );
       }
       const output: unknown = yield* $(
-        task.activate(self.context, input),
+        task.fire(self.context, input),
         Effect.provideService(TaskActionsService, self.getTaskActionsService())
       );
 
@@ -163,9 +173,19 @@ export class Interpreter<
 
     return Effect.gen(function* ($) {
       const task = yield* $(self.workflow.getTask(taskName));
+      const taskState = yield* $(task.getState());
       const isActive = yield* $(task.isActive());
       if (!isActive) {
-        yield* $(Effect.fail(TaskNotActiveError()));
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              workflowId: self.workflow.id,
+              taskName,
+              from: taskState,
+              to: 'completed',
+            })
+          )
+        );
       }
       const output: unknown = yield* $(
         task.complete(self.context, input),
@@ -212,8 +232,17 @@ export class Interpreter<
     return Effect.gen(function* ($) {
       const task = yield* $(self.workflow.getTask(taskName));
       const isActive = yield* $(task.isActive());
+      const taskState = yield* $(task.getState());
       if (!isActive) {
-        yield* $(Effect.fail(TaskNotActiveError()));
+        yield* $(
+          Effect.fail(
+            new InvalidTaskState({
+              workflowId: self.workflow.id,
+              taskName,
+              state: taskState,
+            })
+          )
+        );
       }
       const output: unknown = yield* $(
         task.execute(self.context, input),
@@ -311,6 +340,12 @@ export class Interpreter<
 
   getWorkflowState() {
     return this.workflow.getState();
+  }
+  getWorkflowTasks() {
+    return this.workflow.getTasks();
+  }
+  getWorkflowConditions() {
+    return this.workflow.getConditions();
   }
 }
 

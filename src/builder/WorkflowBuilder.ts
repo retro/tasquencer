@@ -6,7 +6,8 @@ import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
 } from '../errors.js';
-import { IdGenerator, StateManager } from '../stateManager/types.js';
+import { StateManager } from '../state/types.js';
+import { IdGenerator } from '../stateManager/types.js';
 import type {
   ConditionNode,
   NotExtends,
@@ -20,7 +21,6 @@ import {
   TaskFlowBuilder,
   ValidOrXorTaskFlow,
 } from './FlowBuilder.js';
-import { IdProvider } from './IdProvider.js';
 import * as TB from './TaskBuilder.js';
 
 type TaskWithValidContext<C, T> = C extends TB.TaskBuilderUserContext<T>
@@ -397,13 +397,6 @@ export class WorkflowBuilder<
       const stateManager = yield* $(StateManager);
       const idGenerator = yield* $(IdGenerator);
       const workflowId = prevId ?? (yield* $(idGenerator.next('workflow')));
-      const prevState = yield* $(
-        stateManager.getWorkflowState(workflowId),
-        Effect.catchTag('WorkflowNotInitialized', () =>
-          Effect.succeed(undefined)
-        )
-      );
-      const idProvider = new IdProvider(prevState, idGenerator);
 
       const workflow = new Workflow<
         R,
@@ -426,14 +419,13 @@ export class WorkflowBuilder<
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow
         // This casting is ok, because task doesn't care about Workflow generics
-        yield* $(taskBuilder.build(workflow as Workflow, taskName, idProvider));
+        taskBuilder.build(workflow as Workflow, taskName);
       }
 
       for (const [conditionName, conditionNode] of Object.entries(
         definition.conditions
       )) {
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           conditionNode,
           // This casting is ok, because condition doesn't care about Workflow generics
@@ -449,7 +441,11 @@ export class WorkflowBuilder<
       ) {
         workflow.setStartCondition(definition.startCondition);
       } else {
-        yield* $(Effect.fail(StartConditionDoesNotExist()));
+        yield* $(
+          Effect.fail(
+            new StartConditionDoesNotExist({ workflowId: workflow.id })
+          )
+        );
       }
 
       if (
@@ -458,7 +454,9 @@ export class WorkflowBuilder<
       ) {
         workflow.setEndCondition(definition.endCondition);
       } else {
-        yield* $(Effect.fail(EndConditionDoesNotExist()));
+        yield* $(
+          Effect.fail(new EndConditionDoesNotExist({ workflowId: workflow.id }))
+        );
       }
 
       for (const [, conditionFlows] of Object.entries(
@@ -470,7 +468,7 @@ export class WorkflowBuilder<
 
       for (const [, taskFlows] of Object.entries(definition.flows.tasks)) {
         // This casting is ok, because task flow doesn't care about Workflow generics
-        yield* $(taskFlows.build(workflow as Workflow, idProvider));
+        yield* $(taskFlows.build(workflow as Workflow));
       }
 
       for (const [taskName, cancellationRegion] of Object.entries(

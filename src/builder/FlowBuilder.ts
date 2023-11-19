@@ -7,7 +7,6 @@ import {
   TaskToConditionFlowProps,
 } from '../elements/Flow.js';
 import { Workflow } from '../elements/Workflow.js';
-import { IdProvider } from './IdProvider.js';
 
 type AnyFlowPredicate = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +68,7 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
     this.toConditions[conditionName] = {};
     return this;
   }
-  build(workflow: Workflow, idProvider: IdProvider) {
+  build(workflow: Workflow) {
     const { from, toConditions, toTasks } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(from));
@@ -85,7 +84,6 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
         const toTask = yield* $(workflow.getTask(toTaskName));
         const conditionName = `implicit:${from}->${toTask.name}`;
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           { isImplicit: true },
           workflow
@@ -168,7 +166,7 @@ export class OrXorTaskFlowBuilder<
     this.toDefault = { type: 'condition', name: conditionName };
     return this;
   }
-  build(workflow: Workflow, idProvider: IdProvider) {
+  build(workflow: Workflow) {
     const { from, toConditions, toTasks, toDefault } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(from));
@@ -192,7 +190,6 @@ export class OrXorTaskFlowBuilder<
         const toTask = yield* $(workflow.getTask(toTaskName));
         const conditionName = `implicit:${from}->${toTask.name}`;
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           { isImplicit: true },
           workflow
@@ -221,7 +218,6 @@ export class OrXorTaskFlowBuilder<
         const toTask = yield* $(workflow.getTask(defaultFlow.name));
         const conditionName = `implicit:${from}->${toTask.name}`;
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           { isImplicit: true },
           workflow

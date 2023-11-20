@@ -16,6 +16,7 @@ import {
   WorkflowDoesNotExist,
 } from './errors.js';
 import { TaskInstanceState } from './state/types.js';
+import { IdGenerator } from './stateManager/types.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -23,12 +24,7 @@ export type Prettify<T> = {
 
 export type NotExtends<NS, N> = N extends NS ? never : N;
 
-export type TaskState =
-  | 'disabled'
-  | 'enabled'
-  | 'active'
-  | 'exited'
-  | 'canceled';
+export type TaskState = TaskInstanceState;
 
 type JoinSplitType = 'and' | 'or' | 'xor';
 export type SplitType = JoinSplitType;
@@ -91,7 +87,7 @@ export interface WorkflowOnStartPayload<C> {
   input: unknown;
   getWorkflowId: () => Effect.Effect<never, never, string>;
   startWorkflow(): Effect.Effect<
-    never,
+    IdGenerator,
     | TaskDoesNotExist
     | StartConditionDoesNotExist
     | EndConditionDoesNotExist

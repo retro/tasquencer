@@ -78,9 +78,9 @@ export const validTaskInstanceTransitions: Record<
   enabled: new Set(['disabled', 'fired']),
   disabled: new Set(['enabled']),
   fired: new Set(['exited', 'canceled', 'failed']),
-  exited: new Set(),
-  canceled: new Set(),
-  failed: new Set(),
+  exited: new Set(['enabled']),
+  canceled: new Set(['enabled']),
+  failed: new Set(['enabled']),
 };
 
 export function isValidTaskInstanceTransition(
@@ -229,17 +229,18 @@ export interface StateManager {
 
   createWorkItem(
     workflowId: WorkflowInstanceId,
-    taskName: TaskName,
-    workItemId: WorkItemId
+    taskName: TaskName
   ): Effect.Effect<never, TaskDoesNotExist, void>;
 
   getWorkItem(
     workflowId: WorkflowInstanceId,
+    taskName: TaskName,
     workItemId: WorkItemId
   ): Effect.Effect<never, WorkItemDoesNotExist, WorkItem>;
 
   updateWorkItemState(
     workflowId: WorkflowInstanceId,
+    taskName: TaskName,
     workItemId: WorkItemId,
     nextState: WorkItemState
   ): Effect.Effect<

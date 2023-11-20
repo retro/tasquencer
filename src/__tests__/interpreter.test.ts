@@ -4,13 +4,12 @@ import { expect, it } from 'vitest';
 import * as Builder from '../builder.js';
 import * as Interpreter from '../interpreter.js';
 import * as Memory from '../state/memory.js';
-import { StateManager } from '../state/types.js';
+import { StateManager, TaskName } from '../state/types.js';
 import { IdGenerator } from '../stateManager/types.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {
-    task: 0,
-    condition: 0,
+    workItem: 0,
     workflow: 0,
   };
   return {
@@ -50,83 +49,218 @@ it('can run simple net with and-split and and-join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
-      Interpreter.make(workflow, {}),
-      Effect.provideService(StateManager, stateManager)
-    );
+    const interpreter = yield* $(Interpreter.make(workflow, {}));
 
     yield* $(interpreter.start());
 
-    expect(yield* $(interpreter.getWorkflowState())).toEqual({
-      id: 'workflow-1',
-      name: 'checkout',
-      state: 'running',
+    expect(yield* $(interpreter.getFullState())).toEqual({
+      workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },
+      tasks: [
+        {
+          name: 'scan_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'enabled',
+        },
+        {
+          name: 'pay',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'pack_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'issue_receipt',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'check_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+      ],
+      conditions: [
+        { name: 'start', workflowId: 'workflow-1', marking: 1 },
+        { name: 'end', workflowId: 'workflow-1', marking: 0 },
+        {
+          name: 'implicit:scan_goods->pay',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pay->pack_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pay->issue_receipt',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pack_goods->check_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:issue_receipt->check_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+      ],
     });
 
-    expect(yield* $(interpreter.getWorkflowTasks())).toEqual([
-      {
-        name: 'scan_goods',
-        workflowId: 'workflow-1',
-        generation: 0,
-        state: 'enabled',
-      },
-      {
-        name: 'pay',
-        workflowId: 'workflow-1',
-        generation: 0,
-        state: 'disabled',
-      },
-      {
-        name: 'pack_goods',
-        workflowId: 'workflow-1',
-        generation: 0,
-        state: 'disabled',
-      },
-      {
-        name: 'issue_receipt',
-        workflowId: 'workflow-1',
-        generation: 0,
-        state: 'disabled',
-      },
-      {
-        name: 'check_goods',
-        workflowId: 'workflow-1',
-        generation: 0,
-        state: 'disabled',
-      },
-    ]);
+    yield* $(interpreter.fireTask('scan_goods'));
 
-    console.log(yield* $(interpreter.getWorkflowConditions()));
+    expect(yield* $(interpreter.getFullState())).toEqual({
+      workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },
+      tasks: [
+        {
+          name: 'scan_goods',
+          workflowId: 'workflow-1',
+          generation: 1,
+          state: 'fired',
+        },
+        {
+          name: 'pay',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'pack_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'issue_receipt',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'check_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+      ],
+      conditions: [
+        { name: 'start', workflowId: 'workflow-1', marking: 0 },
+        { name: 'end', workflowId: 'workflow-1', marking: 0 },
+        {
+          name: 'implicit:scan_goods->pay',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pay->pack_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pay->issue_receipt',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pack_goods->check_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:issue_receipt->check_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+      ],
+    });
 
-    expect(yield* $(interpreter.getWorkflowConditions())).toEqual([
-      { name: 'start', workflowId: 'workflow-1', marking: 1 },
-      { name: 'end', workflowId: 'workflow-1', marking: 0 },
-      {
-        name: 'implicit:scan_goods->pay',
-        workflowId: 'workflow-1',
-        marking: 0,
-      },
-      {
-        name: 'implicit:pay->pack_goods',
-        workflowId: 'workflow-1',
-        marking: 0,
-      },
-      {
-        name: 'implicit:pay->issue_receipt',
-        workflowId: 'workflow-1',
-        marking: 0,
-      },
-      {
-        name: 'implicit:pack_goods->check_goods',
-        workflowId: 'workflow-1',
-        marking: 0,
-      },
-      {
-        name: 'implicit:issue_receipt->check_goods',
-        workflowId: 'workflow-1',
-        marking: 0,
-      },
-    ]);
+    const workItems = yield* $(
+      interpreter.getWorkItems(TaskName('scan_goods'))
+    );
+
+    for (const workItem of workItems) {
+      yield* $(
+        interpreter.completeWorkItem(TaskName('scan_goods'), workItem.id)
+      );
+    }
+
+    console.log(yield* $(interpreter.getFullState()));
+
+    expect(yield* $(interpreter.getFullState())).toEqual({
+      workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },
+      tasks: [
+        {
+          name: 'scan_goods',
+          workflowId: 'workflow-1',
+          generation: 1,
+          state: 'exited',
+        },
+        {
+          name: 'pay',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'enabled',
+        },
+        {
+          name: 'pack_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'issue_receipt',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+        {
+          name: 'check_goods',
+          workflowId: 'workflow-1',
+          generation: 0,
+          state: 'disabled',
+        },
+      ],
+      conditions: [
+        { name: 'start', workflowId: 'workflow-1', marking: 0 },
+        { name: 'end', workflowId: 'workflow-1', marking: 0 },
+        {
+          name: 'implicit:scan_goods->pay',
+          workflowId: 'workflow-1',
+          marking: 1,
+        },
+        {
+          name: 'implicit:pay->pack_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pay->issue_receipt',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:pack_goods->check_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+        {
+          name: 'implicit:issue_receipt->check_goods',
+          workflowId: 'workflow-1',
+          marking: 0,
+        },
+      ],
+    });
 
     /*expect(res1).toEqual({
       id: 'workflow-1',

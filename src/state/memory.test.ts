@@ -1,6 +1,7 @@
 import { Effect, Exit } from 'effect';
 import { expect, it } from 'vitest';
 
+import { IdGenerator } from '../stateManager/types.js';
 import { make } from './memory.js';
 import {
   ConditionName,
@@ -20,9 +21,25 @@ const workflow = {
   conditions: [conditionName1, ConditionName('condition2')],
 };
 
+function makeIdGenerator(): IdGenerator {
+  const ids = {
+    workItem: 0,
+    workflow: 0,
+  };
+  return {
+    next(type) {
+      ids[type]++;
+      return Effect.succeed(`${type}-${ids[type]}`);
+    },
+  };
+}
+
 it('can initialize read workflow state', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -93,7 +110,10 @@ it('can initialize read workflow state', () => {
 
 it('can update workflow state to exited', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -120,7 +140,10 @@ it('can update workflow state to exited', () => {
 
 it('can update workflow state to canceled', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -147,7 +170,10 @@ it('can update workflow state to canceled', () => {
 
 it('can update workflow state to failed', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -174,7 +200,10 @@ it('can update workflow state to failed', () => {
 
 it('can enable a task', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -203,7 +232,10 @@ it('can enable a task', () => {
 
 it('can fire a task', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -216,7 +248,38 @@ it('can fire a task', () => {
     expect(task1).toEqual({
       name: 'task1',
       workflowId: 'workflow1',
-      generation: 0,
+      generation: 1,
+      state: 'fired',
+    });
+  });
+  Effect.runSync(program);
+});
+
+it('should increment generation every time a task is fired', () => {
+  const program = Effect.gen(function* ($) {
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
+
+    yield* $(stateManager.initializeWorkflow(workflow));
+
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
+
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
+
+    yield* $(stateManager.exitTask(workflow.id, taskName1));
+
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
+
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
+
+    const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
+
+    expect(task1).toEqual({
+      name: 'task1',
+      workflowId: 'workflow1',
+      generation: 2,
       state: 'fired',
     });
   });
@@ -225,7 +288,10 @@ it('can fire a task', () => {
 
 it('can exit a task', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -240,7 +306,7 @@ it('can exit a task', () => {
     expect(task1).toEqual({
       name: 'task1',
       workflowId: 'workflow1',
-      generation: 0,
+      generation: 1,
       state: 'exited',
     });
   });
@@ -249,7 +315,10 @@ it('can exit a task', () => {
 
 it('can cancel a task', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -264,7 +333,7 @@ it('can cancel a task', () => {
     expect(task1).toEqual({
       name: 'task1',
       workflowId: 'workflow1',
-      generation: 0,
+      generation: 1,
       state: 'canceled',
     });
   });
@@ -273,7 +342,10 @@ it('can cancel a task', () => {
 
 it('can fail a task', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -288,7 +360,7 @@ it('can fail a task', () => {
     expect(task1).toEqual({
       name: 'task1',
       workflowId: 'workflow1',
-      generation: 0,
+      generation: 1,
       state: 'failed',
     });
   });
@@ -297,7 +369,10 @@ it('can fail a task', () => {
 
 it('can increment condition marking', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -320,7 +395,10 @@ it('can increment condition marking', () => {
 
 it("can decrement condition marking if it's greater than 0", () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -357,7 +435,10 @@ it("can decrement condition marking if it's greater than 0", () => {
 
 it('can empty condition marking', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -392,7 +473,10 @@ it('can empty condition marking', () => {
 
 it("can decrement condition marking but it won't go below 0", () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -425,7 +509,10 @@ it("can decrement condition marking but it won't go below 0", () => {
 
 it('can not update workflow state if it is not initialized', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
   });
@@ -439,7 +526,10 @@ it('can not update workflow state if it is not initialized', () => {
 
 it("can not update workflow state if it's already exited", () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -457,7 +547,10 @@ it("can not update workflow state if it's already exited", () => {
 
 it("can not update workflow state if it's already canceled", () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -475,7 +568,10 @@ it("can not update workflow state if it's already canceled", () => {
 
 it("can not update workflow state if it's already failed", () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -493,7 +589,10 @@ it("can not update workflow state if it's already failed", () => {
 
 it('can not transition task from disabled to fired', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -509,7 +608,10 @@ it('can not transition task from disabled to fired', () => {
 
 it('can not transition task from disabled to exited', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -525,7 +627,10 @@ it('can not transition task from disabled to exited', () => {
 
 it('can not transition task from disabled to canceled', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
@@ -541,7 +646,10 @@ it('can not transition task from disabled to canceled', () => {
 
 it('can not transition task from enabled to exited', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
@@ -558,7 +666,10 @@ it('can not transition task from enabled to exited', () => {
 
 it('can not transition task from disabled to canceled', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
@@ -575,7 +686,10 @@ it('can not transition task from disabled to canceled', () => {
 
 it('can not transition task from disabled to failed', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
@@ -592,7 +706,10 @@ it('can not transition task from disabled to failed', () => {
 
 it('can not transition task from enabled to exited', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
@@ -609,7 +726,10 @@ it('can not transition task from enabled to exited', () => {
 
 it('can not transition task from enabled to canceled', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
@@ -626,7 +746,10 @@ it('can not transition task from enabled to canceled', () => {
 
 it('can not transition task from enabled to failed', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
@@ -643,15 +766,19 @@ it('can not transition task from enabled to failed', () => {
 
 it('can create work item', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
-    const workItemId = WorkItemId('workItemId1');
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId));
-    const workItem = yield* $(stateManager.getWorkItem(workflowId, workItemId));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1));
+    const workItem = yield* $(
+      stateManager.getWorkItem(workflowId, taskName1, WorkItemId('workItem-1'))
+    );
 
     expect(workItem).toEqual({
-      id: 'workItemId1',
+      id: 'workItem-1',
       taskName: 'task1',
       state: 'running',
     });
@@ -661,18 +788,27 @@ it('can create work item', () => {
 
 it('can update work item state from running to completed', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
-    const workItemId = WorkItemId('workItemId1');
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1));
     yield* $(
-      stateManager.updateWorkItemState(workflow.id, workItemId, 'completed')
+      stateManager.updateWorkItemState(
+        workflow.id,
+        taskName1,
+        WorkItemId('workItem-1'),
+        'completed'
+      )
     );
-    const workItem = yield* $(stateManager.getWorkItem(workflowId, workItemId));
+    const workItem = yield* $(
+      stateManager.getWorkItem(workflowId, taskName1, WorkItemId('workItem-1'))
+    );
 
     expect(workItem).toEqual({
-      id: 'workItemId1',
+      id: 'workItem-1',
       taskName: 'task1',
       state: 'completed',
     });
@@ -682,25 +818,26 @@ it('can update work item state from running to completed', () => {
 
 it('can get all task work items', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
-    const workItemId1 = WorkItemId('workItemId1');
-    const workItemId2 = WorkItemId('workItemId2');
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId1));
-    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId2));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1));
     const workItems = yield* $(
       stateManager.getWorkItems(workflowId, taskName1)
     );
 
     expect(workItems).toEqual([
       {
-        id: 'workItemId1',
+        id: 'workItem-1',
         taskName: 'task1',
         state: 'running',
       },
       {
-        id: 'workItemId2',
+        id: 'workItem-2',
         taskName: 'task1',
         state: 'running',
       },
@@ -711,15 +848,20 @@ it('can get all task work items', () => {
 
 it('can get some work items based on work item state', () => {
   const program = Effect.gen(function* ($) {
-    const stateManager = yield* $(make());
-    const workItemId1 = WorkItemId('workItemId1');
-    const workItemId2 = WorkItemId('workItemId2');
-
+    const stateManager = yield* $(
+      make(),
+      Effect.provideService(IdGenerator, makeIdGenerator())
+    );
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId1));
-    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId2));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1));
     yield* $(
-      stateManager.updateWorkItemState(workflow.id, workItemId1, 'completed')
+      stateManager.updateWorkItemState(
+        workflow.id,
+        taskName1,
+        WorkItemId('workItem-1'),
+        'completed'
+      )
     );
     const workItems = yield* $(
       stateManager.getWorkItems(workflowId, taskName1, 'running')
@@ -727,7 +869,7 @@ it('can get some work items based on work item state', () => {
 
     expect(workItems).toEqual([
       {
-        id: 'workItemId2',
+        id: 'workItem-2',
         taskName: 'task1',
         state: 'running',
       },

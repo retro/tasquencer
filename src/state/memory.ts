@@ -9,6 +9,7 @@ import {
   WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
+import { IdGenerator } from '../stateManager/types.js';
 import {
   ConditionInstance,
   ConditionName,
@@ -29,9 +30,11 @@ import {
 
 export class Memory implements StateManager {
   private stateRef: Ref.Ref<State>;
+  private idGenerator: IdGenerator;
 
-  constructor(stateRef: Ref.Ref<State>) {
+  constructor(stateRef: Ref.Ref<State>, idGenerator: IdGenerator) {
     this.stateRef = stateRef;
+    this.idGenerator = idGenerator;
   }
 
   initializeWorkflow(payload: {
@@ -227,6 +230,10 @@ export class Memory implements StateManager {
                 ...state[workflowId]?.tasks,
                 [taskName]: {
                   ...state[workflowId]?.tasks[taskName],
+                  generation:
+                    nextTaskState === 'fired'
+                      ? task.generation + 1
+                      : task.generation,
                   state: nextTaskState,
                 },
               },
@@ -315,13 +322,12 @@ export class Memory implements StateManager {
     });
   }
 
-  createWorkItem(
-    workflowId: WorkflowInstanceId,
-    taskName: TaskName,
-    workItemId: WorkItemId
-  ) {
+  createWorkItem(workflowId: WorkflowInstanceId, taskName: TaskName) {
     const self = this;
     return Effect.gen(function* ($) {
+      const workItemId = WorkItemId(
+        yield* $(self.idGenerator.next('workItem'))
+      );
       const task = yield* $(self.getTask(workflowId, taskName));
       const workItem: WorkItem = {
         taskName,
@@ -357,13 +363,17 @@ export class Memory implements StateManager {
     });
   }
 
-  getWorkItem(workflowId: WorkflowInstanceId, workItemId: WorkItemId) {
+  getWorkItem(
+    workflowId: WorkflowInstanceId,
+    taskName: TaskName,
+    workItemId: WorkItemId
+  ) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(Ref.get(self.stateRef));
       const workItem = state[workflowId]?.workItems[workItemId];
 
-      if (!workItem) {
+      if (!workItem || workItem.taskName !== taskName) {
         return yield* $(
           Effect.fail(new WorkItemDoesNotExist({ workflowId, workItemId }))
         );
@@ -375,12 +385,15 @@ export class Memory implements StateManager {
 
   updateWorkItemState(
     workflowId: WorkflowInstanceId,
+    taskName: TaskName,
     workItemId: WorkItemId,
     nextState: WorkItemState
   ) {
     const self = this;
     return Effect.gen(function* ($) {
-      const workItem = yield* $(self.getWorkItem(workflowId, workItemId));
+      const workItem = yield* $(
+        self.getWorkItem(workflowId, taskName, workItemId)
+      );
 
       if (!validWorkItemStateTransitions[workItem.state].has(nextState)) {
         return yield* $(
@@ -449,6 +462,7 @@ export class Memory implements StateManager {
 export function make() {
   return Effect.gen(function* ($) {
     const stateRef = yield* $(Ref.make({}));
-    return new Memory(stateRef);
+    const idGenerator = yield* $(IdGenerator);
+    return new Memory(stateRef, idGenerator);
   });
 }

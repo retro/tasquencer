@@ -1,6 +1,10 @@
 import { Effect, pipe } from 'effect';
 
-import { TaskName, isValidTaskInstanceTransition } from '../state/types.js';
+import {
+  TaskName,
+  WorkItemId,
+  isValidTaskInstanceTransition,
+} from '../state/types.js';
 import {
   DefaultTaskActivityPayload,
   JoinType,
@@ -88,6 +92,10 @@ export class Task {
       getWorkflowId: () => Effect.succeed(this.workflow.id),
       getTaskState: () => this.getState(),
     };
+  }
+
+  getWorkItems() {
+    return this.workflow.stateManager.getWorkItems(this.workflow.id, this.name);
   }
 
   enable(context: object) {
@@ -179,6 +187,14 @@ export class Task {
               yield* $(
                 self.workflow.stateManager.fireTask(self.workflow.id, self.name)
               );
+
+              yield* $(
+                self.workflow.stateManager.createWorkItem(
+                  self.workflow.id,
+                  self.name
+                )
+              );
+
               const preSet = Object.values(self.preSet);
               const updates = preSet.map((condition) =>
                 condition.decrementMarking(context)
@@ -304,12 +320,35 @@ export class Task {
     });
   }
 
+  completeWorkItem(workItemId: WorkItemId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const taskActionsService = yield* $(TaskActionsService);
+      yield* $(
+        self.workflow.stateManager.updateWorkItemState(
+          self.workflow.id,
+          self.name,
+          workItemId,
+          'completed'
+        )
+      );
+
+      const taskWorkItems = yield* $(
+        self.workflow.stateManager.getWorkItems(self.workflow.id, self.name)
+      );
+
+      if (!taskWorkItems.some((workItem) => workItem.state === 'running')) {
+        yield* $(taskActionsService.exitTask(self.name));
+      }
+    });
+  }
+
   isEnabled() {
     return this.isStateEqualTo('enabled');
   }
 
-  isActive() {
-    return this.isStateEqualTo('active');
+  isFired() {
+    return this.isStateEqualTo('fired');
   }
 
   isStateEqualTo(state: TaskState) {

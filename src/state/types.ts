@@ -34,7 +34,7 @@ export const WorkItemId = Brand.refined<WorkItemId>(
 
 export type WorkflowInstanceState =
   | 'running'
-  | 'completed'
+  | 'exited'
   | 'canceled'
   | 'failed';
 
@@ -48,8 +48,8 @@ export const validWorkflowInstanceTransitions: Record<
   WorkflowInstanceState,
   Set<WorkflowInstanceState>
 > = {
-  running: new Set(['completed', 'canceled', 'failed']),
-  completed: new Set(),
+  running: new Set(['exited', 'canceled', 'failed']),
+  exited: new Set(),
   canceled: new Set(),
   failed: new Set(),
 };
@@ -58,7 +58,7 @@ export type TaskInstanceState =
   | 'enabled'
   | 'disabled'
   | 'fired'
-  | 'completed'
+  | 'exited'
   | 'canceled'
   | 'failed';
 
@@ -75,8 +75,8 @@ export const validTaskInstanceTransitions: Record<
 > = {
   enabled: new Set(['disabled', 'fired']),
   disabled: new Set(['enabled']),
-  fired: new Set(['completed', 'canceled', 'failed']),
-  completed: new Set(),
+  fired: new Set(['exited', 'canceled', 'failed']),
+  exited: new Set(),
   canceled: new Set(),
   failed: new Set(),
 };
@@ -94,7 +94,7 @@ export interface ConditionInstance {
   marking: number;
 }
 
-type WorkItemState = 'running' | 'completed' | 'canceled' | 'failed';
+type WorkItemState = 'running' | 'exited' | 'canceled' | 'failed';
 
 interface WorkItem {
   id: WorkItemId;
@@ -106,8 +106,8 @@ export const validWorkItemStateTransitions: Record<
   WorkItemState,
   Set<WorkItemState>
 > = {
-  running: new Set(['completed', 'canceled', 'failed']),
-  completed: new Set(),
+  running: new Set(['exited', 'canceled', 'failed']),
+  exited: new Set(),
   canceled: new Set(),
   failed: new Set(),
 };
@@ -192,7 +192,7 @@ export interface StateManager {
     taskName: TaskName
   ): Effect.Effect<never, TaskDoesNotExist | InvalidTaskStateTransition, void>;
 
-  completeWorkflowTask(
+  exitWorkflowTask(
     workflowId: WorkflowInstanceId,
     taskName: TaskName
   ): Effect.Effect<never, TaskDoesNotExist | InvalidTaskStateTransition, void>;

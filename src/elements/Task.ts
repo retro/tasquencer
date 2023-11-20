@@ -13,7 +13,7 @@ import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
-// TODO: handle case where task is completed and prev condition(s)
+// TODO: handle case where task is exited and prev condition(s)
 // have positive marking, so it should transition to enabled again
 
 export class Task {
@@ -104,8 +104,8 @@ export class Task {
         if (isJoinSatisfied) {
           const activityContext = self.getActivityContext();
           const taskActionsService = yield* $(TaskActionsService);
-          const activateTask = (input?: unknown) => {
-            return taskActionsService.activateTask(self.name, input);
+          const fireTask = (input?: unknown) => {
+            return taskActionsService.fireTask(self.name, input);
           };
 
           const performEnable = yield* $(
@@ -124,7 +124,7 @@ export class Task {
               enableTask() {
                 return pipe(
                   performEnable,
-                  Effect.map(() => ({ activateTask }))
+                  Effect.map(() => ({ fireTask }))
                 );
               },
             }) as Effect.Effect<never, never, unknown>
@@ -178,11 +178,11 @@ export class Task {
       if (isValidTaskTransition(state, 'fired')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
-        const completeTask = (input?: unknown) => {
-          return taskActionsService.completeTask(self.name, input);
+        const exitTask = (input?: unknown) => {
+          return taskActionsService.exitTask(self.name, input);
         };
 
-        const performActivate = yield* $(
+        const performFire = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
               yield* $(
@@ -201,20 +201,20 @@ export class Task {
         );
 
         const result = yield* $(
-          self.activities.onActivate({
+          self.activities.onFire({
             ...activityContext,
             context,
             input,
-            activateTask() {
+            fireTask() {
               return pipe(
-                performActivate,
-                Effect.map(() => ({ completeTask }))
+                performFire,
+                Effect.map(() => ({ exitTask }))
               );
             },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performActivate);
+        yield* $(performFire);
 
         return result;
       }
@@ -228,8 +228,8 @@ export class Task {
       if (state === 'fired') {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
-        const completeTask = (input?: unknown) => {
-          return taskActionsService.completeTask(self.name, input);
+        const exitTask = (input?: unknown) => {
+          return taskActionsService.exitTask(self.name, input);
         };
 
         return yield* $(
@@ -237,26 +237,26 @@ export class Task {
             ...activityContext,
             context,
             input,
-            completeTask,
+            exitTask,
           }) as Effect.Effect<never, never, unknown>
         );
       }
     });
   }
 
-  complete(context: object, input: unknown = undefined) {
+  exit(context: object, input: unknown = undefined) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTaskTransition(state, 'completed')) {
+      if (isValidTaskTransition(state, 'exited')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
 
-        const performComplete = yield* $(
+        const performExit = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
               yield* $(
-                self.workflow.stateManager.completeWorkflowTask(
+                self.workflow.stateManager.exitWorkflowTask(
                   self.workflow.id,
                   self.name
                 )
@@ -269,20 +269,20 @@ export class Task {
         );
 
         const result = yield* $(
-          self.activities.onComplete({
+          self.activities.onExit({
             ...activityContext,
             context,
             input,
-            completeTask() {
+            exitTask() {
               return pipe(
-                performComplete,
+                performExit,
                 Effect.provideService(TaskActionsService, taskActionsService)
               );
             },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performComplete);
+        yield* $(performExit);
 
         return result;
       }

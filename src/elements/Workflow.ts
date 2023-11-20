@@ -119,7 +119,7 @@ export class Workflow<
     InvalidWorkflowStateTransition | WorkflowDoesNotExist,
     void
   > {
-    return this.stateManager.updateWorkflowState(this.id, 'completed');
+    return this.stateManager.updateWorkflowState(this.id, 'exited');
   }
 
   cancel(context: object) {

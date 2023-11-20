@@ -282,8 +282,8 @@ export class Memory implements StateManager {
     return this.updateWorkflowTaskState(workflowId, taskName, 'fired');
   }
 
-  completeWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'completed');
+  exitWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateWorkflowTaskState(workflowId, taskName, 'exited');
   }
 
   cancelWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {

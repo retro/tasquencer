@@ -10,8 +10,8 @@ import { InvalidTaskState, InvalidTaskStateTransition } from './errors.js';
 import { TaskActionsService } from './types.js';
 
 type QueueItem =
-  | { type: 'activate'; taskName: string; input: unknown }
-  | { type: 'complete'; taskName: string; input: unknown };
+  | { type: 'fire'; taskName: string; input: unknown }
+  | { type: 'exit'; taskName: string; input: unknown };
 
 // TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Interpreter<
@@ -111,7 +111,7 @@ export class Interpreter<
     });
   }
 
-  private activateTaskWithoutRunningQueue(taskName: string, input: unknown) {
+  private fireTaskWithoutRunningQueue(taskName: string, input: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -139,12 +139,12 @@ export class Interpreter<
     });
   }
 
-  _activateTask(taskName: string, input?: unknown) {
+  _fireTask(taskName: string, input?: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
       const output = yield* $(
-        self.activateTaskWithoutRunningQueue(taskName, input)
+        self.fireTaskWithoutRunningQueue(taskName, input)
       );
 
       yield* $(self.runQueue());
@@ -153,22 +153,22 @@ export class Interpreter<
     });
   }
 
-  activateTask<T extends keyof TasksActivitiesOutputs, I>(
+  fireTask<T extends keyof TasksActivitiesOutputs, I>(
     taskName: T & string,
     input?: I
   ) {
-    return this._activateTask(taskName, input) as unknown as Effect.Effect<
+    return this._fireTask(taskName, input) as unknown as Effect.Effect<
       R,
       E,
       unknown extends I
         ? undefined
-        : unknown extends TasksActivitiesOutputs[T]['onActivate']
+        : unknown extends TasksActivitiesOutputs[T]['onFire']
         ? I
-        : TasksActivitiesOutputs[T]['onActivate']
+        : TasksActivitiesOutputs[T]['onFire']
     >;
   }
 
-  private completeTaskWithoutRunningQueue(taskName: string, input: unknown) {
+  private exitTaskWithoutRunningQueue(taskName: string, input: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -182,13 +182,13 @@ export class Interpreter<
               workflowId: self.workflow.id,
               taskName,
               from: taskState,
-              to: 'completed',
+              to: 'exited',
             })
           )
         );
       }
       const output: unknown = yield* $(
-        task.complete(self.context, input),
+        task.exit(self.context, input),
         Effect.provideService(TaskActionsService, self.getTaskActionsService())
       );
 
@@ -196,12 +196,12 @@ export class Interpreter<
     });
   }
 
-  _completeTask(taskName: string, input?: unknown) {
+  _exitTask(taskName: string, input?: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
       const output = yield* $(
-        self.completeTaskWithoutRunningQueue(taskName, input)
+        self.exitTaskWithoutRunningQueue(taskName, input)
       );
 
       yield* $(self.runQueue());
@@ -211,18 +211,18 @@ export class Interpreter<
     });
   }
 
-  completeTask<T extends keyof TasksActivitiesOutputs, I>(
+  exitTask<T extends keyof TasksActivitiesOutputs, I>(
     taskName: T & string,
     input?: I
   ) {
-    return this._completeTask(taskName, input) as unknown as Effect.Effect<
+    return this._exitTask(taskName, input) as unknown as Effect.Effect<
       R,
       E,
       unknown extends I
         ? undefined
-        : unknown extends TasksActivitiesOutputs[T]['onComplete']
+        : unknown extends TasksActivitiesOutputs[T]['onExit']
         ? I
-        : TasksActivitiesOutputs[T]['onComplete']
+        : TasksActivitiesOutputs[T]['onExit']
     >;
   }
 
@@ -274,15 +274,15 @@ export class Interpreter<
   private getTaskActionsService() {
     const { queue } = this;
     return {
-      activateTask(taskName: string, input?: unknown) {
+      fireTask(taskName: string, input?: unknown) {
         return pipe(
-          Queue.offer(queue, { type: 'activate', taskName, input }),
+          Queue.offer(queue, { type: 'fire', taskName, input }),
           Effect.asUnit
         );
       },
-      completeTask(taskName: string, input?: unknown) {
+      exitTask(taskName: string, input?: unknown) {
         return pipe(
-          Queue.offer(queue, { type: 'complete', taskName, input }),
+          Queue.offer(queue, { type: 'exit', taskName, input }),
           Effect.asUnit
         );
       },
@@ -324,11 +324,11 @@ export class Interpreter<
 
         const match = pipe(
           Match.type<QueueItem>(),
-          Match.when({ type: 'activate' }, ({ taskName, input }) =>
-            self.activateTaskWithoutRunningQueue(taskName, input)
+          Match.when({ type: 'fire' }, ({ taskName, input }) =>
+            self.fireTaskWithoutRunningQueue(taskName, input)
           ),
-          Match.when({ type: 'complete' }, ({ taskName, input }) =>
-            self.completeTaskWithoutRunningQueue(taskName, input)
+          Match.when({ type: 'exit' }, ({ taskName, input }) =>
+            self.exitTaskWithoutRunningQueue(taskName, input)
           ),
           Match.exhaustive
         );

@@ -140,7 +140,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('scan_goods'));
+    yield* $(interpreter.fireTask('scan_goods'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -156,7 +156,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('scan_goods'));
+    yield* $(interpreter.exitTask('scan_goods'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -165,7 +165,7 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
         'task-2': { id: 'task-2', name: 'pay', state: 'enabled' },
       },
       conditions: {
@@ -178,7 +178,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('pay'));
+    yield* $(interpreter.fireTask('pay'));
 
     const res4 = yield* $(interpreter.getWorkflowState());
 
@@ -187,7 +187,7 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
         'task-2': { id: 'task-2', name: 'pay', state: 'active' },
       },
       conditions: {
@@ -200,7 +200,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('pay'));
+    yield* $(interpreter.exitTask('pay'));
 
     const res5 = yield* $(interpreter.getWorkflowState());
 
@@ -209,8 +209,8 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
         'task-3': { id: 'task-3', name: 'pack_goods', state: 'enabled' },
         'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
       },
@@ -234,7 +234,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('pack_goods'));
+    yield* $(interpreter.fireTask('pack_goods'));
 
     const res6 = yield* $(interpreter.getWorkflowState());
 
@@ -243,8 +243,8 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
         'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
         'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
       },
@@ -275,8 +275,8 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
         'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
         'task-4': { id: 'task-4', name: 'issue_receipt', state: 'enabled' },
       },
@@ -300,7 +300,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('issue_receipt'));
+    yield* $(interpreter.fireTask('issue_receipt'));
 
     const res8 = yield* $(interpreter.getWorkflowState());
 
@@ -309,8 +309,8 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
         'task-3': { id: 'task-3', name: 'pack_goods', state: 'active' },
         'task-4': { id: 'task-4', name: 'issue_receipt', state: 'active' },
       },
@@ -334,7 +334,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('pack_goods'));
+    yield* $(interpreter.exitTask('pack_goods'));
 
     const res9 = yield* $(interpreter.getWorkflowState());
 
@@ -343,9 +343,9 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'exited' },
         'task-4': { id: 'task-4', name: 'issue_receipt', state: 'active' },
       },
       conditions: {
@@ -373,7 +373,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('issue_receipt'));
+    yield* $(interpreter.exitTask('issue_receipt'));
 
     const res10 = yield* $(interpreter.getWorkflowState());
 
@@ -382,10 +382,10 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'exited' },
         'task-5': { id: 'task-5', name: 'check_goods', state: 'enabled' },
       },
       conditions: {
@@ -418,7 +418,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('check_goods'));
+    yield* $(interpreter.fireTask('check_goods'));
 
     const res11 = yield* $(interpreter.getWorkflowState());
 
@@ -427,10 +427,10 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'exited' },
         'task-5': { id: 'task-5', name: 'check_goods', state: 'active' },
       },
       conditions: {
@@ -463,7 +463,7 @@ it('can run simple net with and-split and and-join', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('check_goods'));
+    yield* $(interpreter.exitTask('check_goods'));
 
     const res12 = yield* $(interpreter.getWorkflowState());
 
@@ -472,11 +472,11 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'done',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
-        'task-5': { id: 'task-5', name: 'check_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'exited' },
+        'task-5': { id: 'task-5', name: 'check_goods', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -548,7 +548,7 @@ it('can run simple net with and-split and and-join', () => {
     );
 
     yield* $(interpreter1.start());
-    yield* $(interpreter1.activateTask('scan_goods'));
+    yield* $(interpreter1.fireTask('scan_goods'));
 
     const workflow2 = yield* $(
       workflowDefinition.build(workflow1.id),
@@ -561,7 +561,7 @@ it('can run simple net with and-split and and-join', () => {
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter2.completeTask('scan_goods'));
+    yield* $(interpreter2.exitTask('scan_goods'));
 
     const res3 = yield* $(interpreter2.getWorkflowState());
 
@@ -575,7 +575,7 @@ it('can run simple net with and-split and and-join', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
         'task-6': { id: 'task-6', name: 'pay', state: 'enabled' },
       },
       conditions: {
@@ -596,7 +596,7 @@ it('can run workflow with activities', () => {
   const log: {
     name: string;
     activityPhase: 'before' | 'after';
-    taskPhase: 'disable' | 'enable' | 'activate' | 'complete' | 'cancel';
+    taskPhase: 'disable' | 'enable' | 'fire' | 'exit' | 'cancel';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input?: any;
   }[] = [];
@@ -618,38 +618,38 @@ it('can run workflow with activities', () => {
       return 'onEnable';
     });
 
-  const onActivateActivity = (payload: TaskOnActivatePayload) =>
+  const onFireActivity = (payload: TaskOnFirePayload) =>
     Effect.gen(function* ($) {
       const name = yield* $(payload.getTaskName());
       log.push({
         name,
         activityPhase: 'before',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       });
-      yield* $(payload.activateTask());
+      yield* $(payload.fireTask());
       log.push({
         name,
         activityPhase: 'after',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       });
-      return `onActivate: ${payload.input}`;
+      return `onFire: ${payload.input}`;
     });
 
-  const onCompleteActivity = (payload: TaskOnCompletePayload) =>
+  const onExitActivity = (payload: TaskOnExitPayload) =>
     Effect.gen(function* ($) {
       const name = yield* $(payload.getTaskName());
       log.push({
         name,
         activityPhase: 'before',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       });
-      yield* $(payload.completeTask());
+      yield* $(payload.exitTask());
       log.push({
         name,
         activityPhase: 'after',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       });
-      return `onComplete: ${payload.input}`;
+      return `onExit: ${payload.input}`;
     });
 
   const workflowDefinition = Builder.workflow('checkout')
@@ -657,33 +657,33 @@ it('can run workflow with activities', () => {
     .task('scan_goods', (t) =>
       t
         .onEnable(onEnableActivity)
-        .onActivate(onActivateActivity)
-        .onComplete(onCompleteActivity)
+        .onFire(onFireActivity)
+        .onExit(onExitActivity)
     )
     .task('pay', (t) =>
       t
         .onEnable(onEnableActivity)
-        .onActivate(onActivateActivity)
-        .onComplete(onCompleteActivity)
+        .onFire(onFireActivity)
+        .onExit(onExitActivity)
         .withSplitType('and')
     )
     .task('pack_goods', (t) =>
       t
         .onEnable(onEnableActivity)
-        .onActivate(onActivateActivity)
-        .onComplete(onCompleteActivity)
+        .onFire(onFireActivity)
+        .onExit(onExitActivity)
     )
     .task('issue_receipt', (t) =>
       t
         .onEnable(onEnableActivity)
-        .onActivate(onActivateActivity)
-        .onComplete(onCompleteActivity)
+        .onFire(onFireActivity)
+        .onExit(onExitActivity)
     )
     .task('check_goods', (t) =>
       t
         .onEnable(onEnableActivity)
-        .onActivate(onActivateActivity)
-        .onComplete(onCompleteActivity)
+        .onFire(onFireActivity)
+        .onExit(onExitActivity)
         .withJoinType('and')
     )
     .endCondition('end')
@@ -715,23 +715,23 @@ it('can run workflow with activities', () => {
     yield* $(interpreter.start());
 
     const res1 = yield* $(
-      interpreter.activateTask('scan_goods', 'activate scan_goods user input')
+      interpreter.fireTask('scan_goods', 'fire scan_goods user input')
     );
-    expect(res1).toEqual('onActivate: activate scan_goods user input');
+    expect(res1).toEqual('onFire: fire scan_goods user input');
 
     const res2 = yield* $(
-      interpreter.completeTask('scan_goods', 'complete scan_goods user input')
+      interpreter.exitTask('scan_goods', 'exit scan_goods user input')
     );
-    expect(res2).toEqual('onComplete: complete scan_goods user input');
+    expect(res2).toEqual('onExit: exit scan_goods user input');
 
-    yield* $(interpreter.activateTask('pay'));
-    yield* $(interpreter.completeTask('pay'));
-    yield* $(interpreter.activateTask('pack_goods'));
-    yield* $(interpreter.activateTask('issue_receipt'));
-    yield* $(interpreter.completeTask('pack_goods'));
-    yield* $(interpreter.completeTask('issue_receipt'));
-    yield* $(interpreter.activateTask('check_goods'));
-    yield* $(interpreter.completeTask('check_goods'));
+    yield* $(interpreter.fireTask('pay'));
+    yield* $(interpreter.exitTask('pay'));
+    yield* $(interpreter.fireTask('pack_goods'));
+    yield* $(interpreter.fireTask('issue_receipt'));
+    yield* $(interpreter.exitTask('pack_goods'));
+    yield* $(interpreter.exitTask('issue_receipt'));
+    yield* $(interpreter.fireTask('check_goods'));
+    yield* $(interpreter.exitTask('check_goods'));
 
     expect(log).toEqual([
       { name: 'scan_goods', activityPhase: 'before', taskPhase: 'enable' },
@@ -739,20 +739,20 @@ it('can run workflow with activities', () => {
       {
         name: 'scan_goods',
         activityPhase: 'before',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       },
-      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'activate' },
+      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'fire' },
       {
         name: 'scan_goods',
         activityPhase: 'before',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       },
       { name: 'pay', activityPhase: 'before', taskPhase: 'enable' },
       { name: 'pay', activityPhase: 'after', taskPhase: 'enable' },
-      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'complete' },
-      { name: 'pay', activityPhase: 'before', taskPhase: 'activate' },
-      { name: 'pay', activityPhase: 'after', taskPhase: 'activate' },
-      { name: 'pay', activityPhase: 'before', taskPhase: 'complete' },
+      { name: 'scan_goods', activityPhase: 'after', taskPhase: 'exit' },
+      { name: 'pay', activityPhase: 'before', taskPhase: 'fire' },
+      { name: 'pay', activityPhase: 'after', taskPhase: 'fire' },
+      { name: 'pay', activityPhase: 'before', taskPhase: 'exit' },
       { name: 'pack_goods', activityPhase: 'before', taskPhase: 'enable' },
       { name: 'pack_goods', activityPhase: 'after', taskPhase: 'enable' },
       {
@@ -765,60 +765,60 @@ it('can run workflow with activities', () => {
         activityPhase: 'after',
         taskPhase: 'enable',
       },
-      { name: 'pay', activityPhase: 'after', taskPhase: 'complete' },
+      { name: 'pay', activityPhase: 'after', taskPhase: 'exit' },
       {
         name: 'pack_goods',
         activityPhase: 'before',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       },
-      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'activate' },
+      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'fire' },
       {
         name: 'issue_receipt',
         activityPhase: 'before',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       },
       {
         name: 'issue_receipt',
         activityPhase: 'after',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       },
       {
         name: 'pack_goods',
         activityPhase: 'before',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       },
-      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'complete' },
+      { name: 'pack_goods', activityPhase: 'after', taskPhase: 'exit' },
       {
         name: 'issue_receipt',
         activityPhase: 'before',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       },
       { name: 'check_goods', activityPhase: 'before', taskPhase: 'enable' },
       { name: 'check_goods', activityPhase: 'after', taskPhase: 'enable' },
       {
         name: 'issue_receipt',
         activityPhase: 'after',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       },
       {
         name: 'check_goods',
         activityPhase: 'before',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       },
       {
         name: 'check_goods',
         activityPhase: 'after',
-        taskPhase: 'activate',
+        taskPhase: 'fire',
       },
       {
         name: 'check_goods',
         activityPhase: 'before',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       },
       {
         name: 'check_goods',
         activityPhase: 'after',
-        taskPhase: 'complete',
+        taskPhase: 'exit',
       },
     ]);
 
@@ -829,11 +829,11 @@ it('can run workflow with activities', () => {
       name: 'checkout',
       state: 'done',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'pay', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'pack_goods', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'completed' },
-        'task-5': { id: 'task-5', name: 'check_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'pay', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'pack_goods', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'issue_receipt', state: 'exited' },
+        'task-5': { id: 'task-5', name: 'check_goods', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -870,7 +870,7 @@ it('can run workflow with activities', () => {
   Effect.runSync(program);
 });
 
-it('can auto activate and auto complete tasks', () => {
+it('can auto fire and auto exit tasks', () => {
   const workflowDefinition = Builder.workflow('name')
     .startCondition('start')
     .task('A', (t) =>
@@ -878,13 +878,13 @@ it('can auto activate and auto complete tasks', () => {
         .onEnable(({ enableTask }) =>
           pipe(
             enableTask(),
-            Effect.flatMap(({ activateTask }) => activateTask())
+            Effect.flatMap(({ fireTask }) => fireTask())
           )
         )
-        .onActivate(({ activateTask }) =>
+        .onFire(({ fireTask }) =>
           pipe(
-            activateTask(),
-            Effect.flatMap(({ completeTask }) => completeTask())
+            fireTask(),
+            Effect.flatMap(({ exitTask }) => exitTask())
           )
         )
     )
@@ -918,7 +918,7 @@ it('can auto activate and auto complete tasks', () => {
       id: 'workflow-1',
       name: 'name',
       state: 'done',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'exited' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
@@ -978,8 +978,8 @@ it('supports deferred choice pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_1'));
-    yield* $(interpreter.completeTask('task_1'));
+    yield* $(interpreter.fireTask('task_1'));
+    yield* $(interpreter.exitTask('task_1'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -988,7 +988,7 @@ it('supports deferred choice pattern', () => {
       name: 'deferred-choice',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'task_1', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'task_1', state: 'exited' },
         'task-3': { id: 'task-3', name: 'task_2', state: 'disabled' },
         'task-2': { id: 'task-2', name: 'task_1a', state: 'enabled' },
       },
@@ -1002,8 +1002,8 @@ it('supports deferred choice pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_1a'));
-    yield* $(interpreter.completeTask('task_1a'));
+    yield* $(interpreter.fireTask('task_1a'));
+    yield* $(interpreter.exitTask('task_1a'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -1012,9 +1012,9 @@ it('supports deferred choice pattern', () => {
       name: 'deferred-choice',
       state: 'done',
       tasks: {
-        'task-1': { id: 'task-1', name: 'task_1', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'task_1', state: 'exited' },
         'task-3': { id: 'task-3', name: 'task_2', state: 'disabled' },
-        'task-2': { id: 'task-2', name: 'task_1a', state: 'completed' },
+        'task-2': { id: 'task-2', name: 'task_1a', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -1085,8 +1085,8 @@ it('supports xor join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('initial_task'));
-    yield* $(interpreter.completeTask('initial_task'));
+    yield* $(interpreter.fireTask('initial_task'));
+    yield* $(interpreter.exitTask('initial_task'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -1095,7 +1095,7 @@ it('supports xor join', () => {
       name: 'xor-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'task_b', state: 'enabled' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'enabled' },
@@ -1106,8 +1106,8 @@ it('supports xor join', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_b'));
-    yield* $(interpreter.completeTask('task_b'));
+    yield* $(interpreter.fireTask('task_b'));
+    yield* $(interpreter.exitTask('task_b'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -1116,9 +1116,9 @@ it('supports xor join', () => {
       name: 'xor-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'disabled' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'disabled' },
         'task-5': { id: 'task-5', name: 'finish_task', state: 'enabled' },
       },
@@ -1195,8 +1195,8 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('initial_task'));
-    yield* $(interpreter.completeTask('initial_task'));
+    yield* $(interpreter.fireTask('initial_task'));
+    yield* $(interpreter.exitTask('initial_task'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -1205,7 +1205,7 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'enabled' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'enabled' },
       },
@@ -1225,7 +1225,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_a'));
+    yield* $(interpreter.fireTask('task_a'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -1234,7 +1234,7 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
         'task-2': { id: 'task-2', name: 'task_a', state: 'active' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'disabled' },
       },
@@ -1254,7 +1254,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('task_a'));
+    yield* $(interpreter.exitTask('task_a'));
 
     const res4 = yield* $(interpreter.getWorkflowState());
 
@@ -1263,8 +1263,8 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'task_b', state: 'enabled' },
       },
@@ -1289,7 +1289,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_b'));
+    yield* $(interpreter.fireTask('task_b'));
 
     const res5 = yield* $(interpreter.getWorkflowState());
 
@@ -1298,8 +1298,8 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'disabled' },
         'task-3': { id: 'task-3', name: 'task_b', state: 'active' },
       },
@@ -1324,7 +1324,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('task_b'));
+    yield* $(interpreter.exitTask('task_b'));
 
     const res6 = yield* $(interpreter.getWorkflowState());
 
@@ -1333,10 +1333,10 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'enabled' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -1364,7 +1364,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_c'));
+    yield* $(interpreter.fireTask('task_c'));
 
     const res7 = yield* $(interpreter.getWorkflowState());
 
@@ -1373,10 +1373,10 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
         'task-4': { id: 'task-4', name: 'task_c', state: 'active' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -1404,7 +1404,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('task_c'));
+    yield* $(interpreter.exitTask('task_c'));
 
     const res8 = yield* $(interpreter.getWorkflowState());
 
@@ -1413,10 +1413,10 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'task_c', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'task_c', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
         'task-5': { id: 'task-5', name: 'task_d', state: 'enabled' },
       },
       conditions: {
@@ -1450,7 +1450,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('task_d'));
+    yield* $(interpreter.fireTask('task_d'));
 
     const res9 = yield* $(interpreter.getWorkflowState());
 
@@ -1459,10 +1459,10 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'task_c', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'task_c', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
         'task-5': { id: 'task-5', name: 'task_d', state: 'active' },
       },
       conditions: {
@@ -1496,7 +1496,7 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('task_d'));
+    yield* $(interpreter.exitTask('task_d'));
 
     const res10 = yield* $(interpreter.getWorkflowState());
 
@@ -1505,11 +1505,11 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'task_c', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
-        'task-5': { id: 'task-5', name: 'task_d', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'task_c', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
+        'task-5': { id: 'task-5', name: 'task_d', state: 'exited' },
         'task-6': { id: 'task-6', name: 'finish_task', state: 'enabled' },
       },
       conditions: {
@@ -1548,8 +1548,8 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('finish_task'));
-    yield* $(interpreter.completeTask('finish_task'));
+    yield* $(interpreter.fireTask('finish_task'));
+    yield* $(interpreter.exitTask('finish_task'));
 
     const res11 = yield* $(interpreter.getWorkflowState());
 
@@ -1558,12 +1558,12 @@ it('supports interleaved parallel routing pattern', () => {
       name: 'interleaved-parallel',
       state: 'done',
       tasks: {
-        'task-1': { id: 'task-1', name: 'initial_task', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'task_a', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'task_c', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'task_b', state: 'completed' },
-        'task-5': { id: 'task-5', name: 'task_d', state: 'completed' },
-        'task-6': { id: 'task-6', name: 'finish_task', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'initial_task', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'task_a', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'task_c', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'task_b', state: 'exited' },
+        'task-5': { id: 'task-5', name: 'task_d', state: 'exited' },
+        'task-6': { id: 'task-6', name: 'finish_task', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -1644,8 +1644,8 @@ it('supports xor join', () => {
     );
 
     yield* $(interpreter1.start());
-    yield* $(interpreter1.activateTask('A'));
-    yield* $(interpreter1.completeTask('A'));
+    yield* $(interpreter1.fireTask('A'));
+    yield* $(interpreter1.exitTask('A'));
 
     const res1_1 = yield* $(interpreter1.getWorkflowState());
 
@@ -1654,7 +1654,7 @@ it('supports xor join', () => {
       name: 'xor-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
       },
       conditions: {
@@ -1675,8 +1675,8 @@ it('supports xor join', () => {
     );
 
     yield* $(interpreter2.start());
-    yield* $(interpreter2.activateTask('A'));
-    yield* $(interpreter2.completeTask('A'));
+    yield* $(interpreter2.fireTask('A'));
+    yield* $(interpreter2.exitTask('A'));
 
     const res2_1 = yield* $(interpreter2.getWorkflowState());
 
@@ -1685,7 +1685,7 @@ it('supports xor join', () => {
       name: 'xor-join',
       state: 'running',
       tasks: {
-        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'A', state: 'exited' },
         'task-7': { id: 'task-7', name: 'C', state: 'enabled' },
       },
       conditions: {
@@ -1706,8 +1706,8 @@ it('supports xor join', () => {
     );
 
     yield* $(interpreter3.start());
-    yield* $(interpreter3.activateTask('A'));
-    yield* $(interpreter3.completeTask('A'));
+    yield* $(interpreter3.fireTask('A'));
+    yield* $(interpreter3.exitTask('A'));
 
     const res3_1 = yield* $(interpreter3.getWorkflowState());
 
@@ -1716,7 +1716,7 @@ it('supports xor join', () => {
       name: 'xor-join',
       state: 'running',
       tasks: {
-        'task-9': { id: 'task-9', name: 'A', state: 'completed' },
+        'task-9': { id: 'task-9', name: 'A', state: 'exited' },
         'task-12': { id: 'task-12', name: 'D', state: 'enabled' },
       },
       conditions: {
@@ -1796,8 +1796,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('register'));
-    yield* $(interpreter1.completeTask('register'));
+    yield* $(interpreter1.fireTask('register'));
+    yield* $(interpreter1.exitTask('register'));
 
     const res1_2 = yield* $(interpreter1.getWorkflowState());
 
@@ -1806,7 +1806,7 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'register', state: 'exited' },
         'task-2': { id: 'task-2', name: 'book_flight', state: 'enabled' },
         'task-4': { id: 'task-4', name: 'book_car', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'book_hotel', state: 'enabled' },
@@ -1831,8 +1831,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('book_flight'));
-    yield* $(interpreter1.completeTask('book_flight'));
+    yield* $(interpreter1.fireTask('book_flight'));
+    yield* $(interpreter1.exitTask('book_flight'));
 
     const res1_3 = yield* $(interpreter1.getWorkflowState());
 
@@ -1841,8 +1841,8 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'register', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'exited' },
         'task-4': { id: 'task-4', name: 'book_car', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'book_hotel', state: 'enabled' },
       },
@@ -1871,8 +1871,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('book_hotel'));
-    yield* $(interpreter1.completeTask('book_hotel'));
+    yield* $(interpreter1.fireTask('book_hotel'));
+    yield* $(interpreter1.exitTask('book_hotel'));
 
     const res1_4 = yield* $(interpreter1.getWorkflowState());
 
@@ -1881,10 +1881,10 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'register', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'exited' },
         'task-4': { id: 'task-4', name: 'book_car', state: 'enabled' },
-        'task-3': { id: 'task-3', name: 'book_hotel', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'book_hotel', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -1916,8 +1916,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('book_car'));
-    yield* $(interpreter1.completeTask('book_car'));
+    yield* $(interpreter1.fireTask('book_car'));
+    yield* $(interpreter1.exitTask('book_car'));
 
     const res1_5 = yield* $(interpreter1.getWorkflowState());
 
@@ -1926,10 +1926,10 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'register', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'book_flight', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'book_car', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'book_hotel', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'register', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'book_flight', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'book_car', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'book_hotel', state: 'exited' },
         'task-5': { id: 'task-5', name: 'pay', state: 'enabled' },
       },
       conditions: {
@@ -1983,8 +1983,8 @@ it('supports or split and or join', () => {
 
     yield* $(interpreter2.start());
 
-    yield* $(interpreter2.activateTask('register'));
-    yield* $(interpreter2.completeTask('register'));
+    yield* $(interpreter2.fireTask('register'));
+    yield* $(interpreter2.exitTask('register'));
 
     const res2_1 = yield* $(interpreter2.getWorkflowState());
 
@@ -1993,7 +1993,7 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-6': { id: 'task-6', name: 'register', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'register', state: 'exited' },
         'task-7': { id: 'task-7', name: 'book_flight', state: 'enabled' },
         'task-8': { id: 'task-8', name: 'book_hotel', state: 'enabled' },
       },
@@ -2012,8 +2012,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('book_flight'));
-    yield* $(interpreter2.completeTask('book_flight'));
+    yield* $(interpreter2.fireTask('book_flight'));
+    yield* $(interpreter2.exitTask('book_flight'));
 
     const res2_2 = yield* $(interpreter2.getWorkflowState());
 
@@ -2022,8 +2022,8 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-6': { id: 'task-6', name: 'register', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'book_flight', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'register', state: 'exited' },
+        'task-7': { id: 'task-7', name: 'book_flight', state: 'exited' },
         'task-8': { id: 'task-8', name: 'book_hotel', state: 'enabled' },
       },
       conditions: {
@@ -2046,8 +2046,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('book_hotel'));
-    yield* $(interpreter2.completeTask('book_hotel'));
+    yield* $(interpreter2.fireTask('book_hotel'));
+    yield* $(interpreter2.exitTask('book_hotel'));
 
     const res2_3 = yield* $(interpreter2.getWorkflowState());
 
@@ -2056,9 +2056,9 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-6': { id: 'task-6', name: 'register', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'book_flight', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'book_hotel', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'register', state: 'exited' },
+        'task-7': { id: 'task-7', name: 'book_flight', state: 'exited' },
+        'task-8': { id: 'task-8', name: 'book_hotel', state: 'exited' },
         'task-10': { id: 'task-10', name: 'pay', state: 'enabled' },
       },
       conditions: {
@@ -2102,8 +2102,8 @@ it('supports or split and or join', () => {
 
     yield* $(interpreter3.start());
 
-    yield* $(interpreter3.activateTask('register'));
-    yield* $(interpreter3.completeTask('register'));
+    yield* $(interpreter3.fireTask('register'));
+    yield* $(interpreter3.exitTask('register'));
 
     const res3_1 = yield* $(interpreter3.getWorkflowState());
 
@@ -2112,7 +2112,7 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-11': { id: 'task-11', name: 'register', state: 'completed' },
+        'task-11': { id: 'task-11', name: 'register', state: 'exited' },
         'task-13': { id: 'task-13', name: 'book_hotel', state: 'enabled' },
       },
       conditions: {
@@ -2125,8 +2125,8 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter3.activateTask('book_hotel'));
-    yield* $(interpreter3.completeTask('book_hotel'));
+    yield* $(interpreter3.fireTask('book_hotel'));
+    yield* $(interpreter3.exitTask('book_hotel'));
 
     const res3_2 = yield* $(interpreter3.getWorkflowState());
 
@@ -2135,8 +2135,8 @@ it('supports or split and or join', () => {
       name: 'or-split-and-or-join',
       state: 'running',
       tasks: {
-        'task-11': { id: 'task-11', name: 'register', state: 'completed' },
-        'task-13': { id: 'task-13', name: 'book_hotel', state: 'completed' },
+        'task-11': { id: 'task-11', name: 'register', state: 'exited' },
+        'task-13': { id: 'task-13', name: 'book_hotel', state: 'exited' },
         'task-15': { id: 'task-15', name: 'pay', state: 'enabled' },
       },
       conditions: {
@@ -2214,8 +2214,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('A'));
-    yield* $(interpreter1.completeTask('A'));
+    yield* $(interpreter1.fireTask('A'));
+    yield* $(interpreter1.exitTask('A'));
 
     const res1_2 = yield* $(interpreter1.getWorkflowState());
 
@@ -2224,7 +2224,7 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
       },
@@ -2235,8 +2235,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('B'));
-    yield* $(interpreter1.completeTask('B'));
+    yield* $(interpreter1.fireTask('B'));
+    yield* $(interpreter1.exitTask('B'));
 
     const res1_3 = yield* $(interpreter1.getWorkflowState());
 
@@ -2245,8 +2245,8 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
         'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
       },
       conditions: {
@@ -2257,8 +2257,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('C'));
-    yield* $(interpreter1.completeTask('C'));
+    yield* $(interpreter1.fireTask('C'));
+    yield* $(interpreter1.exitTask('C'));
 
     const res1_4 = yield* $(interpreter1.getWorkflowState());
 
@@ -2267,9 +2267,9 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
         'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
       },
       conditions: {
@@ -2282,8 +2282,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('D'));
-    yield* $(interpreter1.completeTask('D'));
+    yield* $(interpreter1.fireTask('D'));
+    yield* $(interpreter1.exitTask('D'));
 
     const res1_5 = yield* $(interpreter1.getWorkflowState());
 
@@ -2292,10 +2292,10 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'D', state: 'exited' },
         'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
       },
       conditions: {
@@ -2309,8 +2309,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('E'));
-    yield* $(interpreter1.completeTask('E'));
+    yield* $(interpreter1.fireTask('E'));
+    yield* $(interpreter1.exitTask('E'));
 
     const res1_6 = yield* $(interpreter1.getWorkflowState());
 
@@ -2319,11 +2319,11 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
-        'task-5': { id: 'task-5', name: 'E', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'D', state: 'exited' },
+        'task-5': { id: 'task-5', name: 'E', state: 'exited' },
         'task-6': { id: 'task-6', name: 'F', state: 'enabled' },
       },
       conditions: {
@@ -2363,8 +2363,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('A'));
-    yield* $(interpreter2.completeTask('A'));
+    yield* $(interpreter2.fireTask('A'));
+    yield* $(interpreter2.exitTask('A'));
 
     const res2_2 = yield* $(interpreter2.getWorkflowState());
 
@@ -2373,7 +2373,7 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'A', state: 'exited' },
         'task-8': { id: 'task-8', name: 'B', state: 'enabled' },
         'task-9': { id: 'task-9', name: 'C', state: 'enabled' },
       },
@@ -2392,8 +2392,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('B'));
-    yield* $(interpreter2.completeTask('B'));
+    yield* $(interpreter2.fireTask('B'));
+    yield* $(interpreter2.exitTask('B'));
 
     const res2_3 = yield* $(interpreter2.getWorkflowState());
 
@@ -2402,8 +2402,8 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'B', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'A', state: 'exited' },
+        'task-8': { id: 'task-8', name: 'B', state: 'exited' },
         'task-9': { id: 'task-9', name: 'C', state: 'enabled' },
       },
       conditions: {
@@ -2426,8 +2426,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('C'));
-    yield* $(interpreter2.completeTask('C'));
+    yield* $(interpreter2.fireTask('C'));
+    yield* $(interpreter2.exitTask('C'));
 
     const res2_4 = yield* $(interpreter2.getWorkflowState());
 
@@ -2436,9 +2436,9 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'B', state: 'completed' },
-        'task-9': { id: 'task-9', name: 'C', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'A', state: 'exited' },
+        'task-8': { id: 'task-8', name: 'B', state: 'exited' },
+        'task-9': { id: 'task-9', name: 'C', state: 'exited' },
         'task-11': { id: 'task-11', name: 'E', state: 'enabled' },
       },
       conditions: {
@@ -2466,8 +2466,8 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('E'));
-    yield* $(interpreter2.completeTask('E'));
+    yield* $(interpreter2.fireTask('E'));
+    yield* $(interpreter2.exitTask('E'));
 
     const res2_5 = yield* $(interpreter2.getWorkflowState());
 
@@ -2476,10 +2476,10 @@ it('supports multiple or splits and or joins (1)', () => {
       name: 'multiple-or-join-1',
       state: 'running',
       tasks: {
-        'task-7': { id: 'task-7', name: 'A', state: 'completed' },
-        'task-8': { id: 'task-8', name: 'B', state: 'completed' },
-        'task-9': { id: 'task-9', name: 'C', state: 'completed' },
-        'task-11': { id: 'task-11', name: 'E', state: 'completed' },
+        'task-7': { id: 'task-7', name: 'A', state: 'exited' },
+        'task-8': { id: 'task-8', name: 'B', state: 'exited' },
+        'task-9': { id: 'task-9', name: 'C', state: 'exited' },
+        'task-11': { id: 'task-11', name: 'E', state: 'exited' },
         'task-12': { id: 'task-12', name: 'F', state: 'enabled' },
       },
       conditions: {
@@ -2573,8 +2573,8 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('A'));
-    yield* $(interpreter1.completeTask('A'));
+    yield* $(interpreter1.fireTask('A'));
+    yield* $(interpreter1.exitTask('A'));
 
     const res1_2 = yield* $(interpreter1.getWorkflowState());
 
@@ -2583,7 +2583,7 @@ it('supports multiple or splits and or joins (2)', () => {
       name: 'multiple-or-join-2',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
       },
       conditions: {
@@ -2593,8 +2593,8 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('B'));
-    yield* $(interpreter1.completeTask('B'));
+    yield* $(interpreter1.fireTask('B'));
+    yield* $(interpreter1.exitTask('B'));
 
     const res1_3 = yield* $(interpreter1.getWorkflowState());
 
@@ -2603,8 +2603,8 @@ it('supports multiple or splits and or joins (2)', () => {
       name: 'multiple-or-join-2',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
         'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
       },
       conditions: {
@@ -2615,8 +2615,8 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter1.activateTask('C'));
-    yield* $(interpreter1.completeTask('C'));
+    yield* $(interpreter1.fireTask('C'));
+    yield* $(interpreter1.exitTask('C'));
 
     const res1_4 = yield* $(interpreter1.getWorkflowState());
 
@@ -2625,9 +2625,9 @@ it('supports multiple or splits and or joins (2)', () => {
       name: 'multiple-or-join-2',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
         'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
       },
       conditions: {
@@ -2664,8 +2664,8 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('A'));
-    yield* $(interpreter2.completeTask('A'));
+    yield* $(interpreter2.fireTask('A'));
+    yield* $(interpreter2.exitTask('A'));
 
     const res2_2 = yield* $(interpreter2.getWorkflowState());
 
@@ -2674,7 +2674,7 @@ it('supports multiple or splits and or joins (2)', () => {
       name: 'multiple-or-join-2',
       state: 'running',
       tasks: {
-        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'A', state: 'exited' },
         'task-6': { id: 'task-6', name: 'B', state: 'enabled' },
       },
       conditions: {
@@ -2692,8 +2692,8 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('B'));
-    yield* $(interpreter2.completeTask('B'));
+    yield* $(interpreter2.fireTask('B'));
+    yield* $(interpreter2.exitTask('B'));
 
     const res2_3 = yield* $(interpreter2.getWorkflowState());
 
@@ -2702,8 +2702,8 @@ it('supports multiple or splits and or joins (2)', () => {
       name: 'multiple-or-join-2',
       state: 'running',
       tasks: {
-        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
-        'task-6': { id: 'task-6', name: 'B', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'A', state: 'exited' },
+        'task-6': { id: 'task-6', name: 'B', state: 'exited' },
         'task-7': { id: 'task-7', name: 'C', state: 'enabled' },
       },
       conditions: {
@@ -2726,8 +2726,8 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter2.activateTask('C'));
-    yield* $(interpreter2.completeTask('C'));
+    yield* $(interpreter2.fireTask('C'));
+    yield* $(interpreter2.exitTask('C'));
 
     const res2_4 = yield* $(interpreter2.getWorkflowState());
 
@@ -2736,9 +2736,9 @@ it('supports multiple or splits and or joins (2)', () => {
       name: 'multiple-or-join-2',
       state: 'running',
       tasks: {
-        'task-5': { id: 'task-5', name: 'A', state: 'completed' },
-        'task-6': { id: 'task-6', name: 'B', state: 'completed' },
-        'task-7': { id: 'task-7', name: 'C', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'A', state: 'exited' },
+        'task-6': { id: 'task-6', name: 'B', state: 'exited' },
+        'task-7': { id: 'task-7', name: 'C', state: 'exited' },
         'task-8': { id: 'task-8', name: 'D', state: 'enabled' },
       },
       conditions: {
@@ -2832,8 +2832,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('A'));
-    yield* $(interpreter.completeTask('A'));
+    yield* $(interpreter.fireTask('A'));
+    yield* $(interpreter.exitTask('A'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -2842,7 +2842,7 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
       },
@@ -2853,8 +2853,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('C'));
-    yield* $(interpreter.completeTask('C'));
+    yield* $(interpreter.fireTask('C'));
+    yield* $(interpreter.exitTask('C'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -2863,9 +2863,9 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -2875,8 +2875,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('B'));
-    yield* $(interpreter.completeTask('B'));
+    yield* $(interpreter.fireTask('B'));
+    yield* $(interpreter.exitTask('B'));
 
     const res4 = yield* $(interpreter.getWorkflowState());
 
@@ -2885,9 +2885,9 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
         'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
         'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
       },
@@ -2901,8 +2901,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('E'));
-    yield* $(interpreter.completeTask('E'));
+    yield* $(interpreter.fireTask('E'));
+    yield* $(interpreter.exitTask('E'));
 
     const res5 = yield* $(interpreter.getWorkflowState());
 
@@ -2911,11 +2911,11 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
         'task-4': { id: 'task-4', name: 'D', state: 'disabled' },
-        'task-5': { id: 'task-5', name: 'E', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -2928,8 +2928,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('B'));
-    yield* $(interpreter.completeTask('B'));
+    yield* $(interpreter.fireTask('B'));
+    yield* $(interpreter.exitTask('B'));
 
     const res6 = yield* $(interpreter.getWorkflowState());
 
@@ -2938,9 +2938,9 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
         'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
         'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
       },
@@ -2955,8 +2955,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('D'));
-    yield* $(interpreter.completeTask('D'));
+    yield* $(interpreter.fireTask('D'));
+    yield* $(interpreter.exitTask('D'));
 
     const res7 = yield* $(interpreter.getWorkflowState());
 
@@ -2965,10 +2965,10 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'disabled' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'D', state: 'exited' },
         'task-5': { id: 'task-5', name: 'E', state: 'disabled' },
         'task-6': { id: 'task-6', name: 'F', state: 'enabled' },
       },
@@ -2984,8 +2984,8 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('F'));
-    yield* $(interpreter.completeTask('F'));
+    yield* $(interpreter.fireTask('F'));
+    yield* $(interpreter.exitTask('F'));
 
     const res8 = yield* $(interpreter.getWorkflowState());
 
@@ -2994,12 +2994,12 @@ it('supports or joins and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'disabled' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'D', state: 'exited' },
         'task-5': { id: 'task-5', name: 'E', state: 'disabled' },
-        'task-6': { id: 'task-6', name: 'F', state: 'completed' },
+        'task-6': { id: 'task-6', name: 'F', state: 'exited' },
         'task-7': { id: 'task-7', name: 'G', state: 'enabled' },
       },
       conditions: {
@@ -3079,8 +3079,8 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('A'));
-    yield* $(interpreter.completeTask('A'));
+    yield* $(interpreter.fireTask('A'));
+    yield* $(interpreter.exitTask('A'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -3089,7 +3089,7 @@ it('supports or joins, loops and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
       },
       conditions: {
@@ -3098,8 +3098,8 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('B'));
-    yield* $(interpreter.completeTask('B'));
+    yield* $(interpreter.fireTask('B'));
+    yield* $(interpreter.exitTask('B'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -3108,8 +3108,8 @@ it('supports or joins, loops and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
         'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
         'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
       },
@@ -3120,8 +3120,8 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('C'));
-    yield* $(interpreter.completeTask('C'));
+    yield* $(interpreter.fireTask('C'));
+    yield* $(interpreter.exitTask('C'));
 
     const res4 = yield* $(interpreter.getWorkflowState());
 
@@ -3130,9 +3130,9 @@ it('supports or joins, loops and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
-        'task-2': { id: 'task-2', name: 'B', state: 'completed' },
-        'task-3': { id: 'task-3', name: 'C', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
+        'task-2': { id: 'task-2', name: 'B', state: 'exited' },
+        'task-3': { id: 'task-3', name: 'C', state: 'exited' },
         'task-5': { id: 'task-5', name: 'E', state: 'disabled' },
         'task-4': { id: 'task-4', name: 'D', state: 'enabled' },
       },
@@ -3144,8 +3144,8 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('D'));
-    yield* $(interpreter.completeTask('D'));
+    yield* $(interpreter.fireTask('D'));
+    yield* $(interpreter.exitTask('D'));
 
     const res5 = yield* $(interpreter.getWorkflowState());
 
@@ -3154,11 +3154,11 @@ it('supports or joins, loops and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'C', state: 'enabled' },
         'task-5': { id: 'task-5', name: 'E', state: 'enabled' },
-        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-4': { id: 'task-4', name: 'D', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -3168,8 +3168,8 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('E'));
-    yield* $(interpreter.completeTask('E'));
+    yield* $(interpreter.fireTask('E'));
+    yield* $(interpreter.exitTask('E'));
 
     const res6 = yield* $(interpreter.getWorkflowState());
 
@@ -3178,11 +3178,11 @@ it('supports or joins, loops and cancellation regions', () => {
       name: 'or-join-cancellation-region',
       state: 'done',
       tasks: {
-        'task-1': { id: 'task-1', name: 'A', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'A', state: 'exited' },
         'task-2': { id: 'task-2', name: 'B', state: 'enabled' },
         'task-3': { id: 'task-3', name: 'C', state: 'disabled' },
-        'task-5': { id: 'task-5', name: 'E', state: 'completed' },
-        'task-4': { id: 'task-4', name: 'D', state: 'completed' },
+        'task-5': { id: 'task-5', name: 'E', state: 'exited' },
+        'task-4': { id: 'task-4', name: 'D', state: 'exited' },
       },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
@@ -3271,8 +3271,8 @@ it('calls onStart and onEnd activities (1)', () => {
 
     expect(start).toEqual(`from onStart activity: starting`);
 
-    yield* $(interpreter.activateTask('A'));
-    yield* $(interpreter.completeTask('A'));
+    yield* $(interpreter.fireTask('A'));
+    yield* $(interpreter.exitTask('A'));
 
     const res1 = yield* $(interpreter.getWorkflowState());
 
@@ -3280,7 +3280,7 @@ it('calls onStart and onEnd activities (1)', () => {
       id: 'workflow-1',
       name: 'name',
       state: 'done',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'exited' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
@@ -3333,13 +3333,13 @@ it('calls onStart and onEnd activities (2)', () => {
         .onEnable(({ enableTask }) =>
           pipe(
             enableTask(),
-            Effect.flatMap(({ activateTask }) => activateTask())
+            Effect.flatMap(({ fireTask }) => fireTask())
           )
         )
-        .onActivate(({ activateTask }) =>
+        .onFire(({ fireTask }) =>
           pipe(
-            activateTask(),
-            Effect.flatMap(({ completeTask }) => completeTask())
+            fireTask(),
+            Effect.flatMap(({ exitTask }) => exitTask())
           )
         )
     )
@@ -3412,7 +3412,7 @@ it('calls onStart and onEnd activities (2)', () => {
       id: 'workflow-1',
       name: 'name',
       state: 'done',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'exited' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
@@ -3500,7 +3500,7 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('scan_goods'));
+    yield* $(interpreter.fireTask('scan_goods'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -3516,7 +3516,7 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.completeTask('scan_goods'));
+    yield* $(interpreter.exitTask('scan_goods'));
 
     const res3 = yield* $(interpreter.getWorkflowState());
 
@@ -3525,7 +3525,7 @@ it('can supports workflow cancellation', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
         'task-2': { id: 'task-2', name: 'pay', state: 'enabled' },
       },
       conditions: {
@@ -3538,7 +3538,7 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('pay'));
+    yield* $(interpreter.fireTask('pay'));
 
     const res4 = yield* $(interpreter.getWorkflowState());
 
@@ -3547,7 +3547,7 @@ it('can supports workflow cancellation', () => {
       name: 'checkout',
       state: 'running',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
         'task-2': { id: 'task-2', name: 'pay', state: 'active' },
       },
       conditions: {
@@ -3569,7 +3569,7 @@ it('can supports workflow cancellation', () => {
       name: 'checkout',
       state: 'canceled',
       tasks: {
-        'task-1': { id: 'task-1', name: 'scan_goods', state: 'completed' },
+        'task-1': { id: 'task-1', name: 'scan_goods', state: 'exited' },
         'task-2': { id: 'task-2', name: 'pay', state: 'canceled' },
       },
       conditions: {
@@ -3611,10 +3611,10 @@ it('supports task execution', () => {
   const workflowDefinition = Builder.workflow('name')
     .startCondition('start')
     .task('A', (t) =>
-      t.onExecute(({ input, completeTask }) =>
+      t.onExecute(({ input, exitTask }) =>
         Effect.gen(function* ($) {
           if (input === 'COMPLETE') {
-            yield* $(completeTask());
+            yield* $(exitTask());
           } else {
             return input;
           }
@@ -3657,7 +3657,7 @@ it('supports task execution', () => {
       },
     });
 
-    yield* $(interpreter.activateTask('A'));
+    yield* $(interpreter.fireTask('A'));
 
     const res2 = yield* $(interpreter.getWorkflowState());
 
@@ -3698,7 +3698,7 @@ it('supports task execution', () => {
       id: 'workflow-1',
       name: 'name',
       state: 'done',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'completed' } },
+      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'exited' } },
       conditions: {
         'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },

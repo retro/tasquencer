@@ -176,7 +176,7 @@ export class OrXorTaskFlowBuilder<
         // Cast props as TaskToConditionFlowProps because we capture the
         // real type signature elsewhere, which will be used by the
         // Interpreter to generate the real return type from the entry points
-        // (activateTask and completeTask)
+        // (fireTask and exitTask)
         const flow = new TaskToConditionFlow(
           task,
           condition,
@@ -200,7 +200,7 @@ export class OrXorTaskFlowBuilder<
         // Cast props as TaskToConditionFlowProps because we capture the
         // real type signature elsewhere, which will be used by the
         // Interpreter to generate the real return type from the entry points
-        // (activateTask and completeTask)
+        // (fireTask and exitTask)
         const leftFlow = new TaskToConditionFlow(
           task,
           condition,

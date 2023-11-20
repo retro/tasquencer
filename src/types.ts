@@ -27,7 +27,7 @@ export type TaskState =
   | 'disabled'
   | 'enabled'
   | 'active'
-  | 'completed'
+  | 'exited'
   | 'canceled';
 
 type JoinSplitType = 'and' | 'or' | 'xor';
@@ -69,11 +69,11 @@ export interface WorkflowBuilderDefinition {
 }
 
 export interface TaskActionsService {
-  activateTask(
+  fireTask(
     taskName: string,
     input?: unknown
   ): Effect.Effect<never, never, void>;
-  completeTask(
+  exitTask(
     taskName: string,
     input?: unknown
   ): Effect.Effect<never, never, void>;
@@ -130,19 +130,19 @@ export type TaskOnEnablePayload<C extends object = object> =
       never,
       TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
       {
-        activateTask: (input?: unknown) => Effect.Effect<never, never, void>;
+        fireTask: (input?: unknown) => Effect.Effect<never, never, void>;
       }
     >;
   };
 
-export type TaskOnActivatePayload<C extends object = object> =
+export type TaskOnFirePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     input: unknown;
-    activateTask: () => Effect.Effect<
+    fireTask: () => Effect.Effect<
       never,
       TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
-      { completeTask: (input?: unknown) => Effect.Effect<never, never, void> }
+      { exitTask: (input?: unknown) => Effect.Effect<never, never, void> }
     >;
   };
 
@@ -150,7 +150,7 @@ export type TaskOnExecutePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     input: unknown;
-    completeTask: (
+    exitTask: (
       input?: unknown
     ) => Effect.Effect<
       never,
@@ -159,11 +159,11 @@ export type TaskOnExecutePayload<C extends object = object> =
     >;
   };
 
-export type TaskOnCompletePayload<C extends object = object> =
+export type TaskOnExitPayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     input: unknown;
-    completeTask: () => Effect.Effect<
+    exitTask: () => Effect.Effect<
       never,
       TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
       void
@@ -187,14 +187,14 @@ export interface TaskActivities<C extends object = object> {
   onEnable: (
     payload: TaskOnEnablePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
-  onActivate: (
-    payload: TaskOnActivatePayload<C>
+  onFire: (
+    payload: TaskOnFirePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onExecute: (
     payload: TaskOnExecutePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
-  onComplete: (
-    payload: TaskOnCompletePayload<C>
+  onExit: (
+    payload: TaskOnExitPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onCancel: (
     payload: TaskOnCancelPayload<C>

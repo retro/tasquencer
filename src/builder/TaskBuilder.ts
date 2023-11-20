@@ -6,12 +6,12 @@ import {
   JoinType,
   SplitType,
   TaskActivities,
-  TaskOnActivatePayload,
   TaskOnCancelPayload,
-  TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
   TaskOnExecutePayload,
+  TaskOnExitPayload,
+  TaskOnFirePayload,
 } from '../types.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -101,8 +101,8 @@ export type InitializedTaskBuilder<C extends object = object> = TaskBuilder<
 >;
 
 export interface ActivitiesReturnType {
-  onActivate: unknown;
-  onComplete: unknown;
+  onFire: unknown;
+  onExit: unknown;
   onExecute: unknown;
 }
 
@@ -144,8 +144,8 @@ export class TaskBuilder<
   initialize() {
     return this.onDisable(() => Effect.unit)
       .onEnable(() => Effect.unit)
-      .onActivate(({ input }) => Effect.succeed(input))
-      .onComplete(({ input }) => Effect.succeed(input))
+      .onFire(({ input }) => Effect.succeed(input))
+      .onExit(({ input }) => Effect.succeed(input))
       .onCancel(() => Effect.unit);
   }
 
@@ -185,9 +185,9 @@ export class TaskBuilder<
     return this;
   }
 
-  onActivate<
+  onFire<
     F extends (
-      payload: TaskOnActivatePayload<C>
+      payload: TaskOnFirePayload<C>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -197,11 +197,11 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    ART & { onActivate: Effect.Effect.Success<ReturnType<F>> },
+    ART & { onFire: Effect.Effect.Success<ReturnType<F>> },
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.activities.onActivate = f;
+    this.activities.onFire = f;
     return this;
   }
 
@@ -225,9 +225,9 @@ export class TaskBuilder<
     return this;
   }
 
-  onComplete<
+  onExit<
     F extends (
-      payload: TaskOnCompletePayload<C>
+      payload: TaskOnExitPayload<C>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -237,11 +237,11 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    ART & { onComplete: Effect.Effect.Success<ReturnType<F>> },
+    ART & { onExit: Effect.Effect.Success<ReturnType<F>> },
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.activities.onComplete = f;
+    this.activities.onExit = f;
     return this;
   }
 

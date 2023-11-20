@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect';
 
-import { TaskName, isValidTaskTransition } from '../state/types.js';
+import { TaskName, isValidTaskInstanceTransition } from '../state/types.js';
 import {
   DefaultTaskActivityPayload,
   JoinType,
@@ -77,10 +77,7 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       return yield* $(
-        self.workflow.stateManager.getWorkflowTaskState(
-          self.workflow.id,
-          self.name
-        )
+        self.workflow.stateManager.getTaskState(self.workflow.id, self.name)
       );
     });
   }
@@ -99,7 +96,7 @@ export class Task {
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
 
-      if (isValidTaskTransition(state, 'enabled')) {
+      if (isValidTaskInstanceTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied());
         if (isJoinSatisfied) {
           const activityContext = self.getActivityContext();
@@ -110,10 +107,7 @@ export class Task {
 
           const performEnable = yield* $(
             Effect.once(
-              self.workflow.stateManager.enableWorkflowTask(
-                self.workflow.id,
-                self.name
-              )
+              self.workflow.stateManager.enableTask(self.workflow.id, self.name)
             )
           );
 
@@ -142,15 +136,12 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTaskTransition(state, 'disabled')) {
+      if (isValidTaskInstanceTransition(state, 'disabled')) {
         const activityContext = self.getActivityContext();
 
         const performDisable = yield* $(
           Effect.once(
-            self.workflow.stateManager.disableWorkflowTask(
-              self.workflow.id,
-              self.name
-            )
+            self.workflow.stateManager.disableTask(self.workflow.id, self.name)
           )
         );
 
@@ -175,7 +166,7 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTaskTransition(state, 'fired')) {
+      if (isValidTaskInstanceTransition(state, 'fired')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
         const exitTask = (input?: unknown) => {
@@ -186,10 +177,7 @@ export class Task {
           Effect.once(
             Effect.gen(function* ($) {
               yield* $(
-                self.workflow.stateManager.fireWorkflowTask(
-                  self.workflow.id,
-                  self.name
-                )
+                self.workflow.stateManager.fireTask(self.workflow.id, self.name)
               );
               const preSet = Object.values(self.preSet);
               const updates = preSet.map((condition) =>
@@ -248,7 +236,7 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTaskTransition(state, 'exited')) {
+      if (isValidTaskInstanceTransition(state, 'exited')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
 
@@ -256,10 +244,7 @@ export class Task {
           Effect.once(
             Effect.gen(function* ($) {
               yield* $(
-                self.workflow.stateManager.exitWorkflowTask(
-                  self.workflow.id,
-                  self.name
-                )
+                self.workflow.stateManager.exitTask(self.workflow.id, self.name)
               );
               yield* $(self.cancelCancellationRegion(context));
               yield* $(self.produceTokensInOutgoingFlows(context));
@@ -293,15 +278,12 @@ export class Task {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getState());
-      if (isValidTaskTransition(state, 'canceled')) {
+      if (isValidTaskInstanceTransition(state, 'canceled')) {
         const activityContext = self.getActivityContext();
 
         const performCancel = yield* $(
           Effect.once(
-            self.workflow.stateManager.cancelWorkflowTask(
-              self.workflow.id,
-              self.name
-            )
+            self.workflow.stateManager.cancelTask(self.workflow.id, self.name)
           )
         );
 

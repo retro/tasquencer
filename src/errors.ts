@@ -16,10 +16,26 @@ export class TaskDoesNotExist extends Data.TaggedClass('TaskDoesNotExist')<{
   readonly workflowId: string;
 }> {}
 
+export class WorkItemDoesNotExist extends Data.TaggedClass(
+  'WorkItemDoesNotExist'
+)<{
+  readonly workflowId: string;
+  readonly workItemId: string;
+}> {}
+
 export class InvalidTaskStateTransition extends Data.TaggedClass(
   'InvalidTaskStateTransition'
 )<{
   readonly taskName: string;
+  readonly workflowId: string;
+  readonly from: string;
+  readonly to: string;
+}> {}
+
+export class InvalidWorkItemTransition extends Data.TaggedClass(
+  'InvalidWorkItemTransition'
+)<{
+  readonly workItemId: string;
   readonly workflowId: string;
   readonly from: string;
   readonly to: string;

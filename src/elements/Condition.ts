@@ -43,7 +43,7 @@ export class Condition {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(
-        self.workflow.stateManager.incrementWorkflowConditionMarking(
+        self.workflow.stateManager.incrementConditionMarking(
           self.workflow.id,
           self.name
         )
@@ -55,7 +55,7 @@ export class Condition {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(
-        self.workflow.stateManager.decrementWorkflowConditionMarking(
+        self.workflow.stateManager.decrementConditionMarking(
           self.workflow.id,
           self.name
         )
@@ -92,7 +92,7 @@ export class Condition {
     const self = this;
     return Effect.gen(function* ($) {
       yield* $(
-        self.workflow.stateManager.emptyWorkflowConditionMarking(
+        self.workflow.stateManager.emptyConditionMarking(
           self.workflow.id,
           self.name
         )
@@ -105,10 +105,7 @@ export class Condition {
     const self = this;
     return Effect.gen(function* ($) {
       const condition = yield* $(
-        self.workflow.stateManager.getWorkflowCondition(
-          self.workflow.id,
-          self.name
-        )
+        self.workflow.stateManager.getCondition(self.workflow.id, self.name)
       );
       return condition.marking;
     });

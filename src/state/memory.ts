@@ -3,8 +3,10 @@ import { Effect, Ref } from 'effect';
 import {
   ConditionDoesNotExist,
   InvalidTaskStateTransition,
+  InvalidWorkItemTransition,
   InvalidWorkflowStateTransition,
   TaskDoesNotExist,
+  WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
 import {
@@ -15,23 +17,15 @@ import {
   TaskInstance,
   TaskInstanceState,
   TaskName,
+  WorkItem,
+  WorkItemId,
+  WorkItemState,
   WorkflowInstanceId,
   WorkflowInstanceState,
-  validTaskInstanceTransitions,
+  isValidTaskInstanceTransition,
+  validWorkItemStateTransitions,
   validWorkflowInstanceTransitions,
 } from './types.js';
-
-function getInitialState(): State {
-  return {
-    workflows: {},
-    tasks: {},
-    conditions: {},
-    workItems: {},
-    workflowsToTasks: {},
-    workflowsToConditions: {},
-    tasksToWorkItems: {},
-  };
-}
 
 export class Memory implements StateManager {
   private stateRef: Ref.Ref<State>;
@@ -68,92 +62,59 @@ export class Memory implements StateManager {
         return acc;
       }, {});
 
-      const existingWorkflowsToTasks = state.workflowsToTasks[workflowId] ?? [];
-      const existingWorkflowsToConditions =
-        state.workflowsToConditions[workflowId] ?? [];
-
       return {
         ...state,
-        workflows: {
-          ...state.workflows,
-          [workflowId]: {
+        [workflowId]: {
+          workflow: {
             id: workflowId,
             name: payload.name,
             state: 'running',
           },
-        },
-        tasks: { ...state.tasks, ...workflowTasks },
-        conditions: { ...state.conditions, ...workflowConditions },
-        workflowsToTasks: {
-          ...state.workflowsToTasks,
-          [workflowId]: [
-            ...existingWorkflowsToTasks,
-            ...Object.keys(workflowTasks),
-          ],
-        },
-        workflowsToConditions: {
-          ...state.workflowsToConditions,
-          [workflowId]: [
-            ...existingWorkflowsToConditions,
-            ...Object.keys(workflowConditions),
-          ],
+          tasks: workflowTasks,
+          conditions: workflowConditions,
+          workItems: {},
+          tasksToWorkItems: {},
         },
       };
     });
   }
 
-  getWorkflow(id: WorkflowInstanceId) {
+  getWorkflow(workflowId: WorkflowInstanceId) {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(Ref.get(self.stateRef));
-      const workflow = state.workflows[id];
+      const workflow = state[workflowId]?.workflow;
 
       if (!workflow) {
-        return yield* $(
-          Effect.fail(new WorkflowDoesNotExist({ workflowId: id }))
-        );
+        return yield* $(Effect.fail(new WorkflowDoesNotExist({ workflowId })));
       }
       return workflow;
     });
   }
 
-  getWorkflowTasks(id: WorkflowInstanceId) {
+  getTasks(workflowId: WorkflowInstanceId) {
     return Ref.get(this.stateRef).pipe(
       Effect.map((state) => {
-        const taskNames = state.workflowsToTasks[id] ?? [];
-        return taskNames.reduce<TaskInstance[]>((acc, taskName) => {
-          const task = state.tasks[taskName];
-          if (task) {
-            acc.push(task);
-          }
-          return acc;
-        }, []);
+        return Object.values(state[workflowId]?.tasks ?? {});
       })
     );
   }
 
-  getWorkflowConditions(id: WorkflowInstanceId) {
+  getConditions(id: WorkflowInstanceId) {
     return Ref.get(this.stateRef).pipe(
       Effect.map((state) => {
-        const conditionNames = state.workflowsToConditions[id] ?? [];
-        return conditionNames.reduce<ConditionInstance[]>((acc, name) => {
-          const condition = state.conditions[name];
-          if (condition) {
-            acc.push(condition);
-          }
-          return acc;
-        }, []);
+        return Object.values(state[id]?.conditions ?? {});
       })
     );
   }
 
-  getWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+  getTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
     const { stateRef } = this;
     return Effect.gen(function* ($) {
       const state = yield* $(Ref.get(stateRef));
-      const task = state.tasks[taskName];
+      const task = state[workflowId]?.tasks[taskName];
 
-      if (!task || task.workflowId !== workflowId) {
+      if (!task) {
         return yield* $(
           Effect.fail(new TaskDoesNotExist({ taskName, workflowId }))
         );
@@ -163,20 +124,17 @@ export class Memory implements StateManager {
     });
   }
 
-  getWorkflowTaskState(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.getWorkflowTask(workflowId, taskName).pipe(
+  getTaskState(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.getTask(workflowId, taskName).pipe(
       Effect.map((task) => task.state)
     );
   }
 
-  getWorkflowCondition(
-    workflowId: WorkflowInstanceId,
-    conditionName: ConditionName
-  ) {
+  getCondition(workflowId: WorkflowInstanceId, conditionName: ConditionName) {
     const { stateRef } = this;
     return Effect.gen(function* ($) {
       const state = yield* $(Ref.get(stateRef));
-      const condition = state.conditions[conditionName];
+      const condition = state[workflowId]?.conditions[conditionName];
 
       if (!condition || condition.workflowId !== workflowId) {
         return yield* $(
@@ -188,11 +146,11 @@ export class Memory implements StateManager {
     });
   }
 
-  getWorkflowConditionMarking(
+  getConditionMarking(
     workflowId: WorkflowInstanceId,
     conditionName: ConditionName
   ) {
-    return this.getWorkflowCondition(workflowId, conditionName).pipe(
+    return this.getCondition(workflowId, conditionName).pipe(
       Effect.map((condition) => condition.marking)
     );
   }
@@ -223,9 +181,12 @@ export class Memory implements StateManager {
         Ref.update(self.stateRef, (state) => {
           return {
             ...state,
-            workflows: {
-              ...state.workflows,
-              [workflowId]: { ...workflow, state: workflowState },
+            [workflowId]: {
+              ...state[workflowId],
+              workflow: {
+                ...state[workflowId]?.workflow,
+                state: workflowState,
+              },
             },
           };
         })
@@ -233,24 +194,24 @@ export class Memory implements StateManager {
     });
   }
 
-  updateWorkflowTaskState(
+  updateTaskState(
     workflowId: WorkflowInstanceId,
     taskName: TaskName,
-    taskState: TaskInstanceState
+    nextTaskState: TaskInstanceState
   ) {
     const self = this;
 
     return Effect.gen(function* ($) {
-      const task = yield* $(self.getWorkflowTask(workflowId, taskName));
+      const task = yield* $(self.getTask(workflowId, taskName));
 
-      if (!validTaskInstanceTransitions[task.state].has(taskState)) {
+      if (!isValidTaskInstanceTransition(task.state, nextTaskState)) {
         return yield* $(
           Effect.fail(
             new InvalidTaskStateTransition({
               workflowId,
               taskName,
               from: task.state,
-              to: taskState,
+              to: nextTaskState,
             })
           )
         );
@@ -260,9 +221,15 @@ export class Memory implements StateManager {
         Ref.update(self.stateRef, (state) => {
           return {
             ...state,
-            tasks: {
-              ...state.tasks,
-              [taskName]: { ...task, state: taskState },
+            [workflowId]: {
+              ...state[workflowId],
+              tasks: {
+                ...state[workflowId]?.tasks,
+                [taskName]: {
+                  ...state[workflowId]?.tasks[taskName],
+                  state: nextTaskState,
+                },
+              },
             },
           };
         })
@@ -270,31 +237,31 @@ export class Memory implements StateManager {
     });
   }
 
-  enableWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'enabled');
+  enableTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'enabled');
   }
 
-  disableWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'disabled');
+  disableTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'disabled');
   }
 
-  fireWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'fired');
+  fireTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'fired');
   }
 
-  exitWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'exited');
+  exitTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'exited');
   }
 
-  cancelWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'canceled');
+  cancelTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'canceled');
   }
 
-  failWorkflowTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
-    return this.updateWorkflowTaskState(workflowId, taskName, 'failed');
+  failTask(workflowId: WorkflowInstanceId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'failed');
   }
 
-  updateWorkflowCondition(
+  updateCondition(
     workflowId: WorkflowInstanceId,
     conditionName: ConditionName,
     f: (condition: ConditionInstance) => ConditionInstance
@@ -302,64 +269,186 @@ export class Memory implements StateManager {
     const self = this;
 
     return Effect.gen(function* ($) {
-      const condition = yield* $(
-        self.getWorkflowCondition(workflowId, conditionName)
-      );
+      const condition = yield* $(self.getCondition(workflowId, conditionName));
 
       return yield* $(
         Ref.update(self.stateRef, (state) => {
           return {
             ...state,
-            conditions: { ...state.conditions, [conditionName]: f(condition) },
+            [workflowId]: {
+              ...state[workflowId],
+              conditions: {
+                ...state[workflowId]?.conditions,
+                [conditionName]: f(condition),
+              },
+            },
           };
         })
       );
     });
   }
 
-  incrementWorkflowConditionMarking(
+  incrementConditionMarking(
     workflowId: WorkflowInstanceId,
     conditionName: ConditionName
   ) {
-    return this.updateWorkflowCondition(
-      workflowId,
-      conditionName,
-      (condition) => {
-        return { ...condition, marking: condition.marking + 1 };
-      }
-    );
+    return this.updateCondition(workflowId, conditionName, (condition) => {
+      return { ...condition, marking: condition.marking + 1 };
+    });
   }
 
-  decrementWorkflowConditionMarking(
+  decrementConditionMarking(
     workflowId: WorkflowInstanceId,
     conditionName: ConditionName
   ) {
-    return this.updateWorkflowCondition(
-      workflowId,
-      conditionName,
-      (condition) => {
-        return { ...condition, marking: Math.max(condition.marking - 1, 0) };
-      }
-    );
+    return this.updateCondition(workflowId, conditionName, (condition) => {
+      return { ...condition, marking: Math.max(condition.marking - 1, 0) };
+    });
   }
 
-  emptyWorkflowConditionMarking(
+  emptyConditionMarking(
     workflowId: WorkflowInstanceId,
     conditionName: ConditionName
   ) {
-    return this.updateWorkflowCondition(
-      workflowId,
-      conditionName,
-      (condition) => {
-        return { ...condition, marking: 0 };
+    return this.updateCondition(workflowId, conditionName, (condition) => {
+      return { ...condition, marking: 0 };
+    });
+  }
+
+  createWorkItem(
+    workflowId: WorkflowInstanceId,
+    taskName: TaskName,
+    workItemId: WorkItemId
+  ) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const task = yield* $(self.getTask(workflowId, taskName));
+      const workItem: WorkItem = {
+        taskName,
+        id: workItemId,
+        state: 'running',
+      };
+      return yield* $(
+        Ref.update(self.stateRef, (state) => {
+          return {
+            ...state,
+            [workflowId]: {
+              ...state[workflowId],
+              workItems: {
+                ...state[workflowId]?.workItems,
+                [workItemId]: workItem,
+              },
+              tasksToWorkItems: {
+                ...state[workflowId]?.tasksToWorkItems,
+                [taskName]: {
+                  ...state[workflowId]?.tasksToWorkItems[taskName],
+                  [task.generation]: [
+                    ...(state[workflowId]?.tasksToWorkItems[taskName]?.[
+                      task.generation
+                    ] ?? []),
+                    workItemId,
+                  ],
+                },
+              },
+            },
+          };
+        })
+      );
+    });
+  }
+
+  getWorkItem(workflowId: WorkflowInstanceId, workItemId: WorkItemId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(Ref.get(self.stateRef));
+      const workItem = state[workflowId]?.workItems[workItemId];
+
+      if (!workItem) {
+        return yield* $(
+          Effect.fail(new WorkItemDoesNotExist({ workflowId, workItemId }))
+        );
       }
-    );
+
+      return workItem;
+    });
+  }
+
+  updateWorkItemState(
+    workflowId: WorkflowInstanceId,
+    workItemId: WorkItemId,
+    nextState: WorkItemState
+  ) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const workItem = yield* $(self.getWorkItem(workflowId, workItemId));
+
+      if (!validWorkItemStateTransitions[workItem.state].has(nextState)) {
+        return yield* $(
+          Effect.fail(
+            new InvalidWorkItemTransition({
+              workflowId,
+              workItemId,
+              from: workItem.state,
+              to: nextState,
+            })
+          )
+        );
+      }
+
+      return yield* $(
+        Ref.update(self.stateRef, (state) => {
+          return {
+            ...state,
+            [workflowId]: {
+              ...state[workflowId],
+              workItems: {
+                ...state[workflowId]?.workItems,
+                [workItemId]: {
+                  ...state[workflowId]?.workItems[workItemId],
+                  state: nextState,
+                },
+              },
+            },
+          };
+        })
+      );
+    });
+  }
+
+  getWorkItems(
+    workflowId: WorkflowInstanceId,
+    taskName: TaskName,
+    workItemState?: WorkItemState
+  ) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const task = yield* $(self.getTask(workflowId, taskName));
+      return yield* $(
+        Ref.get(self.stateRef).pipe(
+          Effect.map((state) => {
+            const workItemIds =
+              state[workflowId]?.tasksToWorkItems[taskName]?.[
+                task.generation
+              ] ?? [];
+            return workItemIds.reduce<WorkItem[]>((acc, workItemId) => {
+              const workItem = state[workflowId]?.workItems[workItemId];
+              if (workItem) {
+                workItemState
+                  ? workItemState === workItem.state && acc.push(workItem)
+                  : acc.push(workItem);
+              }
+              return acc;
+            }, []);
+          })
+        )
+      );
+    });
   }
 }
 
 export function make() {
   return Effect.gen(function* ($) {
-    const stateRef = yield* $(Ref.make(getInitialState()));
+    const stateRef = yield* $(Ref.make({}));
     return new Memory(stateRef);
   });
 }

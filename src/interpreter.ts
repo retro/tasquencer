@@ -1,5 +1,4 @@
-import * as Match from '@effect/match';
-import { Effect, Option, Queue, pipe } from 'effect';
+import { Effect, Match, Option, Queue, pipe } from 'effect';
 
 import { ActivitiesReturnType } from './builder/TaskBuilder.js';
 import {

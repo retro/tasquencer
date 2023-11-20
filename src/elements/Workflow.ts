@@ -179,17 +179,15 @@ export class Workflow<
     return this.stateManager.getWorkflow(this.id);
   }
   getTasks() {
-    return this.stateManager.getWorkflowTasks(this.id);
+    return this.stateManager.getTasks(this.id);
   }
   getConditions() {
-    return this.stateManager.getWorkflowConditions(this.id);
+    return this.stateManager.getConditions(this.id);
   }
   isOrJoinSatisfied(task: Task) {
     const self = this;
     return Effect.gen(function* ($) {
-      const workflowTasks = yield* $(
-        self.stateManager.getWorkflowTasks(self.id)
-      );
+      const workflowTasks = yield* $(self.stateManager.getTasks(self.id));
       const activeTasks = workflowTasks.reduce<Task[]>((acc, taskData) => {
         if (taskData.state === 'fired') {
           const task = self.tasks[taskData.name];
@@ -198,7 +196,7 @@ export class Workflow<
         return acc;
       }, []);
       const workflowConditions = yield* $(
-        self.stateManager.getWorkflowConditions(self.id)
+        self.stateManager.getConditions(self.id)
       );
       const enabledConditions = workflowConditions.reduce<Condition[]>(
         (acc, conditionData) => {

@@ -2,7 +2,12 @@ import { Effect, Exit } from 'effect';
 import { expect, it } from 'vitest';
 
 import { make } from './memory.js';
-import { ConditionName, TaskName, WorkflowInstanceId } from './types.js';
+import {
+  ConditionName,
+  TaskName,
+  WorkItemId,
+  WorkflowInstanceId,
+} from './types.js';
 
 const workflowId = WorkflowInstanceId('workflow1');
 const taskName1 = TaskName('task1');
@@ -29,7 +34,7 @@ it('can initialize read workflow state', () => {
       state: 'running',
     });
 
-    const workflowTasks = yield* $(stateManager.getWorkflowTasks(workflow.id));
+    const workflowTasks = yield* $(stateManager.getTasks(workflow.id));
 
     expect(workflowTasks).toEqual([
       {
@@ -47,7 +52,7 @@ it('can initialize read workflow state', () => {
     ]);
 
     const workflowConditions = yield* $(
-      stateManager.getWorkflowConditions(workflow.id)
+      stateManager.getConditions(workflow.id)
     );
 
     expect(workflowConditions).toEqual([
@@ -63,7 +68,7 @@ it('can initialize read workflow state', () => {
       },
     ]);
 
-    const task1 = yield* $(stateManager.getWorkflowTask(workflowId, taskName1));
+    const task1 = yield* $(stateManager.getTask(workflowId, taskName1));
 
     expect(task1).toEqual({
       name: 'task1',
@@ -73,7 +78,7 @@ it('can initialize read workflow state', () => {
     });
 
     const condition1 = yield* $(
-      stateManager.getWorkflowCondition(workflowId, conditionName1)
+      stateManager.getCondition(workflowId, conditionName1)
     );
 
     expect(condition1).toEqual({
@@ -173,9 +178,7 @@ it('can enable a task', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    const task1 = yield* $(
-      stateManager.getWorkflowTask(workflow.id, taskName1)
-    );
+    const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
     expect(task1).toEqual({
       name: 'task1',
@@ -184,11 +187,9 @@ it('can enable a task', () => {
       state: 'disabled',
     });
 
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    const task2 = yield* $(
-      stateManager.getWorkflowTask(workflow.id, taskName1)
-    );
+    const task2 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
     expect(task2).toEqual({
       name: 'task1',
@@ -206,13 +207,11 @@ it('can fire a task', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
 
-    const task1 = yield* $(
-      stateManager.getWorkflowTask(workflow.id, taskName1)
-    );
+    const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
     expect(task1).toEqual({
       name: 'task1',
@@ -230,15 +229,13 @@ it('can exit a task', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.exitTask(workflow.id, taskName1));
 
-    const task1 = yield* $(
-      stateManager.getWorkflowTask(workflow.id, taskName1)
-    );
+    const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
     expect(task1).toEqual({
       name: 'task1',
@@ -256,15 +253,13 @@ it('can cancel a task', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
 
-    yield* $(stateManager.cancelWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.cancelTask(workflow.id, taskName1));
 
-    const task1 = yield* $(
-      stateManager.getWorkflowTask(workflow.id, taskName1)
-    );
+    const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
     expect(task1).toEqual({
       name: 'task1',
@@ -282,15 +277,13 @@ it('can fail a task', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
 
-    yield* $(stateManager.failWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.failTask(workflow.id, taskName1));
 
-    const task1 = yield* $(
-      stateManager.getWorkflowTask(workflow.id, taskName1)
-    );
+    const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
     expect(task1).toEqual({
       name: 'task1',
@@ -309,14 +302,11 @@ it('can increment condition marking', () => {
     yield* $(stateManager.initializeWorkflow(workflow));
 
     yield* $(
-      stateManager.incrementWorkflowConditionMarking(
-        workflow.id,
-        conditionName1
-      )
+      stateManager.incrementConditionMarking(workflow.id, conditionName1)
     );
 
     const condition1 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition1).toEqual({
@@ -335,14 +325,11 @@ it("can decrement condition marking if it's greater than 0", () => {
     yield* $(stateManager.initializeWorkflow(workflow));
 
     yield* $(
-      stateManager.incrementWorkflowConditionMarking(
-        workflow.id,
-        conditionName1
-      )
+      stateManager.incrementConditionMarking(workflow.id, conditionName1)
     );
 
     const condition1 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition1).toEqual({
@@ -352,14 +339,11 @@ it("can decrement condition marking if it's greater than 0", () => {
     });
 
     yield* $(
-      stateManager.decrementWorkflowConditionMarking(
-        workflow.id,
-        conditionName1
-      )
+      stateManager.decrementConditionMarking(workflow.id, conditionName1)
     );
 
     const condition2 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition2).toEqual({
@@ -378,14 +362,11 @@ it('can empty condition marking', () => {
     yield* $(stateManager.initializeWorkflow(workflow));
 
     yield* $(
-      stateManager.incrementWorkflowConditionMarking(
-        workflow.id,
-        conditionName1
-      )
+      stateManager.incrementConditionMarking(workflow.id, conditionName1)
     );
 
     const condition1 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition1).toEqual({
@@ -394,12 +375,10 @@ it('can empty condition marking', () => {
       marking: 1,
     });
 
-    yield* $(
-      stateManager.emptyWorkflowConditionMarking(workflow.id, conditionName1)
-    );
+    yield* $(stateManager.emptyConditionMarking(workflow.id, conditionName1));
 
     const condition2 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition2).toEqual({
@@ -418,7 +397,7 @@ it("can decrement condition marking but it won't go below 0", () => {
     yield* $(stateManager.initializeWorkflow(workflow));
 
     const condition1 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition1).toEqual({
@@ -428,14 +407,11 @@ it("can decrement condition marking but it won't go below 0", () => {
     });
 
     yield* $(
-      stateManager.decrementWorkflowConditionMarking(
-        workflow.id,
-        conditionName1
-      )
+      stateManager.decrementConditionMarking(workflow.id, conditionName1)
     );
 
     const condition2 = yield* $(
-      stateManager.getWorkflowCondition(workflow.id, conditionName1)
+      stateManager.getCondition(workflow.id, conditionName1)
     );
 
     expect(condition2).toEqual({
@@ -521,7 +497,7 @@ it('can not transition task from disabled to fired', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.fireWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.fireTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -537,7 +513,7 @@ it('can not transition task from disabled to exited', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.exitWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.exitTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -553,7 +529,7 @@ it('can not transition task from disabled to canceled', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.cancelWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.cancelTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -568,9 +544,9 @@ it('can not transition task from enabled to exited', () => {
     const stateManager = yield* $(make());
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.exitTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -585,9 +561,9 @@ it('can not transition task from disabled to canceled', () => {
     const stateManager = yield* $(make());
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.cancelWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.cancelTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -602,9 +578,9 @@ it('can not transition task from disabled to failed', () => {
     const stateManager = yield* $(make());
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.failWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.failTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -619,9 +595,9 @@ it('can not transition task from enabled to exited', () => {
     const stateManager = yield* $(make());
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.exitTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -636,9 +612,9 @@ it('can not transition task from enabled to canceled', () => {
     const stateManager = yield* $(make());
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.cancelWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.cancelTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -653,9 +629,9 @@ it('can not transition task from enabled to failed', () => {
     const stateManager = yield* $(make());
 
     yield* $(stateManager.initializeWorkflow(workflow));
-    yield* $(stateManager.enableWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.failWorkflowTask(workflow.id, taskName1));
+    yield* $(stateManager.failTask(workflow.id, taskName1));
   });
   const result = Effect.runSyncExit(program);
 
@@ -663,4 +639,99 @@ it('can not transition task from enabled to failed', () => {
 
   // @ts-expect-error - we know it"s a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
+});
+
+it('can create work item', () => {
+  const program = Effect.gen(function* ($) {
+    const stateManager = yield* $(make());
+    const workItemId = WorkItemId('workItemId1');
+
+    yield* $(stateManager.initializeWorkflow(workflow));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId));
+    const workItem = yield* $(stateManager.getWorkItem(workflowId, workItemId));
+
+    expect(workItem).toEqual({
+      id: 'workItemId1',
+      taskName: 'task1',
+      state: 'running',
+    });
+  });
+  Effect.runSync(program);
+});
+
+it('can update work item state from running to completed', () => {
+  const program = Effect.gen(function* ($) {
+    const stateManager = yield* $(make());
+    const workItemId = WorkItemId('workItemId1');
+
+    yield* $(stateManager.initializeWorkflow(workflow));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId));
+    yield* $(
+      stateManager.updateWorkItemState(workflow.id, workItemId, 'completed')
+    );
+    const workItem = yield* $(stateManager.getWorkItem(workflowId, workItemId));
+
+    expect(workItem).toEqual({
+      id: 'workItemId1',
+      taskName: 'task1',
+      state: 'completed',
+    });
+  });
+  Effect.runSync(program);
+});
+
+it('can get all task work items', () => {
+  const program = Effect.gen(function* ($) {
+    const stateManager = yield* $(make());
+    const workItemId1 = WorkItemId('workItemId1');
+    const workItemId2 = WorkItemId('workItemId2');
+
+    yield* $(stateManager.initializeWorkflow(workflow));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId1));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId2));
+    const workItems = yield* $(
+      stateManager.getWorkItems(workflowId, taskName1)
+    );
+
+    expect(workItems).toEqual([
+      {
+        id: 'workItemId1',
+        taskName: 'task1',
+        state: 'running',
+      },
+      {
+        id: 'workItemId2',
+        taskName: 'task1',
+        state: 'running',
+      },
+    ]);
+  });
+  Effect.runSync(program);
+});
+
+it('can get some work items based on work item state', () => {
+  const program = Effect.gen(function* ($) {
+    const stateManager = yield* $(make());
+    const workItemId1 = WorkItemId('workItemId1');
+    const workItemId2 = WorkItemId('workItemId2');
+
+    yield* $(stateManager.initializeWorkflow(workflow));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId1));
+    yield* $(stateManager.createWorkItem(workflow.id, taskName1, workItemId2));
+    yield* $(
+      stateManager.updateWorkItemState(workflow.id, workItemId1, 'completed')
+    );
+    const workItems = yield* $(
+      stateManager.getWorkItems(workflowId, taskName1, 'running')
+    );
+
+    expect(workItems).toEqual([
+      {
+        id: 'workItemId2',
+        taskName: 'task1',
+        state: 'running',
+      },
+    ]);
+  });
+  Effect.runSync(program);
 });

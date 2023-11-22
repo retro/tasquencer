@@ -322,7 +322,11 @@ export class Memory implements StateManager {
     });
   }
 
-  createWorkItem(workflowId: WorkflowInstanceId, taskName: TaskName) {
+  createWorkItem(
+    workflowId: WorkflowInstanceId,
+    taskName: TaskName,
+    payload: unknown = null
+  ) {
     const self = this;
     return Effect.gen(function* ($) {
       const workItemId = WorkItemId(
@@ -332,7 +336,8 @@ export class Memory implements StateManager {
       const workItem: WorkItem = {
         taskName,
         id: workItemId,
-        state: 'running',
+        state: 'initialized',
+        payload,
       };
       return yield* $(
         Ref.update(self.stateRef, (state) => {

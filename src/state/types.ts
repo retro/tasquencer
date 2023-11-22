@@ -96,19 +96,26 @@ export interface ConditionInstance {
   marking: number;
 }
 
-export type WorkItemState = 'running' | 'completed' | 'canceled' | 'failed';
+export type WorkItemState =
+  | 'initialized'
+  | 'started'
+  | 'completed'
+  | 'canceled'
+  | 'failed';
 
 export interface WorkItem {
   id: WorkItemId;
   taskName: TaskName;
   state: WorkItemState;
+  payload: unknown;
 }
 
 export const validWorkItemStateTransitions: Record<
   WorkItemState,
   Set<WorkItemState>
 > = {
-  running: new Set(['completed', 'canceled', 'failed']),
+  initialized: new Set(['started', 'canceled', 'completed']), // TODO: remove completed from here
+  started: new Set(['completed', 'canceled', 'failed']),
   completed: new Set(),
   canceled: new Set(),
   failed: new Set(),
@@ -229,7 +236,8 @@ export interface StateManager {
 
   createWorkItem(
     workflowId: WorkflowInstanceId,
-    taskName: TaskName
+    taskName: TaskName,
+    payload: unknown
   ): Effect.Effect<never, TaskDoesNotExist, void>;
 
   getWorkItem(

@@ -780,13 +780,14 @@ it('can create work item', () => {
     expect(workItem).toEqual({
       id: 'workItem-1',
       taskName: 'task1',
-      state: 'running',
+      state: 'initialized',
+      payload: null,
     });
   });
   Effect.runSync(program);
 });
 
-it('can update work item state from running to completed', () => {
+it('can update work item state from initialized to completed', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -811,6 +812,7 @@ it('can update work item state from running to completed', () => {
       id: 'workItem-1',
       taskName: 'task1',
       state: 'completed',
+      payload: null,
     });
   });
   Effect.runSync(program);
@@ -834,12 +836,14 @@ it('can get all task work items', () => {
       {
         id: 'workItem-1',
         taskName: 'task1',
-        state: 'running',
+        state: 'initialized',
+        payload: null,
       },
       {
         id: 'workItem-2',
         taskName: 'task1',
-        state: 'running',
+        state: 'initialized',
+        payload: null,
       },
     ]);
   });
@@ -864,14 +868,15 @@ it('can get some work items based on work item state', () => {
       )
     );
     const workItems = yield* $(
-      stateManager.getWorkItems(workflowId, taskName1, 'running')
+      stateManager.getWorkItems(workflowId, taskName1, 'initialized')
     );
 
     expect(workItems).toEqual([
       {
         id: 'workItem-2',
         taskName: 'task1',
-        state: 'running',
+        state: 'initialized',
+        payload: null,
       },
     ]);
   });

@@ -35,7 +35,7 @@ type IsXorOrOrJoinSplit<T> = T extends never
 
 type TasksActivitiesOutputs = Record<
   string,
-  { onExit: unknown; onFire: unknown; onExecute: unknown }
+  { onExit: unknown; onFire: unknown }
 >;
 // TODO: implement invariant checking
 export class WorkflowBuilder<
@@ -406,7 +406,6 @@ export class WorkflowBuilder<
           [K in WBTasks & string]: {
             onFire: WBTasksActivitiesOutputs[K]['onFire'];
             onExit: WBTasksActivitiesOutputs[K]['onExit'];
-            onExecute: WBTasksActivitiesOutputs[K]['onExecute'];
           };
         },
         OnStartReturnType

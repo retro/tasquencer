@@ -1,5 +1,6 @@
 import { Effect, pipe } from 'effect';
 
+import { InvalidTaskState } from '../errors.js';
 import {
   TaskName,
   WorkItemId,
@@ -11,6 +12,7 @@ import {
   SplitType,
   TaskActionsService,
   TaskActivities,
+  TaskAnyWorkItemHandlers,
   TaskState,
 } from '../types.js';
 import { Condition } from './Condition.js';
@@ -32,6 +34,7 @@ export class Task {
   } = { tasks: {}, conditions: {} };
   readonly name: TaskName;
   readonly activities: TaskActivities;
+  readonly workItemHandlers: TaskAnyWorkItemHandlers;
   readonly splitType: SplitType | undefined;
   readonly joinType: JoinType | undefined;
 
@@ -39,11 +42,13 @@ export class Task {
     name: string,
     workflow: Workflow,
     activities: TaskActivities,
+    workItemHandlers: TaskAnyWorkItemHandlers,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     this.name = TaskName(name);
     this.workflow = workflow;
     this.activities = activities;
+    this.workItemHandlers = workItemHandlers;
     this.splitType = props?.splitType;
     this.joinType = props?.joinType;
   }
@@ -177,29 +182,50 @@ export class Task {
       if (isValidTaskInstanceTransition(state, 'fired')) {
         const activityContext = self.getActivityContext();
         const taskActionsService = yield* $(TaskActionsService);
-        const exitTask = (input?: unknown) => {
-          return taskActionsService.exitTask(self.name, input);
-        };
 
         const performFire = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
-              yield* $(
-                self.workflow.stateManager.fireTask(self.workflow.id, self.name)
-              );
-
-              yield* $(
-                self.workflow.stateManager.createWorkItem(
+              const prevWorkItems = yield* $(
+                self.workflow.stateManager.getWorkItems(
                   self.workflow.id,
                   self.name
                 )
               );
+
+              yield* $(
+                self.workflow.stateManager.fireTask(self.workflow.id, self.name)
+              );
+
+              const initialWorkItemPayloads = yield* $(
+                self.workItemHandlers.initialPayloads({
+                  context,
+                  workflowId: self.workflow.id,
+                  taskName: self.name,
+                  taskGeneration: 1,
+                  prevWorkItems,
+                })
+              );
+
+              for (const workItemPayload of initialWorkItemPayloads) {
+                yield* $(
+                  self.workflow.stateManager.createWorkItem(
+                    self.workflow.id,
+                    self.name,
+                    workItemPayload
+                  )
+                );
+              }
 
               const preSet = Object.values(self.preSet);
               const updates = preSet.map((condition) =>
                 condition.decrementMarking(context)
               );
               yield* $(Effect.all(updates, { discard: true, batching: true }));
+              yield* $(
+                self.maybeExit(),
+                Effect.provideService(TaskActionsService, taskActionsService)
+              );
             })
           )
         );
@@ -210,10 +236,7 @@ export class Task {
             context,
             input,
             fireTask() {
-              return pipe(
-                performFire,
-                Effect.map(() => ({ exitTask }))
-              );
+              return pipe(performFire);
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -221,29 +244,6 @@ export class Task {
         yield* $(performFire);
 
         return result;
-      }
-    });
-  }
-
-  execute(context: object, input: unknown = undefined) {
-    const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getState());
-      if (state === 'fired') {
-        const activityContext = self.getActivityContext();
-        const taskActionsService = yield* $(TaskActionsService);
-        const exitTask = (input?: unknown) => {
-          return taskActionsService.exitTask(self.name, input);
-        };
-
-        return yield* $(
-          self.activities.onExecute({
-            ...activityContext,
-            context,
-            input,
-            exitTask,
-          }) as Effect.Effect<never, never, unknown>
-        );
       }
     });
   }
@@ -320,25 +320,45 @@ export class Task {
     });
   }
 
-  completeWorkItem(workItemId: WorkItemId) {
+  maybeExit() {
     const self = this;
     return Effect.gen(function* ($) {
       const taskActionsService = yield* $(TaskActionsService);
-      yield* $(
-        self.workflow.stateManager.updateWorkItemState(
-          self.workflow.id,
-          self.name,
-          workItemId,
-          'completed'
-        )
-      );
-
       const taskWorkItems = yield* $(
         self.workflow.stateManager.getWorkItems(self.workflow.id, self.name)
       );
 
-      if (!taskWorkItems.some((workItem) => workItem.state === 'running')) {
+      if (!taskWorkItems.some((workItem) => workItem.state === 'initialized')) {
         yield* $(taskActionsService.exitTask(self.name));
+      }
+    });
+  }
+
+  completeWorkItem(workItemId: WorkItemId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getState());
+      if (state === 'fired') {
+        yield* $(
+          self.workflow.stateManager.updateWorkItemState(
+            self.workflow.id,
+            self.name,
+            workItemId,
+            'completed'
+          )
+        );
+
+        yield* $(self.maybeExit());
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskState({
+              workflowId: self.workflow.id,
+              taskName: self.name,
+              state,
+            })
+          )
+        );
       }
     });
   }

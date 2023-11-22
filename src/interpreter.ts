@@ -5,7 +5,7 @@ import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
 } from './elements/Workflow.js';
-import { InvalidTaskState, InvalidTaskStateTransition } from './errors.js';
+import { InvalidTaskStateTransition } from './errors.js';
 import { WorkItemId } from './state/types.js';
 import { TaskActionsService } from './types.js';
 
@@ -246,51 +246,6 @@ export class Interpreter<
       yield* $(self.maybeEnd());
       return result;
     });
-  }
-
-  _executeTask(taskName: string, input?: unknown) {
-    const self = this;
-
-    return Effect.gen(function* ($) {
-      const task = yield* $(self.workflow.getTask(taskName));
-      const isFired = yield* $(task.isFired());
-      const taskState = yield* $(task.getState());
-      if (!isFired) {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskState({
-              workflowId: self.workflow.id,
-              taskName,
-              state: taskState,
-            })
-          )
-        );
-      }
-      const output: unknown = yield* $(
-        task.execute(self.context, input),
-        Effect.provideService(TaskActionsService, self.getTaskActionsService())
-      );
-
-      yield* $(self.runQueue());
-      yield* $(self.maybeEnd());
-
-      return output;
-    });
-  }
-
-  executeTask<T extends keyof TasksActivitiesOutputs, I>(
-    taskName: T & string,
-    input?: I
-  ) {
-    return this._executeTask(taskName, input) as unknown as Effect.Effect<
-      R,
-      E,
-      unknown extends I
-        ? undefined
-        : unknown extends TasksActivitiesOutputs[T]['onExecute']
-        ? I
-        : TasksActivitiesOutputs[T]['onExecute']
-    >;
   }
 
   private getTaskActionsService() {

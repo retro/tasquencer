@@ -2,6 +2,7 @@ import { Effect } from 'effect';
 import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
+import { workItem } from '../builder/WorkItemBuilder.js';
 import * as Interpreter from '../interpreter.js';
 import * as Memory from '../state/memory.js';
 import { StateManager, TaskName } from '../state/types.js';
@@ -23,7 +24,13 @@ function makeIdGenerator(): IdGenerator {
 it('can run simple net with and-split and and-join', () => {
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
-    .task('scan_goods')
+    .task('scan_goods', (t) =>
+      t.withWorkItem(
+        workItem()
+          .initialPayloads(() => Effect.succeed([null]))
+          .createPayload(() => Effect.succeed(null))
+      )
+    )
     .task('pay', (t) => t.withSplitType('and'))
     .task('pack_goods')
     .task('issue_receipt')
@@ -188,6 +195,8 @@ it('can run simple net with and-split and and-join', () => {
     const workItems = yield* $(
       interpreter.getWorkItems(TaskName('scan_goods'))
     );
+
+    console.log(workItems);
 
     for (const workItem of workItems) {
       yield* $(
@@ -3741,105 +3750,5 @@ it('can supports workflow cancellation', () => {
   Effect.runSync(program);
 });
 
-it('supports task execution', () => {
-  const workflowDefinition = Builder.workflow('name')
-    .startCondition('start')
-    .task('A', (t) =>
-      t.onExecute(({ input, exitTask }) =>
-        Effect.gen(function* ($) {
-          if (input === 'COMPLETE') {
-            yield* $(exitTask());
-          } else {
-            return input;
-          }
-        })
-      )
-    )
-    .endCondition('end')
-    .connectCondition('start', (to) => to.task('A'))
-    .connectTask('A', (to) => to.condition('end'));
 
-  const program = Effect.gen(function* ($) {
-    const idGenerator = makeIdGenerator();
-    const stateManager = yield* $(
-      createMemory(),
-      Effect.provideService(IdGenerator, idGenerator)
-    );
-
-    const workflow = yield* $(
-      workflowDefinition.build(),
-      Effect.provideService(StateManager, stateManager),
-      Effect.provideService(IdGenerator, idGenerator)
-    );
-
-    const interpreter = yield* $(
-      Interpreter.make(workflow, {}),
-      Effect.provideService(StateManager, stateManager)
-    );
-
-    yield* $(interpreter.start('starting'));
-
-    const res1 = yield* $(interpreter.getWorkflowState());
-
-    expect(res1).toEqual({
-      id: 'workflow-1',
-      name: 'name',
-      state: 'running',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'enabled' } },
-      conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 1 },
-      },
-    });
-
-    yield* $(interpreter.fireTask('A'));
-
-    const res2 = yield* $(interpreter.getWorkflowState());
-
-    expect(res2).toEqual({
-      id: 'workflow-1',
-      name: 'name',
-      state: 'running',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'active' } },
-      conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
-      },
-    });
-
-    const executeRes1 = yield* $(interpreter.executeTask('A', 'foo'));
-    expect(executeRes1).toEqual('foo');
-
-    const executeRes2 = yield* $(interpreter.executeTask('A', 'bar'));
-    expect(executeRes2).toEqual('bar');
-
-    const res3 = yield* $(interpreter.getWorkflowState());
-
-    expect(res3).toEqual({
-      id: 'workflow-1',
-      name: 'name',
-      state: 'running',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'active' } },
-      conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
-      },
-    });
-
-    const executeRes3 = yield* $(interpreter.executeTask('A', 'COMPLETE'));
-    expect(executeRes3).toEqual(undefined);
-
-    const res4 = yield* $(interpreter.getWorkflowState());
-
-    expect(res4).toEqual({
-      id: 'workflow-1',
-      name: 'name',
-      state: 'done',
-      tasks: { 'task-1': { id: 'task-1', name: 'A', state: 'exited' } },
-      conditions: {
-        'condition-1': { id: 'condition-1', name: 'start', marking: 0 },
-        'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
-      },
-    });
-  });
-
-  Effect.runSync(program);
-});
 */

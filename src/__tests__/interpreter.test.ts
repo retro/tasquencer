@@ -3,9 +3,12 @@ import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
 import * as Interpreter from '../interpreter.js';
-import * as Memory from '../state/memory.js';
-import { StateManager, TaskName } from '../state/types.js';
-import { IdGenerator } from '../stateManager/types.js';
+import {
+  IdGenerator,
+  TaskName,
+  WorkItemId,
+  WorkflowInstanceId,
+} from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {
@@ -13,9 +16,13 @@ function makeIdGenerator(): IdGenerator {
     workflow: 0,
   };
   return {
-    next(type) {
-      ids[type]++;
-      return Effect.succeed(`${type}-${ids[type]}`);
+    workflow() {
+      ids.workflow++;
+      return Effect.succeed(WorkflowInstanceId(`workflow-${ids.workflow}`));
+    },
+    workItem() {
+      ids.workItem++;
+      return Effect.succeed(WorkItemId(`workItem-${ids.workItem}`));
     },
   };
 }
@@ -47,14 +54,9 @@ it('can run simple net with and-split and and-join', () => {
 
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
-    const stateManager = yield* $(
-      Memory.make(),
-      Effect.provideService(IdGenerator, idGenerator)
-    );
 
     const workflow = yield* $(
       workflowDefinition.build(),
-      Effect.provideService(StateManager, stateManager),
       Effect.provideService(IdGenerator, idGenerator)
     );
 

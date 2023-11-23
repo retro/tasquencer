@@ -74,6 +74,7 @@
   },
   "dependencies": {
     "big-integer": "^1.6.51",
-    "effect": "^2.0.0-next.54"
+    "effect": "^2.0.0-next.54",
+    "nanoid": "^5.0.3"
   }
 }

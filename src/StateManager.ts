@@ -8,13 +8,12 @@ import {
   TaskDoesNotExist,
   WorkItemDoesNotExist,
   WorkflowDoesNotExist,
-} from '../errors.js';
-import { IdGenerator } from '../stateManager/types.js';
+} from './errors.js';
 import {
   ConditionInstance,
   ConditionName,
+  IdGenerator,
   State,
-  StateManager,
   TaskInstance,
   TaskInstanceState,
   TaskName,
@@ -28,7 +27,7 @@ import {
   validWorkflowInstanceTransitions,
 } from './types.js';
 
-export class Memory implements StateManager {
+export class StateManager {
   private stateRef: Ref.Ref<State>;
   private idGenerator: IdGenerator;
 
@@ -329,9 +328,8 @@ export class Memory implements StateManager {
   ) {
     const self = this;
     return Effect.gen(function* ($) {
-      const workItemId = WorkItemId(
-        yield* $(self.idGenerator.next('workItem'))
-      );
+      const workItemId = yield* $(self.idGenerator.workItem());
+
       const task = yield* $(self.getTask(workflowId, taskName));
       const workItem: WorkItem = {
         taskName,
@@ -465,10 +463,9 @@ export class Memory implements StateManager {
   }
 }
 
-export function make() {
+export function make(idGenerator: IdGenerator) {
   return Effect.gen(function* ($) {
     const stateRef = yield* $(Ref.make({}));
-    const idGenerator = yield* $(IdGenerator);
-    return new Memory(stateRef, idGenerator);
+    return new StateManager(stateRef, idGenerator);
   });
 }

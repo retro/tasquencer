@@ -1,5 +1,6 @@
 import { Effect, pipe } from 'effect';
 
+import { StateManager } from '../StateManager.js';
 import * as TB from '../builder/TaskBuilder.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
 import {
@@ -12,16 +13,14 @@ import {
 } from '../errors.js';
 import {
   ConditionName,
-  StateManager,
   TaskName,
   WorkflowInstanceId,
-} from '../state/types.js';
-import { WorkflowOnEndPayload, WorkflowOnStartPayload } from '../types.js';
+  WorkflowOnEndPayload,
+  WorkflowOnStartPayload,
+} from '../types.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
 import { Task } from './Task.js';
-
-('../state/types.js');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<

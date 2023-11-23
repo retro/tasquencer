@@ -1,20 +1,21 @@
-import { Effect } from 'effect';
+import { Effect, Option } from 'effect';
 
+import * as StateManager from '../StateManager.js';
 import { Condition } from '../elements/Condition.js';
 import { Workflow } from '../elements/Workflow.js';
 import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
 } from '../errors.js';
-import { StateManager } from '../state/types.js';
-import { IdGenerator } from '../stateManager/types.js';
-import type {
+import {
   ConditionNode,
+  IdGenerator,
   NotExtends,
   WorkflowBuilderDefinition,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
+import { nanoidIdGenerator } from '../util.js';
 import {
   ConditionFlowBuilder,
   OrXorTaskFlowBuilder,
@@ -396,9 +397,13 @@ export class WorkflowBuilder<
     const { name, definition, onStartFn, onEndFn } = this;
 
     return Effect.gen(function* ($) {
-      const stateManager = yield* $(StateManager);
-      const idGenerator = yield* $(IdGenerator);
-      const workflowId = prevId ?? (yield* $(idGenerator.next('workflow')));
+      const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));
+      const idGenerator = Option.getOrElse(
+        maybeIdGenerator,
+        () => nanoidIdGenerator
+      );
+      const stateManager = yield* $(StateManager.make(idGenerator));
+      const workflowId = prevId ?? (yield* $(idGenerator.workflow()));
 
       const workflow = new Workflow<
         R,

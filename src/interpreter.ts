@@ -6,8 +6,7 @@ import {
   WorkflowTasksActivitiesOutputs,
 } from './elements/Workflow.js';
 import { InvalidTaskStateTransition } from './errors.js';
-import { WorkItemId } from './state/types.js';
-import { TaskActionsService } from './types.js';
+import { TaskActionsService, WorkItemId } from './types.js';
 
 type QueueItem =
   | { type: 'fire'; taskName: string; input: unknown }

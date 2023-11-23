@@ -1,4 +1,4 @@
-import { Context, Effect } from 'effect';
+import { Brand, Context, Effect } from 'effect';
 
 import {
   ConditionFlowBuilder,
@@ -15,8 +15,6 @@ import {
   TaskDoesNotExist,
   WorkflowDoesNotExist,
 } from './errors.js';
-import { TaskInstanceState, WorkItem } from './state/types.js';
-import { IdGenerator } from './stateManager/types.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -188,3 +186,128 @@ export interface TaskActivities<C extends object = object> {
     payload: TaskOnCancelPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
+export interface IdGenerator {
+  workflow: () => Effect.Effect<never, never, WorkflowInstanceId>;
+  workItem: () => Effect.Effect<never, never, WorkItemId>;
+}
+export const IdGenerator = Context.Tag<IdGenerator>();
+
+export type WorkflowInstanceId = string & Brand.Brand<'WorkflowInstanceId'>;
+export const WorkflowInstanceId = Brand.refined<WorkflowInstanceId>(
+  (value) => typeof value === 'string',
+  (value) => Brand.error(`Expected string, got ${typeof value}`)
+);
+
+export type TaskName = string & Brand.Brand<'TaskName'>;
+export const TaskName = Brand.refined<TaskName>(
+  (value) => typeof value === 'string',
+  (value) => Brand.error(`Expected string, got ${typeof value}`)
+);
+
+export type ConditionName = string & Brand.Brand<'ConditionName'>;
+export const ConditionName = Brand.refined<ConditionName>(
+  (value) => typeof value === 'string',
+  (value) => Brand.error(`Expected string, got ${typeof value}`)
+);
+
+export type WorkItemId = string & Brand.Brand<'WorkItemId'>;
+export const WorkItemId = Brand.refined<WorkItemId>(
+  (value) => typeof value === 'string',
+  (value) => Brand.error(`Expected string, got ${typeof value}`)
+);
+
+export type WorkflowInstanceState =
+  | 'running'
+  | 'exited'
+  | 'canceled'
+  | 'failed';
+
+export interface WorkflowInstance {
+  id: WorkflowInstanceId;
+  name: string;
+  state: WorkflowInstanceState;
+}
+
+export const validWorkflowInstanceTransitions: Record<
+  WorkflowInstanceState,
+  Set<WorkflowInstanceState>
+> = {
+  running: new Set(['exited', 'canceled', 'failed']),
+  exited: new Set(),
+  canceled: new Set(),
+  failed: new Set(),
+};
+
+export type TaskInstanceState =
+  | 'enabled'
+  | 'disabled'
+  | 'fired'
+  | 'exited'
+  | 'canceled'
+  | 'failed';
+
+export interface TaskInstance {
+  name: TaskName;
+  workflowId: WorkflowInstanceId;
+  generation: number;
+  state: TaskInstanceState;
+}
+
+export const validTaskInstanceTransitions: Record<
+  TaskInstanceState,
+  Set<TaskInstanceState>
+> = {
+  enabled: new Set(['disabled', 'fired']),
+  disabled: new Set(['enabled']),
+  fired: new Set(['exited', 'canceled', 'failed']),
+  exited: new Set(['enabled']),
+  canceled: new Set(['enabled']),
+  failed: new Set(['enabled']),
+};
+
+export function isValidTaskInstanceTransition(
+  from: TaskInstanceState,
+  to: TaskInstanceState
+) {
+  return validTaskInstanceTransitions[from].has(to);
+}
+
+export interface ConditionInstance {
+  name: ConditionName;
+  workflowId: WorkflowInstanceId;
+  marking: number;
+}
+
+export type WorkItemState =
+  | 'initialized'
+  | 'started'
+  | 'completed'
+  | 'canceled'
+  | 'failed';
+
+export interface WorkItem<P = unknown> {
+  id: WorkItemId;
+  taskName: TaskName;
+  state: WorkItemState;
+  payload: P;
+}
+
+export const validWorkItemStateTransitions: Record<
+  WorkItemState,
+  Set<WorkItemState>
+> = {
+  initialized: new Set(['started', 'canceled', 'completed']), // TODO: remove completed from here
+  started: new Set(['completed', 'canceled', 'failed']),
+  completed: new Set(),
+  canceled: new Set(),
+  failed: new Set(),
+};
+
+interface WorkflowState {
+  workflow: WorkflowInstance;
+  tasks: Record<TaskName, TaskInstance>;
+  conditions: Record<ConditionName, ConditionInstance>;
+  workItems: Record<WorkItemId, WorkItem>;
+  tasksToWorkItems: Record<TaskName, Record<number, WorkItemId[]>>;
+}
+export type State = Record<WorkflowInstanceId, WorkflowState>;

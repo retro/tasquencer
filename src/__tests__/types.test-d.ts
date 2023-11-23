@@ -1,7 +1,7 @@
 import { Context, Data, Effect } from 'effect';
 import { assertType, expect, it } from 'vitest';
 
-import * as Builder from '../builder.js';
+/*import * as Builder from '../builder.js';
 import {
   EndConditionDoesNotExist,
   StartConditionDoesNotExist,
@@ -26,7 +26,7 @@ function makeIdGenerator(): IdGenerator {
       return Effect.succeed(`${type}-${ids[type]}`);
     },
   };
-}
+}*/
 
 /*interface PredicateService {
   bar(baz: string): Effect.Effect<never, never, boolean>;

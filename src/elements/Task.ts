@@ -3,17 +3,15 @@ import { Effect, pipe } from 'effect';
 import { AnyWorkItemActivities } from '../builder/WorkItemBuilder.js';
 import { InvalidTaskState } from '../errors.js';
 import {
-  TaskName,
-  WorkItemId,
-  isValidTaskInstanceTransition,
-} from '../state/types.js';
-import {
   DefaultTaskActivityPayload,
   JoinType,
   SplitType,
   TaskActionsService,
   TaskActivities,
+  TaskName,
   TaskState,
+  WorkItemId,
+  isValidTaskInstanceTransition,
 } from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';

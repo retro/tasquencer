@@ -1,8 +1,8 @@
 import { Effect, Exit } from 'effect';
 import { expect, it } from 'vitest';
 
+import { make } from '../StateManager.js';
 import { IdGenerator } from '../stateManager/types.js';
-import { make } from './memory.js';
 import {
   ConditionName,
   TaskName,

@@ -2,11 +2,11 @@ import { Effect } from 'effect';
 
 import {
   TaskName,
+  TaskState,
   WorkItem,
   WorkItemId,
   WorkflowInstanceId,
-} from '../state/types.js';
-import { TaskState } from '../types.js';
+} from '../types.js';
 
 export interface WorkItemActivitiesReturnType {
   onInitialize: unknown;

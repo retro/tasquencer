@@ -1,6 +1,6 @@
 import { Effect, Match, Option, Queue, pipe } from 'effect';
 
-import { ActivitiesReturnType } from './builder/TaskBuilder.js';
+import { TaskActivitiesReturnType } from './builder/TaskBuilder.js';
 import {
   Workflow,
   WorkflowTasksActivitiesOutputs,
@@ -15,7 +15,7 @@ type QueueItem =
 
 // TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Interpreter<
-  TasksActivitiesOutputs extends Record<string, ActivitiesReturnType>,
+  TasksActivitiesOutputs extends Record<string, TaskActivitiesReturnType>,
   OnStartReturnType = unknown,
   R = never,
   E = never

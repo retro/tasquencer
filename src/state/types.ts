@@ -103,11 +103,11 @@ export type WorkItemState =
   | 'canceled'
   | 'failed';
 
-export interface WorkItem {
+export interface WorkItem<P = unknown> {
   id: WorkItemId;
   taskName: TaskName;
   state: WorkItemState;
-  payload: unknown;
+  payload: P;
 }
 
 export const validWorkItemStateTransitions: Record<
@@ -238,7 +238,7 @@ export interface StateManager {
     workflowId: WorkflowInstanceId,
     taskName: TaskName,
     payload: unknown
-  ): Effect.Effect<never, TaskDoesNotExist, void>;
+  ): Effect.Effect<never, TaskDoesNotExist, WorkItem>;
 
   getWorkItem(
     workflowId: WorkflowInstanceId,

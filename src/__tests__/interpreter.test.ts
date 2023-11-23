@@ -2,7 +2,6 @@ import { Effect } from 'effect';
 import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
-import { workItem } from '../builder/WorkItemBuilder.js';
 import * as Interpreter from '../interpreter.js';
 import * as Memory from '../state/memory.js';
 import { StateManager, TaskName } from '../state/types.js';
@@ -25,16 +24,19 @@ it('can run simple net with and-split and and-join', () => {
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
     .task('scan_goods', (t) =>
-      t.withWorkItem(
-        workItem()
-          .initialPayloads(() => Effect.succeed([null]))
-          .createPayload(() => Effect.succeed(null))
-      )
+      t()
+        .withWorkItem((w) => w<{ foo: string }>())
+        .onFire(({ fireTask }) =>
+          Effect.gen(function* ($) {
+            const { createWorkItem } = yield* $(fireTask());
+            yield* $(createWorkItem({ foo: 'bar' }));
+          })
+        )
     )
-    .task('pay', (t) => t.withSplitType('and'))
+    .task('pay', (t) => t().withSplitType('and'))
     .task('pack_goods')
     .task('issue_receipt')
-    .task('check_goods', (t) => t.withJoinType('and'))
+    .task('check_goods', (t) => t().withJoinType('and'))
     .endCondition('end')
     .connectCondition('start', (to) => to.task('scan_goods'))
     .connectTask('scan_goods', (to) => to.task('pay'))

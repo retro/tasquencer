@@ -47,8 +47,8 @@ export class Workflow<
   Context extends object = object,
   _WorkflowTaskActivitiesOutputs extends Record<
     string,
-    TB.ActivitiesReturnType
-  > = Record<string, TB.ActivitiesReturnType>,
+    TB.TaskActivitiesReturnType
+  > = Record<string, TB.TaskActivitiesReturnType>,
   _OnStartReturnType = unknown
 > {
   readonly tasks: Record<string, Task> = {};

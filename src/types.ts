@@ -15,12 +15,7 @@ import {
   TaskDoesNotExist,
   WorkflowDoesNotExist,
 } from './errors.js';
-import {
-  TaskInstanceState,
-  TaskName,
-  WorkItem,
-  WorkflowInstanceId,
-} from './state/types.js';
+import { TaskInstanceState, WorkItem } from './state/types.js';
 import { IdGenerator } from './stateManager/types.js';
 
 export type Prettify<T> = {
@@ -136,16 +131,23 @@ export type TaskOnEnablePayload<C extends object = object> =
     >;
   };
 
-export type TaskOnFirePayload<C extends object = object> =
-  DefaultTaskActivityPayload & {
-    context: C;
-    input: unknown;
-    fireTask: () => Effect.Effect<
-      never,
-      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
-      void
-    >;
-  };
+export type TaskOnFirePayload<
+  C extends object = object,
+  P = unknown
+> = DefaultTaskActivityPayload & {
+  context: C;
+  input: unknown;
+
+  fireTask: () => Effect.Effect<
+    never,
+    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    {
+      createWorkItem: (
+        payload: P
+      ) => Effect.Effect<never, TaskDoesNotExist, WorkItem<P>>;
+    }
+  >;
+};
 
 export type TaskOnExitPayload<C extends object = object> =
   DefaultTaskActivityPayload & {
@@ -176,7 +178,8 @@ export interface TaskActivities<C extends object = object> {
     payload: TaskOnEnablePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onFire: (
-    payload: TaskOnFirePayload<C>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: TaskOnFirePayload<C, any>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onExit: (
     payload: TaskOnExitPayload<C>
@@ -185,51 +188,3 @@ export interface TaskActivities<C extends object = object> {
     payload: TaskOnCancelPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
-
-export type WorkItemWithPayload<P extends object | null> = WorkItem & {
-  payload: P;
-};
-
-export interface WorkItemGetInitialPayloadsPayload<
-  C extends object,
-  P extends object | null
-> {
-  context: C;
-  workflowId: WorkflowInstanceId;
-  taskName: TaskName;
-  taskGeneration: number;
-  prevWorkItems: WorkItemWithPayload<P>[];
-}
-
-export interface WorkItemOnCreatePayload<
-  C extends object,
-  P extends object | null
-> {
-  context: C;
-  workflowId: WorkflowInstanceId;
-  taskName: TaskName;
-  taskGeneration: number;
-  workItems: WorkItemWithPayload<P>[];
-}
-
-export interface WorkItemHandlers<C extends object, P extends object | null> {
-  initialPayloads: (
-    payload: WorkItemGetInitialPayloadsPayload<C, P>
-  ) => Effect.Effect<unknown, unknown, P[]>;
-  createPayload: (
-    payload: WorkItemOnCreatePayload<C, P>,
-    input: unknown
-  ) => Effect.Effect<unknown, unknown, P>;
-}
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export interface TaskAnyWorkItemHandlers {
-  initialPayloads: (
-    payload: WorkItemGetInitialPayloadsPayload<any, any>
-  ) => Effect.Effect<never, never, unknown[]>;
-  createPayload: (
-    payload: WorkItemOnCreatePayload<any, any>,
-    input: unknown
-  ) => Effect.Effect<never, never, unknown>;
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */

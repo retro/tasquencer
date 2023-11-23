@@ -339,7 +339,7 @@ export class Memory implements StateManager {
         state: 'initialized',
         payload,
       };
-      return yield* $(
+      yield* $(
         Ref.update(self.stateRef, (state) => {
           return {
             ...state,
@@ -365,6 +365,7 @@ export class Memory implements StateManager {
           };
         })
       );
+      return workItem;
     });
   }
 

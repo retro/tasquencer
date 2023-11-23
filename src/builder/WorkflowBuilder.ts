@@ -166,7 +166,7 @@ export class WorkflowBuilder<
   task<
     TN extends string,
     T extends (
-      t: TB.InitializedTaskBuilder<WBContext>
+      t: () => TB.InitializedTaskBuilder<WBContext>
     ) => TB.AnyTaskBuilder<WBContext>,
     X extends IsXorOrOrJoinSplit<
       TB.TaskBuilderSplitType<ReturnType<T>>
@@ -204,20 +204,22 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.ActivitiesReturnType;
+      [tn in TN]: TB.TaskActivitiesReturnType;
     },
     OnStartReturnType
   >;
   task(
     taskName: string,
-    input?: TB.AnyTaskBuilder | ((t: TB.AnyTaskBuilder) => TB.AnyTaskBuilder)
+    input?:
+      | TB.AnyTaskBuilder
+      | ((t: () => TB.AnyTaskBuilder) => TB.AnyTaskBuilder)
   ) {
     if (!input) {
       this.definition.tasks[taskName] = TB.task<WBContext>();
     } else if (input instanceof TB.TaskBuilder) {
       this.definition.tasks[taskName] = input;
     } else {
-      this.definition.tasks[taskName] = input(TB.task<WBContext>());
+      this.definition.tasks[taskName] = input(() => TB.task<WBContext>());
     }
 
     return this;

@@ -18,9 +18,9 @@ import {
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
+import { BaseTask } from './BaseTask.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
-import { Task } from './Task.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
@@ -50,7 +50,7 @@ export class Workflow<
   > = Record<string, TB.TaskActivitiesReturnType>,
   _OnStartReturnType = unknown
 > {
-  readonly tasks: Record<string, Task> = {};
+  readonly tasks: Record<string, BaseTask> = {};
   readonly conditions: Record<string, Condition> = {};
   private startCondition?: Condition;
   private endCondition?: Condition;
@@ -74,7 +74,7 @@ export class Workflow<
     this.onEnd = onEnd;
   }
 
-  addTask(task: Task) {
+  addTask(task: BaseTask) {
     this.tasks[task.name] = task;
   }
 
@@ -183,11 +183,11 @@ export class Workflow<
   getConditions() {
     return this.stateManager.getConditions(this.id);
   }
-  isOrJoinSatisfied(task: Task) {
+  isOrJoinSatisfied(task: BaseTask) {
     const self = this;
     return Effect.gen(function* ($) {
       const workflowTasks = yield* $(self.stateManager.getTasks(self.id));
-      const activeTasks = workflowTasks.reduce<Task[]>((acc, taskData) => {
+      const activeTasks = workflowTasks.reduce<BaseTask[]>((acc, taskData) => {
         if (taskData.state === 'fired') {
           const task = self.tasks[taskData.name];
           task && acc.push(task);

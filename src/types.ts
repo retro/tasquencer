@@ -1,11 +1,13 @@
 import { Brand, Context, Effect } from 'effect';
 
+import { AnyCompositeTaskBuilder } from './builder/CompositeTaskBuilder.js';
 import {
   ConditionFlowBuilder,
   OrXorTaskFlowBuilder,
   TaskFlowBuilder,
 } from './builder/FlowBuilder.js';
 import { AnyTaskBuilder } from './builder/TaskBuilder.js';
+import { Workflow } from './elements/Workflow.js';
 import {
   ConditionDoesNotExist,
   EndConditionDoesNotExist,
@@ -49,7 +51,7 @@ export interface WorkflowBuilderDefinition {
   startCondition?: string;
   endCondition?: string;
   conditions: Record<string, ConditionNode>;
-  tasks: Record<string, AnyTaskBuilder>;
+  tasks: Record<string, AnyTaskBuilder | AnyCompositeTaskBuilder>;
   cancellationRegions: Record<string, CancellationRegion>;
   flows: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,6 +149,24 @@ export type TaskOnFirePayload<
   >;
 };
 
+export type CompositeTaskOnFirePayload<
+  C extends object = object,
+  P = unknown
+> = DefaultTaskActivityPayload & {
+  context: C;
+  input: unknown;
+
+  fireTask: () => Effect.Effect<
+    never,
+    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    {
+      startSubWorkflow: (
+        payload: P
+      ) => Effect.Effect<never, TaskDoesNotExist, Workflow>;
+    }
+  >;
+};
+
 export type TaskOnExitPayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
@@ -186,6 +206,16 @@ export interface TaskActivities<C extends object = object> {
     payload: TaskOnCancelPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
+export type CompositeTaskActivities<C extends object = object> = Omit<
+  TaskActivities<C>,
+  'onFire'
+> & {
+  onFire: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: CompositeTaskOnFirePayload<C, any>
+  ) => Effect.Effect<unknown, unknown, unknown>;
+};
+
 export interface IdGenerator {
   workflow: () => Effect.Effect<never, never, WorkflowInstanceId>;
   workItem: () => Effect.Effect<never, never, WorkItemId>;

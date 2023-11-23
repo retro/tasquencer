@@ -1,15 +1,11 @@
 import { Effect, pipe } from 'effect';
 
-import { AnyWorkItemActivities } from '../builder/WorkItemBuilder.js';
-import { InvalidTaskState } from '../errors.js';
 import {
+  CompositeTaskActivities,
   DefaultTaskActivityPayload,
   JoinType,
   SplitType,
   TaskActionsService,
-  TaskActivities,
-  TaskState,
-  WorkItemId,
   isValidTaskInstanceTransition,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
@@ -18,29 +14,17 @@ import { Workflow } from './Workflow.js';
 // TODO: handle case where task is exited and prev condition(s)
 // have positive marking, so it should transition to enabled again
 
-export class Task extends BaseTask {
-  readonly activities: TaskActivities;
-  readonly workItemActivities: AnyWorkItemActivities;
+export class CompositeTask extends BaseTask {
+  readonly activities: CompositeTaskActivities;
 
   constructor(
     name: string,
     workflow: Workflow,
-    activities: TaskActivities,
-    workItemActivities: AnyWorkItemActivities,
+    activities: CompositeTaskActivities,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     super(name, workflow, props);
     this.activities = activities;
-    this.workItemActivities = workItemActivities;
-  }
-
-  getState() {
-    const self = this;
-    return Effect.gen(function* ($) {
-      return yield* $(
-        self.workflow.stateManager.getTaskState(self.workflow.id, self.name)
-      );
-    });
   }
 
   getActivityContext(): DefaultTaskActivityPayload {
@@ -49,10 +33,6 @@ export class Task extends BaseTask {
       getWorkflowId: () => Effect.succeed(this.workflow.id),
       getTaskState: () => this.getState(),
     };
-  }
-
-  getWorkItems() {
-    return this.workflow.stateManager.getWorkItems(this.workflow.id, this.name);
   }
 
   enable(context: object) {
@@ -151,8 +131,7 @@ export class Task extends BaseTask {
           )
         );
 
-        const createWorkItem = (payload: unknown) =>
-          self.createWorkItem(payload);
+        const startSubWorkflow = () => Effect.succeed(undefined);
 
         const result = yield* $(
           self.activities.onFire({
@@ -162,7 +141,7 @@ export class Task extends BaseTask {
             fireTask() {
               return pipe(
                 performFire,
-                Effect.map(() => ({ createWorkItem }))
+                Effect.map(() => ({ startSubWorkflow }))
               );
             },
           }) as Effect.Effect<never, never, unknown>
@@ -266,55 +245,20 @@ export class Task extends BaseTask {
     });
   }
 
-  createWorkItem(payload: unknown) {
-    return this.workflow.stateManager.createWorkItem(
-      this.workflow.id,
-      this.name,
-      payload
+  cancelCancellationRegion(context: object) {
+    const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>
+      t.cancel(context)
     );
-  }
+    const conditionUpdates = Object.values(
+      this.cancellationRegion.conditions
+    ).map((c) => c.cancel(context));
 
-  completeWorkItem(workItemId: WorkItemId) {
-    const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getState());
-      if (state === 'fired') {
-        yield* $(
-          self.workflow.stateManager.updateWorkItemState(
-            self.workflow.id,
-            self.name,
-            workItemId,
-            'completed'
-          )
-        );
-
-        yield* $(self.maybeExit());
-      } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskState({
-              workflowId: self.workflow.id,
-              taskName: self.name,
-              state,
-            })
-          )
-        );
-      }
-    });
-  }
-
-  isEnabled() {
-    return this.isStateEqualTo('enabled');
-  }
-
-  isFired() {
-    return this.isStateEqualTo('fired');
-  }
-
-  isStateEqualTo(state: TaskState) {
-    return pipe(
-      this.getState(),
-      Effect.map((s) => s === state)
+    return Effect.all(
+      [
+        Effect.all(taskUpdates, { batching: true, discard: true }),
+        Effect.all(conditionUpdates, { batching: true, discard: true }),
+      ],
+      { discard: true }
     );
   }
 }

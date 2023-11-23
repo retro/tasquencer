@@ -1,15 +1,15 @@
 import { Effect } from 'effect';
 
 import { ConditionName, ConditionNode } from '../types.js';
+import { BaseTask } from './BaseTask.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
-import { Task } from './Task.js';
 import { Workflow } from './Workflow.js';
 
 export class Condition {
   readonly incomingFlows = new Set<TaskToConditionFlow>();
   readonly outgoingFlows = new Set<ConditionToTaskFlow>();
-  readonly preSet: Record<string, Task> = {};
-  readonly postSet: Record<string, Task> = {};
+  readonly preSet: Record<string, BaseTask> = {};
+  readonly postSet: Record<string, BaseTask> = {};
   readonly name: ConditionName;
   readonly isImplicit: boolean = false;
   readonly workflow: Workflow;

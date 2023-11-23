@@ -27,6 +27,21 @@ function makeIdGenerator(): IdGenerator {
   };
 }
 
+const w1 = Builder.workflow<{ foo: string }>('w1')
+  .startCondition('start')
+  .task('t1', (t) =>
+    t().onCancel(() =>
+      Effect.gen(function* ($) {
+        yield* $(Effect.fail(new Error('t1 canceled')));
+      })
+    )
+  )
+  .endCondition('end')
+  .connectCondition('start', (to) => to.task('t1'))
+  .connectTask('t1', (to) => to.condition('end'));
+
+const c = Builder.compositeTask<{ bar: string }>().withSubWorkflow(w1);
+
 it('can run simple net with and-split and and-join', () => {
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')

@@ -16,6 +16,7 @@ import {
   WorkflowOnStartPayload,
 } from '../types.js';
 import { nanoidIdGenerator } from '../util.js';
+import * as CTB from './CompositeTaskBuilder.js';
 import {
   ConditionFlowBuilder,
   OrXorTaskFlowBuilder,
@@ -24,9 +25,12 @@ import {
 } from './FlowBuilder.js';
 import * as TB from './TaskBuilder.js';
 
-type TaskWithValidContext<C, T> = C extends TB.TaskBuilderUserContext<T>
+type TaskWithValidContext<C, T> = C extends TB.TaskBuilderContext<T>
   ? T
   : never;
+
+type CompositeTaskWithValidContext<C, T> =
+  C extends CTB.CompositeTaskBuilderContext<T> ? T : never;
 
 type IsXorOrOrJoinSplit<T> = T extends never
   ? never
@@ -38,6 +42,77 @@ type TasksActivitiesOutputs = Record<
   string,
   { onExit: unknown; onFire: unknown }
 >;
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AnyWorkflowBuilder = WorkflowBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type WorkflowBuilderC<T> = T extends WorkflowBuilder<
+  infer C,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
+  ? C
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type WorkflowBuilderR<T> = T extends WorkflowBuilder<
+  any,
+  infer R,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
+  ? R
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type WorkflowBuilderE<T> = T extends WorkflowBuilder<
+  any,
+  any,
+  infer E,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
+  ? E
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 // TODO: implement invariant checking
 export class WorkflowBuilder<
   WBContext extends object,
@@ -221,6 +296,79 @@ export class WorkflowBuilder<
       this.definition.tasks[taskName] = input;
     } else {
       this.definition.tasks[taskName] = input(() => TB.task<WBContext>());
+    }
+
+    return this;
+  }
+
+  compositeTask<
+    TN extends string,
+    T extends CTB.AnyCompositeTaskBuilder,
+    X extends IsXorOrOrJoinSplit<
+      CTB.CompositeTaskBuilderSplitType<T>
+    > extends never
+      ? never
+      : TN
+  >(
+    compositeTaskName: TN & NotExtends<WBTasks | WBConditions, TN>,
+    compositeTask: T & CompositeTaskWithValidContext<WBContext, T>
+  ): WorkflowBuilder<
+    WBContext,
+    R | CTB.CompositeTaskBuilderR<T>,
+    E | CTB.CompositeTaskBuilderE<T>,
+    WBTasks | TN,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit | X,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs & {
+      [tn in TN]: CTB.CompositeTaskBuilderActivitiesReturnType<T>;
+    },
+    OnStartReturnType
+  >;
+  compositeTask<
+    TN extends string,
+    T extends (
+      t: () => CTB.InitializedCompositeTaskBuilder<WBContext>
+    ) => CTB.AnyCompositeTaskBuilder<WBContext>,
+    X extends IsXorOrOrJoinSplit<
+      CTB.CompositeTaskBuilderSplitType<ReturnType<T>>
+    > extends never
+      ? never
+      : TN
+  >(
+    compositeTaskName: TN & NotExtends<WBTasks | WBConditions, TN>,
+    compositeTask: T
+  ): WorkflowBuilder<
+    WBContext,
+    R | CTB.CompositeTaskBuilderR<ReturnType<T>>,
+    E | CTB.CompositeTaskBuilderE<ReturnType<T>>,
+    WBTasks | TN,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit | X,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    WBTasksActivitiesOutputs & {
+      [tn in TN]: CTB.CompositeTaskBuilderActivitiesReturnType<ReturnType<T>>;
+    },
+    OnStartReturnType
+  >;
+  compositeTask(
+    compositeTaskName: string,
+    input:
+      | CTB.AnyCompositeTaskBuilder
+      | ((
+          t: () => CTB.InitialCompositeTaskFnReturnType<WBContext>
+        ) => CTB.AnyCompositeTaskBuilder)
+  ) {
+    if (input instanceof CTB.CompositeTaskBuilder) {
+      this.definition.tasks[compositeTaskName] = input;
+    } else {
+      this.definition.tasks[compositeTaskName] = input(() =>
+        CTB.compositeTask<WBContext>()
+      );
     }
 
     return this;

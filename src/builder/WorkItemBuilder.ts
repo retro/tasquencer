@@ -5,7 +5,7 @@ import {
   TaskState,
   WorkItem,
   WorkItemId,
-  WorkflowInstanceId,
+  WorkflowId,
 } from '../types.js';
 
 export interface WorkItemActivitiesReturnType {
@@ -19,7 +19,7 @@ export interface WorkItemActivitiesReturnType {
 export interface WorkItemOnPayload<C extends object, P> {
   context: C;
   workflow: {
-    id: WorkflowInstanceId;
+    id: WorkflowId;
   };
   task: {
     name: TaskName;

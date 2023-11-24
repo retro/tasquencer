@@ -1,5 +1,6 @@
 import { Brand, Context, Effect } from 'effect';
 
+import { State } from './State.js';
 import { AnyCompositeTaskBuilder } from './builder/CompositeTaskBuilder.js';
 import {
   ConditionFlowBuilder,
@@ -7,14 +8,15 @@ import {
   TaskFlowBuilder,
 } from './builder/FlowBuilder.js';
 import { AnyTaskBuilder } from './builder/TaskBuilder.js';
-import { Workflow } from './elements/Workflow.js';
 import {
   ConditionDoesNotExist,
+  ConditionDoesNotExistInStore,
   EndConditionDoesNotExist,
   InvalidTaskStateTransition,
   InvalidWorkflowStateTransition,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
+  TaskDoesNotExistInStore,
   WorkflowDoesNotExist,
 } from './errors.js';
 
@@ -79,7 +81,11 @@ export const TaskActionsService = Context.Tag<TaskActionsService>();
 export interface DefaultTaskActivityPayload {
   getTaskName: () => Effect.Effect<never, never, string>;
   getWorkflowId: () => Effect.Effect<never, never, string>;
-  getTaskState: () => Effect.Effect<never, TaskDoesNotExist, TaskInstanceState>;
+  getTaskState: () => Effect.Effect<
+    State,
+    TaskDoesNotExistInStore,
+    TaskInstanceState
+  >;
 }
 
 export interface WorkflowOnStartPayload<C> {
@@ -87,11 +93,13 @@ export interface WorkflowOnStartPayload<C> {
   input: unknown;
   getWorkflowId: () => Effect.Effect<never, never, string>;
   startWorkflow(): Effect.Effect<
-    IdGenerator,
+    State,
     | TaskDoesNotExist
+    | TaskDoesNotExistInStore
     | StartConditionDoesNotExist
     | EndConditionDoesNotExist
     | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
     | WorkflowDoesNotExist
     | InvalidTaskStateTransition
     | InvalidWorkflowStateTransition,
@@ -103,7 +111,7 @@ export interface WorkflowOnEndPayload<C> {
   context: C;
   getWorkflowId: () => Effect.Effect<never, never, string>;
   endWorkflow(): Effect.Effect<
-    never,
+    State,
     WorkflowDoesNotExist | InvalidWorkflowStateTransition,
     void
   >;
@@ -113,8 +121,8 @@ export type TaskOnDisablePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     disableTask: () => Effect.Effect<
-      never,
-      TaskDoesNotExist | InvalidTaskStateTransition,
+      State,
+      TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
       void
     >;
   };
@@ -123,8 +131,12 @@ export type TaskOnEnablePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     enableTask: () => Effect.Effect<
-      never,
-      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      State,
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | InvalidTaskStateTransition,
       {
         fireTask: (input?: unknown) => Effect.Effect<never, never, void>;
       }
@@ -139,12 +151,16 @@ export type TaskOnFirePayload<
   input: unknown;
 
   fireTask: () => Effect.Effect<
-    never,
-    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition,
     {
       createWorkItem: (
         payload: P
-      ) => Effect.Effect<never, TaskDoesNotExist, WorkItem<P>>;
+      ) => Effect.Effect<State, TaskDoesNotExistInStore, WorkItem<P>>;
     }
   >;
 };
@@ -157,12 +173,16 @@ export type CompositeTaskOnFirePayload<
   input: unknown;
 
   fireTask: () => Effect.Effect<
-    never,
-    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition,
     {
       startSubWorkflow: (
         payload: P
-      ) => Effect.Effect<never, TaskDoesNotExist, Workflow>;
+      ) => Effect.Effect<State, TaskDoesNotExist, void>;
     }
   >;
 };
@@ -172,8 +192,12 @@ export type TaskOnExitPayload<C extends object = object> =
     context: C;
     input: unknown;
     exitTask: () => Effect.Effect<
-      never,
-      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      State,
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | InvalidTaskStateTransition,
       void
     >;
   };
@@ -182,8 +206,12 @@ export type TaskOnCancelPayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     cancelTask: () => Effect.Effect<
-      never,
-      TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+      State,
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | InvalidTaskStateTransition,
       void
     >;
   };
@@ -217,13 +245,13 @@ export type CompositeTaskActivities<C extends object = object> = Omit<
 };
 
 export interface IdGenerator {
-  workflow: () => Effect.Effect<never, never, WorkflowInstanceId>;
+  workflow: () => Effect.Effect<never, never, WorkflowId>;
   workItem: () => Effect.Effect<never, never, WorkItemId>;
 }
 export const IdGenerator = Context.Tag<IdGenerator>();
 
-export type WorkflowInstanceId = string & Brand.Brand<'WorkflowInstanceId'>;
-export const WorkflowInstanceId = Brand.refined<WorkflowInstanceId>(
+export type WorkflowId = string & Brand.Brand<'WorkflowId'>;
+export const WorkflowId = Brand.refined<WorkflowId>(
   (value) => typeof value === 'string',
   (value) => Brand.error(`Expected string, got ${typeof value}`)
 );
@@ -253,7 +281,7 @@ export type WorkflowInstanceState =
   | 'failed';
 
 export interface WorkflowInstance {
-  id: WorkflowInstanceId;
+  id: WorkflowId;
   name: string;
   state: WorkflowInstanceState;
 }
@@ -278,7 +306,7 @@ export type TaskInstanceState =
 
 export interface TaskInstance {
   name: TaskName;
-  workflowId: WorkflowInstanceId;
+  workflowId: WorkflowId;
   generation: number;
   state: TaskInstanceState;
 }
@@ -304,7 +332,7 @@ export function isValidTaskInstanceTransition(
 
 export interface ConditionInstance {
   name: ConditionName;
-  workflowId: WorkflowInstanceId;
+  workflowId: WorkflowId;
   marking: number;
 }
 
@@ -340,4 +368,4 @@ interface WorkflowState {
   workItems: Record<WorkItemId, WorkItem>;
   tasksToWorkItems: Record<TaskName, Record<number, WorkItemId[]>>;
 }
-export type State = Record<WorkflowInstanceId, WorkflowState>;
+export type Store = Record<WorkflowId, WorkflowState>;

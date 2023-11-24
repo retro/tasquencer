@@ -1,6 +1,7 @@
 import { Effect } from 'effect';
 
-import { ConditionName, ConditionNode } from '../types.js';
+import { State } from '../State.js';
+import { ConditionName, ConditionNode, WorkflowId } from '../types.js';
 import { BaseTask } from './BaseTask.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
@@ -38,73 +39,62 @@ export class Condition {
     return new Set(Object.values(this.postSet));
   }
 
-  incrementMarking() {
-    const self = this;
+  incrementMarking(workflowId: WorkflowId) {
+    const { name } = this;
     return Effect.gen(function* ($) {
-      yield* $(
-        self.workflow.stateManager.incrementConditionMarking(
-          self.workflow.id,
-          self.name
-        )
-      );
+      const stateManager = yield* $(State);
+      yield* $(stateManager.incrementConditionMarking(workflowId, name));
     });
   }
 
-  decrementMarking(context: object) {
+  decrementMarking(workflowId: WorkflowId, context: object) {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(
-        self.workflow.stateManager.decrementConditionMarking(
-          self.workflow.id,
-          self.name
-        )
-      );
-      yield* $(self.disableTasks(context));
+      const stateManager = yield* $(State);
+      yield* $(stateManager.decrementConditionMarking(workflowId, self.name));
+      yield* $(self.disableTasks(workflowId, context));
     });
   }
 
-  enableTasks(context: object) {
+  enableTasks(workflowId: WorkflowId, context: object) {
     const tasks = Object.values(this.postSet);
     return Effect.all(
-      tasks.map((task) => task.enable(context)),
+      tasks.map((task) => task.enable(workflowId, context)),
       { discard: true, batching: true }
     );
   }
 
-  disableTasks(context: object) {
+  disableTasks(workflowId: WorkflowId, context: object) {
     const tasks = Object.values(this.postSet);
     return Effect.all(
-      tasks.map((task) => task.disable(context)),
+      tasks.map((task) => task.disable(workflowId, context)),
       { discard: true, batching: true }
     );
   }
 
-  cancelTasks(context: object) {
+  cancelTasks(workflowId: WorkflowId, context: object) {
     const tasks = Object.values(this.postSet);
     return Effect.all(
-      tasks.map((task) => task.cancel(context)),
+      tasks.map((task) => task.cancel(workflowId, context)),
       { discard: true, batching: true }
     );
   }
 
-  cancel(context: object) {
+  cancel(workflowId: WorkflowId, context: object) {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(
-        self.workflow.stateManager.emptyConditionMarking(
-          self.workflow.id,
-          self.name
-        )
-      );
-      yield* $(self.disableTasks(context));
+      const stateManager = yield* $(State);
+      yield* $(stateManager.emptyConditionMarking(workflowId, self.name));
+      yield* $(self.disableTasks(workflowId, context));
     });
   }
 
-  getMarking() {
+  getMarking(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
       const condition = yield* $(
-        self.workflow.stateManager.getCondition(self.workflow.id, self.name)
+        stateManager.getCondition(workflowId, self.name)
       );
       return condition.marking;
     });

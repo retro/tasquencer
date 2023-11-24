@@ -3,12 +3,7 @@ import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
 import * as Interpreter from '../interpreter.js';
-import {
-  IdGenerator,
-  TaskName,
-  WorkItemId,
-  WorkflowInstanceId,
-} from '../types.js';
+import { IdGenerator, TaskName, WorkItemId, WorkflowId } from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {
@@ -18,7 +13,7 @@ function makeIdGenerator(): IdGenerator {
   return {
     workflow() {
       ids.workflow++;
-      return Effect.succeed(WorkflowInstanceId(`workflow-${ids.workflow}`));
+      return Effect.succeed(WorkflowId(`workflow-${ids.workflow}`));
     },
     workItem() {
       ids.workItem++;
@@ -70,14 +65,12 @@ it('can run simple net with and-split and and-join', () => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 
-    const workflow = yield* $(
-      workflowDefinition.build(),
+    const workflow = yield* $(workflowDefinition.build());
+
+    const interpreter = yield* $(
+      Interpreter.initialize(workflow, {}),
       Effect.provideService(IdGenerator, idGenerator)
     );
-
-    const interpreter = yield* $(Interpreter.make(workflow, {}));
-
-    yield* $(interpreter.start());
 
     expect(yield* $(interpreter.getFullState())).toEqual({
       workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },

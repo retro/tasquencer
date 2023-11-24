@@ -1,6 +1,5 @@
-import { Effect, Option } from 'effect';
+import { Effect } from 'effect';
 
-import * as StateManager from '../StateManager.js';
 import { Condition } from '../elements/Condition.js';
 import { Workflow } from '../elements/Workflow.js';
 import {
@@ -9,13 +8,11 @@ import {
 } from '../errors.js';
 import {
   ConditionNode,
-  IdGenerator,
   NotExtends,
   WorkflowBuilderDefinition,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
-import { nanoidIdGenerator } from '../util.js';
 import * as CTB from './CompositeTaskBuilder.js';
 import {
   ConditionFlowBuilder,
@@ -541,9 +538,7 @@ export class WorkflowBuilder<
     this.onEndFn = f;
     return this;
   }
-  build(prevId?: string) {
-    const { name, definition, onStartFn, onEndFn } = this;
-
+  /* getBuildDeps() {
     return Effect.gen(function* ($) {
       const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));
       const idGenerator = Option.getOrElse(
@@ -551,8 +546,13 @@ export class WorkflowBuilder<
         () => nanoidIdGenerator
       );
       const stateManager = yield* $(StateManager.make(idGenerator));
-      const workflowId = prevId ?? (yield* $(idGenerator.workflow()));
+      return { stateManager, idGenerator };
+    });
+  }*/
+  build() {
+    const { name, definition, onStartFn, onEndFn } = this;
 
+    return Effect.gen(function* ($) {
       const workflow = new Workflow<
         R,
         E,
@@ -568,7 +568,7 @@ export class WorkflowBuilder<
         // in the initialize method which is automatically called by the `workflow`
         // entrypoint
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      >(workflowId, name, stateManager, onStartFn!, onEndFn!);
+      >(name, onStartFn!, onEndFn!);
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow
@@ -597,7 +597,7 @@ export class WorkflowBuilder<
       } else {
         yield* $(
           Effect.fail(
-            new StartConditionDoesNotExist({ workflowId: workflow.id })
+            new StartConditionDoesNotExist({ workflowName: workflow.name })
           )
         );
       }
@@ -609,7 +609,9 @@ export class WorkflowBuilder<
         workflow.setEndCondition(definition.endCondition);
       } else {
         yield* $(
-          Effect.fail(new EndConditionDoesNotExist({ workflowId: workflow.id }))
+          Effect.fail(
+            new EndConditionDoesNotExist({ workflowName: workflow.name })
+          )
         );
       }
 

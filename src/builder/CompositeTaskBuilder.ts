@@ -1,5 +1,6 @@
 import { Effect } from 'effect';
 
+import { Workflow } from '../elements/Workflow.js';
 import {
   CompositeTaskActivities,
   CompositeTaskOnFirePayload,
@@ -241,7 +242,7 @@ export class CompositeTaskBuilder<
   }
 
   build(workflow: Workflow, name: string) {
-    true;
+    workflow && name;
   }
 }
 

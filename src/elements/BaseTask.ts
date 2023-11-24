@@ -1,9 +1,12 @@
 import { Effect, pipe } from 'effect';
 
+import { State } from '../State.js';
 import {
   ConditionDoesNotExist,
+  ConditionDoesNotExistInStore,
   InvalidTaskStateTransition,
   TaskDoesNotExist,
+  TaskDoesNotExistInStore,
 } from '../errors.js';
 import {
   JoinType,
@@ -11,6 +14,7 @@ import {
   TaskActionsService,
   TaskName,
   TaskState,
+  WorkflowId,
 } from '../types.js';
 import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
@@ -73,79 +77,95 @@ export abstract class BaseTask {
     ]);
   }
 
-  getState() {
+  getState(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
-      return yield* $(
-        self.workflow.stateManager.getTaskState(self.workflow.id, self.name)
-      );
+      const stateManager = yield* $(State);
+      return yield* $(stateManager.getTaskState(workflowId, self.name));
     });
   }
 
-  isEnabled() {
-    return this.isStateEqualTo('enabled');
+  isEnabled(workflowId: WorkflowId) {
+    return this.isStateEqualTo(workflowId, 'enabled');
   }
 
-  isFired() {
-    return this.isStateEqualTo('fired');
+  isFired(workflowId: WorkflowId) {
+    return this.isStateEqualTo(workflowId, 'fired');
   }
 
-  isStateEqualTo(state: TaskState) {
+  isStateEqualTo(workflowId: WorkflowId, state: TaskState) {
     return pipe(
-      this.getState(),
+      this.getState(workflowId),
       Effect.map((s) => s === state)
     );
   }
 
   abstract enable(
+    workflowId: WorkflowId,
     context: object
   ): Effect.Effect<
-    TaskActionsService,
-    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    TaskActionsService | State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition,
     unknown
   >;
 
   abstract disable(
+    workflowId: WorkflowId,
     context: object
   ): Effect.Effect<
-    never,
-    TaskDoesNotExist | InvalidTaskStateTransition,
+    State,
+    TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
     unknown
   >;
 
   abstract fire(
+    workflowId: WorkflowId,
     context: object,
     input?: unknown
   ): Effect.Effect<
-    TaskActionsService,
-    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    TaskActionsService | State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition,
     unknown
   >;
 
   abstract exit(
+    workflowId: WorkflowId,
     context: object,
     input?: unknown
   ): Effect.Effect<
-    TaskActionsService,
-    TaskDoesNotExist | ConditionDoesNotExist | InvalidTaskStateTransition,
+    TaskActionsService | State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition,
     unknown
   >;
 
   abstract cancel(
+    workflowId: WorkflowId,
     context: object
   ): Effect.Effect<
-    never,
-    TaskDoesNotExist | InvalidTaskStateTransition,
+    State,
+    TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
     unknown
   >;
 
-  cancelCancellationRegion(context: object) {
+  cancelCancellationRegion(workflowId: WorkflowId, context: object) {
     const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>
-      t.cancel(context)
+      t.cancel(workflowId, context)
     );
     const conditionUpdates = Object.values(
       this.cancellationRegion.conditions
-    ).map((c) => c.cancel(context));
+    ).map((c) => c.cancel(workflowId, context));
 
     return Effect.all(
       [
@@ -156,34 +176,43 @@ export abstract class BaseTask {
     );
   }
 
-  protected produceTokensInOutgoingFlows(context: object) {
+  protected produceTokensInOutgoingFlows(
+    workflowId: WorkflowId,
+    context: object
+  ) {
     switch (this.splitType) {
       case 'or':
-        return this.produceOrSplitTokensInOutgoingFlows(context);
+        return this.produceOrSplitTokensInOutgoingFlows(workflowId, context);
       case 'xor':
-        return this.produceXorSplitTokensInOutgoingFlows(context);
+        return this.produceXorSplitTokensInOutgoingFlows(workflowId, context);
       default:
-        return this.produceAndSplitTokensInOutgoingFlows();
+        return this.produceAndSplitTokensInOutgoingFlows(workflowId);
     }
   }
 
-  protected produceOrSplitTokensInOutgoingFlows(context: object) {
+  protected produceOrSplitTokensInOutgoingFlows(
+    workflowId: WorkflowId,
+    context: object
+  ) {
     const flows = this.outgoingFlows;
     const updates = Array.from(flows).map((flow) => {
       return Effect.gen(function* ($) {
         if (flow.isDefault) {
-          yield* $(flow.nextElement.incrementMarking());
+          yield* $(flow.nextElement.incrementMarking(workflowId));
         } else if (
           flow.predicate ? yield* $(flow.predicate({ context })) : false
         ) {
-          yield* $(flow.nextElement.incrementMarking());
+          yield* $(flow.nextElement.incrementMarking(workflowId));
         }
       });
     });
     return Effect.all(updates, { batching: true, discard: true });
   }
 
-  protected produceXorSplitTokensInOutgoingFlows(context: object) {
+  protected produceXorSplitTokensInOutgoingFlows(
+    workflowId: WorkflowId,
+    context: object
+  ) {
     const flows = this.outgoingFlows;
     const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
       return flowA.order > flowB.order ? 1 : flowA.order < flowB.order ? -1 : 0;
@@ -192,45 +221,45 @@ export abstract class BaseTask {
     return Effect.gen(function* ($) {
       for (const flow of sortedFlows) {
         if (flow.isDefault) {
-          return yield* $(flow.nextElement.incrementMarking());
+          return yield* $(flow.nextElement.incrementMarking(workflowId));
         } else if (
           flow.predicate ? yield* $(flow.predicate({ context })) : false
         ) {
-          return yield* $(flow.nextElement.incrementMarking());
+          return yield* $(flow.nextElement.incrementMarking(workflowId));
         }
       }
     });
   }
 
-  protected produceAndSplitTokensInOutgoingFlows() {
+  protected produceAndSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
     const updates = Array.from(this.outgoingFlows).map((flow) => {
-      return flow.nextElement.incrementMarking();
+      return flow.nextElement.incrementMarking(workflowId);
     });
     return Effect.all(updates, { batching: true, discard: true });
   }
 
-  protected isJoinSatisfied() {
+  protected isJoinSatisfied(workflowId: WorkflowId) {
     switch (this.joinType) {
       case 'or':
-        return this.isOrJoinSatisfied();
+        return this.isOrJoinSatisfied(workflowId);
       case 'xor':
-        return this.isXorJoinSatisfied();
+        return this.isXorJoinSatisfied(workflowId);
       default:
-        return this.isAndJoinSatisfied();
+        return this.isAndJoinSatisfied(workflowId);
     }
   }
 
-  protected isOrJoinSatisfied() {
-    return this.workflow.isOrJoinSatisfied(this);
+  protected isOrJoinSatisfied(workflowId: WorkflowId) {
+    return this.workflow.isOrJoinSatisfied(workflowId, this);
   }
 
-  protected isXorJoinSatisfied() {
+  protected isXorJoinSatisfied(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
       const markings = yield* $(
         Effect.all(
           Array.from(self.incomingFlows).map((flow) =>
-            flow.priorElement.getMarking()
+            flow.priorElement.getMarking(workflowId)
           ),
           { batching: true }
         )
@@ -239,13 +268,13 @@ export abstract class BaseTask {
     });
   }
 
-  protected isAndJoinSatisfied() {
+  protected isAndJoinSatisfied(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
       const markings = yield* $(
         Effect.all(
           Array.from(self.incomingFlows).map((flow) =>
-            flow.priorElement.getMarking()
+            flow.priorElement.getMarking(workflowId)
           ),
           { batching: true }
         )
@@ -257,10 +286,10 @@ export abstract class BaseTask {
     });
   }
 
-  protected enablePostTasks(context: object) {
+  protected enablePostTasks(workflowId: WorkflowId, context: object) {
     return Effect.all(
       Array.from(this.outgoingFlows).map((flow) =>
-        flow.nextElement.enableTasks(context)
+        flow.nextElement.enableTasks(workflowId, context)
       ),
       { discard: true }
     );

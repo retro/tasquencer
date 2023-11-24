@@ -1,20 +1,18 @@
 import { Effect, pipe } from 'effect';
 
-import { StateManager } from '../StateManager.js';
+import { State } from '../State.js';
 import * as TB from '../builder/TaskBuilder.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
   EndConditionDoesNotExist,
-  InvalidWorkflowStateTransition,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
-  WorkflowDoesNotExist,
 } from '../errors.js';
 import {
   ConditionName,
   TaskName,
-  WorkflowInstanceId,
+  WorkflowId,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
@@ -54,22 +52,13 @@ export class Workflow<
   readonly conditions: Record<string, Condition> = {};
   private startCondition?: Condition;
   private endCondition?: Condition;
-  readonly id: WorkflowInstanceId;
   readonly name: string;
-  readonly stateManager: StateManager;
   readonly onStart: OnStart<Context>;
   readonly onEnd: OnEnd<Context>;
 
-  constructor(
-    id: string,
-    name: string,
-    stateManager: StateManager,
-    onStart: OnStart<Context>,
-    onEnd: OnEnd<Context>
-  ) {
-    this.id = WorkflowInstanceId(id);
+  constructor(name: string, onStart: OnStart<Context>, onEnd: OnEnd<Context>) {
+    //this.id = WorkflowInstanceId(id);
     this.name = name;
-    this.stateManager = stateManager;
     this.onStart = onStart;
     this.onEnd = onEnd;
   }
@@ -88,7 +77,7 @@ export class Workflow<
       return Effect.succeed(this.startCondition);
     }
     return Effect.fail(
-      new ConditionDoesNotExist({ workflowId: this.id, conditionName })
+      new ConditionDoesNotExist({ workflowName: this.name, conditionName })
     );
   }
 
@@ -98,40 +87,44 @@ export class Workflow<
       return Effect.succeed(this.endCondition);
     }
     return Effect.fail(
-      new ConditionDoesNotExist({ workflowId: this.id, conditionName })
+      new ConditionDoesNotExist({ workflowName: this.name, conditionName })
     );
   }
 
-  initialize(): Effect.Effect<never, never, void> {
-    const taskNames = Object.keys(this.tasks).map(TaskName);
-    const conditionNames = Object.keys(this.conditions).map(ConditionName);
-    return this.stateManager.initializeWorkflow({
-      id: this.id,
-      name: this.name,
-      tasks: taskNames,
-      conditions: conditionNames,
+  initialize() {
+    const { tasks, conditions, name } = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const taskNames = Object.keys(tasks).map(TaskName);
+      const conditionNames = Object.keys(conditions).map(ConditionName);
+      return yield* $(
+        stateManager.initializeWorkflow({
+          name: name,
+          tasks: taskNames,
+          conditions: conditionNames,
+        })
+      );
     });
   }
 
-  end(): Effect.Effect<
-    never,
-    InvalidWorkflowStateTransition | WorkflowDoesNotExist,
-    void
-  > {
-    return this.stateManager.updateWorkflowState(this.id, 'exited');
+  end(id: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return yield* $(stateManager.updateWorkflowState(id, 'exited'));
+    });
   }
 
-  cancel(context: object) {
+  cancel(id: WorkflowId, context: object) {
     return pipe(
       Effect.all(
         [
           Effect.all(
-            Object.values(this.tasks).map((task) => task.cancel(context)),
+            Object.values(this.tasks).map((task) => task.cancel(id, context)),
             { batching: true }
           ),
           Effect.all(
             Object.values(this.conditions).map((condition) =>
-              condition.cancel(context)
+              condition.cancel(id, context)
             ),
             { batching: true }
           ),
@@ -139,7 +132,10 @@ export class Workflow<
         { discard: true }
       ),
       Effect.tap(() =>
-        this.stateManager.updateWorkflowState(this.id, 'canceled')
+        Effect.gen(function* ($) {
+          const stateManager = yield* $(State);
+          yield* $(stateManager.updateWorkflowState(id, 'canceled'));
+        })
       )
     );
   }
@@ -149,14 +145,18 @@ export class Workflow<
     if (startCondition) {
       return Effect.succeed(startCondition);
     }
-    return Effect.fail(new StartConditionDoesNotExist({ workflowId: this.id }));
+    return Effect.fail(
+      new StartConditionDoesNotExist({ workflowName: this.name })
+    );
   }
   getEndCondition() {
     const endCondition = this.endCondition;
     if (endCondition) {
       return Effect.succeed(endCondition);
     }
-    return Effect.fail(new EndConditionDoesNotExist({ workflowId: this.id }));
+    return Effect.fail(
+      new EndConditionDoesNotExist({ workflowName: this.name })
+    );
   }
   getCondition(conditionName: string) {
     const condition = this.conditions[conditionName];
@@ -164,7 +164,7 @@ export class Workflow<
       return Effect.succeed(condition);
     }
     return Effect.fail(
-      new ConditionDoesNotExist({ workflowId: this.id, conditionName })
+      new ConditionDoesNotExist({ workflowName: this.name, conditionName })
     );
   }
   getTask(taskName: string) {
@@ -172,21 +172,33 @@ export class Workflow<
     if (task) {
       return Effect.succeed(task);
     }
-    return Effect.fail(new TaskDoesNotExist({ workflowId: this.id, taskName }));
+    return Effect.fail(
+      new TaskDoesNotExist({ workflowName: this.name, taskName })
+    );
   }
-  getState() {
-    return this.stateManager.getWorkflow(this.id);
+  getState(id: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return yield* $(stateManager.getWorkflow(id));
+    });
   }
-  getTasks() {
-    return this.stateManager.getTasks(this.id);
+  getTasks(id: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return yield* $(stateManager.getTasks(id));
+    });
   }
-  getConditions() {
-    return this.stateManager.getConditions(this.id);
+  getConditions(id: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return yield* $(stateManager.getConditions(id));
+    });
   }
-  isOrJoinSatisfied(task: BaseTask) {
+  isOrJoinSatisfied(id: WorkflowId, task: BaseTask) {
     const self = this;
     return Effect.gen(function* ($) {
-      const workflowTasks = yield* $(self.stateManager.getTasks(self.id));
+      const stateManager = yield* $(State);
+      const workflowTasks = yield* $(stateManager.getTasks(id));
       const activeTasks = workflowTasks.reduce<BaseTask[]>((acc, taskData) => {
         if (taskData.state === 'fired') {
           const task = self.tasks[taskData.name];
@@ -194,9 +206,7 @@ export class Workflow<
         }
         return acc;
       }, []);
-      const workflowConditions = yield* $(
-        self.stateManager.getConditions(self.id)
-      );
+      const workflowConditions = yield* $(stateManager.getConditions(id));
       const enabledConditions = workflowConditions.reduce<Condition[]>(
         (acc, conditionData) => {
           if (conditionData.marking > 0) {
@@ -222,11 +232,11 @@ export class Workflow<
       return e2wfojnet.orJoinEnabled(marking, task);
     });
   }
-  isEndReached() {
+  isEndReached(id: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
       const endCondition = yield* $(self.getEndCondition());
-      const endConditionMarking = yield* $(endCondition.getMarking());
+      const endConditionMarking = yield* $(endCondition.getMarking(id));
 
       if (endConditionMarking > 0) {
         return true;

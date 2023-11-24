@@ -12,6 +12,7 @@ import {
 import {
   ConditionInstance,
   ConditionName,
+  Store,
   TaskInstance,
   TaskInstanceState,
   TaskName,
@@ -20,15 +21,19 @@ import {
   WorkItemState,
   WorkflowId,
   WorkflowInstance,
+  WorkflowInstanceParent,
   WorkflowInstanceState,
 } from './types.js';
 
 export interface State {
-  initializeWorkflow(payload: {
-    name: string;
-    tasks: TaskName[];
-    conditions: ConditionName[];
-  }): Effect.Effect<never, never, WorkflowInstance>;
+  initializeWorkflow(
+    payload: {
+      name: string;
+      tasks: TaskName[];
+      conditions: ConditionName[];
+    },
+    parent: WorkflowInstanceParent
+  ): Effect.Effect<never, never, WorkflowInstance>;
 
   getWorkflow(
     id: WorkflowId
@@ -182,6 +187,8 @@ export interface State {
     taskName: TaskName,
     workItemState?: WorkItemState
   ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItem[]>;
+
+  inspect(): Effect.Effect<never, never, Store>;
 }
 
 export const State = Context.Tag<State>();

@@ -18,14 +18,17 @@ import { Workflow } from './Workflow.js';
 
 export class CompositeTask extends BaseTask {
   readonly activities: CompositeTaskActivities;
+  readonly subWorkflow: Workflow;
 
   constructor(
     name: string,
     workflow: Workflow,
+    subWorkflow: Workflow,
     activities: CompositeTaskActivities,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     super(name, workflow, props);
+    this.subWorkflow = subWorkflow;
     this.activities = activities;
   }
 
@@ -132,7 +135,13 @@ export class CompositeTask extends BaseTask {
           )
         );
 
-        const startSubWorkflow = () => Effect.succeed(undefined);
+        const startSubWorkflow = () =>
+          Effect.gen(function* ($) {
+            const workflow = yield* $(
+              self.subWorkflow.initialize({ workflowId, taskName: self.name })
+            );
+            return workflow;
+          }).pipe(Effect.provideService(State, stateManager));
 
         const result = yield* $(
           self.activities.onFire({
@@ -142,7 +151,8 @@ export class CompositeTask extends BaseTask {
             fireTask() {
               return pipe(
                 performFire,
-                Effect.map(() => ({ startSubWorkflow }))
+                Effect.map(() => ({ startSubWorkflow })),
+                Effect.provideService(State, stateManager)
               );
             },
           }) as Effect.Effect<never, never, unknown>
@@ -188,6 +198,7 @@ export class CompositeTask extends BaseTask {
             exitTask() {
               return pipe(
                 performExit,
+                Effect.provideService(State, stateManager),
                 Effect.provideService(TaskActionsService, taskActionsService)
               );
             },

@@ -121,7 +121,7 @@ export type TaskOnDisablePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     disableTask: () => Effect.Effect<
-      State,
+      never,
       TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
       void
     >;
@@ -131,7 +131,7 @@ export type TaskOnEnablePayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     enableTask: () => Effect.Effect<
-      State,
+      never,
       | TaskDoesNotExist
       | TaskDoesNotExistInStore
       | ConditionDoesNotExist
@@ -151,7 +151,7 @@ export type TaskOnFirePayload<
   input: unknown;
 
   fireTask: () => Effect.Effect<
-    State,
+    never,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -173,7 +173,7 @@ export type CompositeTaskOnFirePayload<
   input: unknown;
 
   fireTask: () => Effect.Effect<
-    State,
+    never,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -182,7 +182,7 @@ export type CompositeTaskOnFirePayload<
     {
       startSubWorkflow: (
         payload: P
-      ) => Effect.Effect<State, TaskDoesNotExist, void>;
+      ) => Effect.Effect<State, TaskDoesNotExist, WorkflowInstance>;
     }
   >;
 };
@@ -192,7 +192,7 @@ export type TaskOnExitPayload<C extends object = object> =
     context: C;
     input: unknown;
     exitTask: () => Effect.Effect<
-      State,
+      never,
       | TaskDoesNotExist
       | TaskDoesNotExistInStore
       | ConditionDoesNotExist
@@ -206,7 +206,7 @@ export type TaskOnCancelPayload<C extends object = object> =
   DefaultTaskActivityPayload & {
     context: C;
     cancelTask: () => Effect.Effect<
-      State,
+      never,
       | TaskDoesNotExist
       | TaskDoesNotExistInStore
       | ConditionDoesNotExist
@@ -280,7 +280,13 @@ export type WorkflowInstanceState =
   | 'canceled'
   | 'failed';
 
+export type WorkflowInstanceParent = {
+  workflowId: WorkflowId;
+  taskName: TaskName;
+} | null;
+
 export interface WorkflowInstance {
+  parent: WorkflowInstanceParent;
   id: WorkflowId;
   name: string;
   state: WorkflowInstanceState;

@@ -143,7 +143,7 @@ export class Task extends BaseTask {
                 condition.decrementMarking(workflowId, context)
               );
               yield* $(Effect.all(updates, { discard: true, batching: true }));
-            })
+            }).pipe(Effect.provideService(State, stateManager))
           )
         );
 
@@ -193,7 +193,7 @@ export class Task extends BaseTask {
               yield* $(self.cancelCancellationRegion(workflowId, context));
               yield* $(self.produceTokensInOutgoingFlows(workflowId, context));
               yield* $(self.enablePostTasks(workflowId, context));
-            })
+            }).pipe(Effect.provideService(State, stateManager))
           )
         );
 

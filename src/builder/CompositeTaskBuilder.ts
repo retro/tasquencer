@@ -1,6 +1,13 @@
 import { Effect } from 'effect';
 
+import { CompositeTask } from '../elements/CompositeTask.js';
 import { Workflow } from '../elements/Workflow.js';
+import {
+  ConditionDoesNotExist,
+  EndConditionDoesNotExist,
+  StartConditionDoesNotExist,
+  TaskDoesNotExist,
+} from '../errors.js';
 import {
   CompositeTaskActivities,
   CompositeTaskOnFirePayload,
@@ -241,8 +248,30 @@ export class CompositeTaskBuilder<
     return this;
   }
 
-  build(workflow: Workflow, name: string) {
-    workflow && name;
+  build(
+    workflow: Workflow,
+    name: string
+  ): Effect.Effect<
+    never,
+    | StartConditionDoesNotExist
+    | EndConditionDoesNotExist
+    | ConditionDoesNotExist
+    | TaskDoesNotExist,
+    void
+  > {
+    const { splitType, joinType, activities, workflowBuilder } = this;
+    return Effect.gen(function* ($) {
+      const subWorkflow = yield* $(workflowBuilder.build());
+      const compositeTask = new CompositeTask(
+        name,
+        workflow,
+        subWorkflow,
+        activities as unknown as CompositeTaskActivities,
+        { joinType, splitType }
+      );
+
+      workflow.addTask(compositeTask);
+    });
   }
 }
 
@@ -262,7 +291,7 @@ export function compositeTask<C extends object>() {
         CompositeTaskActivitiesReturnType,
         WorkflowBuilderR<W>,
         WorkflowBuilderE<W>
-      >(workflow);
+      >(workflow).initialize();
     },
   };
 }

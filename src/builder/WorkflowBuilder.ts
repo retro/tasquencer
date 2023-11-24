@@ -538,17 +538,7 @@ export class WorkflowBuilder<
     this.onEndFn = f;
     return this;
   }
-  /* getBuildDeps() {
-    return Effect.gen(function* ($) {
-      const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));
-      const idGenerator = Option.getOrElse(
-        maybeIdGenerator,
-        () => nanoidIdGenerator
-      );
-      const stateManager = yield* $(StateManager.make(idGenerator));
-      return { stateManager, idGenerator };
-    });
-  }*/
+
   build() {
     const { name, definition, onStartFn, onEndFn } = this;
 
@@ -573,7 +563,7 @@ export class WorkflowBuilder<
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow
         // This casting is ok, because task doesn't care about Workflow generics
-        taskBuilder.build(workflow as Workflow, taskName);
+        yield* $(taskBuilder.build(workflow as Workflow, taskName));
       }
 
       for (const [conditionName, conditionNode] of Object.entries(

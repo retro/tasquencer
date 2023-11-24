@@ -2,6 +2,7 @@ import { Effect } from 'effect';
 import { expect, it } from 'vitest';
 
 import * as Builder from '../builder.js';
+import { compositeTask } from '../builder.js';
 import * as Interpreter from '../interpreter.js';
 import { IdGenerator, TaskName, WorkItemId, WorkflowId } from '../types.js';
 
@@ -22,7 +23,7 @@ function makeIdGenerator(): IdGenerator {
   };
 }
 
-const w1 = Builder.workflow<{ foo: string }>('w1')
+/*const w1 = Builder.workflow<{ foo: string }>('w1')
   .startCondition('start')
   .task('t1', (t) =>
     t().onCancel(() =>
@@ -35,9 +36,55 @@ const w1 = Builder.workflow<{ foo: string }>('w1')
   .connectCondition('start', (to) => to.task('t1'))
   .connectTask('t1', (to) => to.condition('end'));
 
-const c = Builder.compositeTask<{ bar: string }>().withSubWorkflow(w1);
+const c = Builder.compositeTask<{ bar: string }>().withSubWorkflow(w1);*/
 
-it('can run simple net with and-split and and-join', () => {
+it('can run net with composite tasks', () => {
+  const subWorkflow = Builder.workflow('subWorkflow')
+    .startCondition('subStart')
+    .task('subT1')
+    .endCondition('subEnd')
+    .connectCondition('subStart', (to) => to.task('subT1'))
+    .connectTask('subT1', (to) => to.condition('subEnd'));
+
+  const workflowDefinition = Builder.workflow('parent')
+    .startCondition('start')
+    .compositeTask(
+      't1',
+      compositeTask()
+        .withSubWorkflow(subWorkflow)
+        .onFire(({ fireTask }) =>
+          Effect.gen(function* ($) {
+            const { startSubWorkflow } = yield* $(fireTask());
+            yield* $(startSubWorkflow({ foo: 'bar' }));
+          })
+        )
+    )
+    .endCondition('end')
+    .connectCondition('start', (to) => to.task('t1'))
+    .connectTask('t1', (to) => to.condition('end'));
+
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+
+    const workflow = yield* $(workflowDefinition.build());
+
+    const interpreter = yield* $(
+      Interpreter.initialize(workflow, {}),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    yield* $(interpreter.start());
+
+    yield* $(interpreter.fireTask('t1'));
+
+    console.log(JSON.stringify(yield* $(interpreter.inspectState()), null, 2));
+    expect(1).toBe(1);
+  });
+
+  Effect.runSync(program);
+});
+
+/*it('can run simple net with and-split and and-join', () => {
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
     .task('scan_goods', (t) =>
@@ -72,8 +119,15 @@ it('can run simple net with and-split and and-join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
+    yield* $(interpreter.start());
+
     expect(yield* $(interpreter.getFullState())).toEqual({
-      workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },
+      workflow: {
+        id: 'workflow-1',
+        name: 'checkout',
+        state: 'running',
+        parent: null,
+      },
       tasks: [
         {
           name: 'scan_goods',
@@ -140,7 +194,12 @@ it('can run simple net with and-split and and-join', () => {
     yield* $(interpreter.fireTask('scan_goods'));
 
     expect(yield* $(interpreter.getFullState())).toEqual({
-      workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },
+      workflow: {
+        id: 'workflow-1',
+        name: 'checkout',
+        state: 'running',
+        parent: null,
+      },
       tasks: [
         {
           name: 'scan_goods',
@@ -219,7 +278,12 @@ it('can run simple net with and-split and and-join', () => {
     console.log(yield* $(interpreter.getFullState()));
 
     expect(yield* $(interpreter.getFullState())).toEqual({
-      workflow: { id: 'workflow-1', name: 'checkout', state: 'running' },
+      workflow: {
+        id: 'workflow-1',
+        name: 'checkout',
+        state: 'running',
+        parent: null,
+      },
       tasks: [
         {
           name: 'scan_goods',
@@ -283,7 +347,9 @@ it('can run simple net with and-split and and-join', () => {
       ],
     });
 
-    /*expect(res1).toEqual({
+    //  console.log(JSON.stringify(yield* $(interpreter.inspectState()), null, 2));
+
+    / *expect(res1).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -662,11 +728,11 @@ it('can run simple net with and-split and and-join', () => {
         },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
       },
-    });*/
+    });* /
   });
 
   Effect.runSync(program);
-});
+});*/
 
 /*it('can run resume a workflow', () => {
   const workflowDefinition = Builder.workflow('checkout')

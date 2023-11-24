@@ -290,7 +290,6 @@ export class TaskBuilder<
     const task = new Task(
       name,
       workflow,
-
       activities as unknown as TaskActivities,
       this.workItem.build() as AnyWorkItemActivities,
       {
@@ -299,6 +298,8 @@ export class TaskBuilder<
       }
     );
     workflow.addTask(task);
+
+    return Effect.unit;
   }
 }
 

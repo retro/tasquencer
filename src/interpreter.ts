@@ -80,10 +80,13 @@ export class Interpreter<
 
   start<I>(input?: I) {
     return this._start(input) as Effect.Effect<
-      | Effect.Effect.Context<
-          ReturnType<Interpreter<TasksActivitiesOutputs>['_start']>
-        >
-      | R,
+      Exclude<
+        | Effect.Effect.Context<
+            ReturnType<Interpreter<TasksActivitiesOutputs>['_start']>
+          >
+        | R,
+        State
+      >,
       | Effect.Effect.Error<
           ReturnType<Interpreter<TasksActivitiesOutputs>['_start']>
         >
@@ -166,7 +169,7 @@ export class Interpreter<
     input?: I
   ) {
     return this._fireTask(taskName, input) as unknown as Effect.Effect<
-      R,
+      Exclude<R, State>,
       E,
       unknown extends I
         ? undefined
@@ -365,6 +368,9 @@ export class Interpreter<
       };
     });
   }
+  inspectState() {
+    return this.state.inspect();
+  }
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -409,8 +415,6 @@ export function initialize<
       R,
       E
     >(id, workflow, context, state, queue);
-
-    yield* $(interpreter.start());
 
     return interpreter;
   });

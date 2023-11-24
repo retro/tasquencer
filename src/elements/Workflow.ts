@@ -13,6 +13,7 @@ import {
   ConditionName,
   TaskName,
   WorkflowId,
+  WorkflowInstanceParent,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
@@ -91,18 +92,21 @@ export class Workflow<
     );
   }
 
-  initialize() {
+  initialize(parent: WorkflowInstanceParent = null) {
     const { tasks, conditions, name } = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       const taskNames = Object.keys(tasks).map(TaskName);
       const conditionNames = Object.keys(conditions).map(ConditionName);
       return yield* $(
-        stateManager.initializeWorkflow({
-          name: name,
-          tasks: taskNames,
-          conditions: conditionNames,
-        })
+        stateManager.initializeWorkflow(
+          {
+            name: name,
+            tasks: taskNames,
+            conditions: conditionNames,
+          },
+          parent
+        )
       );
     });
   }

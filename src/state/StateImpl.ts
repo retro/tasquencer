@@ -23,6 +23,7 @@ import {
   WorkItemState,
   WorkflowId,
   WorkflowInstance,
+  WorkflowInstanceParent,
   WorkflowInstanceState,
   isValidTaskInstanceTransition,
   validWorkItemStateTransitions,
@@ -38,11 +39,14 @@ export class StateImpl implements State {
     this.idGenerator = idGenerator;
   }
 
-  initializeWorkflow(payload: {
-    name: string;
-    tasks: TaskName[];
-    conditions: ConditionName[];
-  }) {
+  initializeWorkflow(
+    payload: {
+      name: string;
+      tasks: TaskName[];
+      conditions: ConditionName[];
+    },
+    parent: WorkflowInstanceParent = null
+  ) {
     const { idGenerator, stateRef } = this;
     return Effect.gen(function* ($) {
       const workflowId = yield* $(idGenerator.workflow());
@@ -66,6 +70,7 @@ export class StateImpl implements State {
       }, {});
 
       const workflow: WorkflowInstance = {
+        parent,
         id: workflowId,
         name: payload.name,
         state: 'running',
@@ -465,6 +470,10 @@ export class StateImpl implements State {
         )
       );
     });
+  }
+
+  inspect() {
+    return Ref.get(this.stateRef);
   }
 }
 

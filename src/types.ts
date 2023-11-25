@@ -112,7 +112,14 @@ export interface WorkflowOnEndPayload<C> {
   getWorkflowId: () => Effect.Effect<never, never, string>;
   endWorkflow(): Effect.Effect<
     State,
-    WorkflowDoesNotExist | InvalidWorkflowStateTransition,
+    | ConditionDoesNotExist
+    | WorkflowDoesNotExist
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | ConditionDoesNotExistInStore
+    | EndConditionDoesNotExist,
     void
   >;
 }
@@ -180,9 +187,25 @@ export type CompositeTaskOnFirePayload<
     | ConditionDoesNotExistInStore
     | InvalidTaskStateTransition,
     {
-      startSubWorkflow: (
+      initializeWorkflow: (
         payload: P
       ) => Effect.Effect<State, TaskDoesNotExist, WorkflowInstance>;
+      startWorkflow: (
+        workflowId: WorkflowId,
+        payload?: unknown
+      ) => Effect.Effect<
+        State,
+        | TaskDoesNotExist
+        | TaskDoesNotExistInStore
+        | StartConditionDoesNotExist
+        | EndConditionDoesNotExist
+        | ConditionDoesNotExist
+        | ConditionDoesNotExistInStore
+        | WorkflowDoesNotExist
+        | InvalidTaskStateTransition
+        | InvalidWorkflowStateTransition,
+        void
+      >;
     }
   >;
 };
@@ -275,8 +298,9 @@ export const WorkItemId = Brand.refined<WorkItemId>(
 );
 
 export type WorkflowInstanceState =
-  | 'running'
-  | 'exited'
+  | 'initialized'
+  | 'started'
+  | 'completed'
   | 'canceled'
   | 'failed';
 
@@ -296,11 +320,20 @@ export const validWorkflowInstanceTransitions: Record<
   WorkflowInstanceState,
   Set<WorkflowInstanceState>
 > = {
-  running: new Set(['exited', 'canceled', 'failed']),
-  exited: new Set(),
+  initialized: new Set(['started']),
+  started: new Set(['completed', 'canceled', 'failed']),
+  completed: new Set(),
   canceled: new Set(),
   failed: new Set(),
 };
+
+export const finalWorkflowInstanceStates = new Set([
+  'completed',
+  'canceled',
+  'failed',
+]);
+
+export const activeWorkflowInstanceStates = new Set(['initialized', 'started']);
 
 export type TaskInstanceState =
   | 'enabled'
@@ -342,12 +375,7 @@ export interface ConditionInstance {
   marking: number;
 }
 
-export type WorkItemState =
-  | 'initialized'
-  | 'started'
-  | 'completed'
-  | 'canceled'
-  | 'failed';
+export type WorkItemState = WorkflowInstanceState;
 
 export interface WorkItem<P = unknown> {
   id: WorkItemId;
@@ -367,11 +395,15 @@ export const validWorkItemStateTransitions: Record<
   failed: new Set(),
 };
 
+export const finalWorkItemInstanceStates = finalWorkflowInstanceStates;
+export const activeWorkItemInstanceStates = activeWorkflowInstanceStates;
+
 interface WorkflowState {
   workflow: WorkflowInstance;
   tasks: Record<TaskName, TaskInstance>;
   conditions: Record<ConditionName, ConditionInstance>;
   workItems: Record<WorkItemId, WorkItem>;
   tasksToWorkItems: Record<TaskName, Record<number, WorkItemId[]>>;
+  tasksToWorkflows: Record<TaskName, Record<number, WorkflowId[]>>;
 }
 export type Store = Record<WorkflowId, WorkflowState>;

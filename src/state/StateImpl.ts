@@ -1,4 +1,6 @@
-import { Effect, Ref } from 'effect';
+/* eslint @typescript-eslint/no-non-null-assertion: 0 */
+import { Effect } from 'effect';
+import { create } from 'mutative';
 
 import { State } from '../State.js';
 import {
@@ -31,11 +33,10 @@ import {
 } from '../types.js';
 
 export class StateImpl implements State {
-  private stateRef: Ref.Ref<Store>;
+  private store: Store = {};
   private idGenerator: IdGenerator;
 
-  constructor(stateRef: Ref.Ref<Store>, idGenerator: IdGenerator) {
-    this.stateRef = stateRef;
+  constructor(idGenerator: IdGenerator) {
     this.idGenerator = idGenerator;
   }
 
@@ -47,7 +48,8 @@ export class StateImpl implements State {
     },
     parent: WorkflowInstanceParent = null
   ) {
-    const { idGenerator, stateRef } = this;
+    const self = this;
+    const { idGenerator } = this;
     return Effect.gen(function* ($) {
       const workflowId = yield* $(idGenerator.workflow());
       const workflowTasks = payload.tasks.reduce<
@@ -73,33 +75,47 @@ export class StateImpl implements State {
         parent,
         id: workflowId,
         name: payload.name,
-        state: 'running',
+        state: 'initialized',
       };
 
-      yield* $(
-        Ref.update(stateRef, (state) => {
-          return {
-            ...state,
-            [workflowId]: {
-              workflow,
-              tasks: workflowTasks,
-              conditions: workflowConditions,
-              workItems: {},
-              tasksToWorkItems: {},
-            },
-          };
-        })
-      );
+      const workflowState = {
+        workflow,
+        tasks: workflowTasks,
+        conditions: workflowConditions,
+        workItems: {},
+        tasksToWorkItems: {},
+        tasksToWorkflows: {},
+      };
+
+      if (!parent) {
+        self.store = create(self.store, (draft) => {
+          draft[workflowId] = workflowState;
+        });
+      } else {
+        const taskGeneration =
+          self.store[parent.workflowId]!.tasks[parent.taskName]!.generation;
+
+        self.store = create(self.store, (draft) => {
+          draft[workflowId] = workflowState;
+          draft[parent.workflowId]!.tasksToWorkflows[parent.taskName] ||= {};
+          draft[parent.workflowId]!.tasksToWorkflows[parent.taskName]![
+            taskGeneration
+          ] ||= [];
+
+          draft[parent.workflowId]!.tasksToWorkflows[parent.taskName]![
+            taskGeneration
+          ]!.push(workflowId);
+        });
+      }
 
       return workflow;
     });
   }
 
   getWorkflow(workflowId: WorkflowId) {
-    const self = this;
+    const { store } = this;
     return Effect.gen(function* ($) {
-      const state = yield* $(Ref.get(self.stateRef));
-      const workflow = state[workflowId]?.workflow;
+      const workflow = store[workflowId]?.workflow;
 
       if (!workflow) {
         return yield* $(Effect.fail(new WorkflowDoesNotExist({ workflowId })));
@@ -109,26 +125,17 @@ export class StateImpl implements State {
   }
 
   getTasks(workflowId: WorkflowId) {
-    return Ref.get(this.stateRef).pipe(
-      Effect.map((state) => {
-        return Object.values(state[workflowId]?.tasks ?? {});
-      })
-    );
+    return Effect.succeed(Object.values(this.store[workflowId]?.tasks ?? {}));
   }
 
   getConditions(id: WorkflowId) {
-    return Ref.get(this.stateRef).pipe(
-      Effect.map((state) => {
-        return Object.values(state[id]?.conditions ?? {});
-      })
-    );
+    return Effect.succeed(Object.values(this.store[id]?.conditions ?? {}));
   }
 
   getTask(workflowId: WorkflowId, taskName: TaskName) {
-    const { stateRef } = this;
+    const { store } = this;
     return Effect.gen(function* ($) {
-      const state = yield* $(Ref.get(stateRef));
-      const task = state[workflowId]?.tasks[taskName];
+      const task = store[workflowId]?.tasks[taskName];
 
       if (!task) {
         return yield* $(
@@ -147,10 +154,9 @@ export class StateImpl implements State {
   }
 
   getCondition(workflowId: WorkflowId, conditionName: ConditionName) {
-    const { stateRef } = this;
+    const { store } = this;
     return Effect.gen(function* ($) {
-      const state = yield* $(Ref.get(stateRef));
-      const condition = state[workflowId]?.conditions[conditionName];
+      const condition = store[workflowId]?.conditions[conditionName];
 
       if (!condition || condition.workflowId !== workflowId) {
         return yield* $(
@@ -172,7 +178,7 @@ export class StateImpl implements State {
 
   updateWorkflowState(
     workflowId: WorkflowId,
-    workflowState: Exclude<WorkflowInstanceState, 'running'>
+    workflowState: Exclude<WorkflowInstanceState, 'initialized'>
   ) {
     const self = this;
     return Effect.gen(function* ($) {
@@ -192,20 +198,9 @@ export class StateImpl implements State {
         );
       }
 
-      return yield* $(
-        Ref.update(self.stateRef, (state) => {
-          return {
-            ...state,
-            [workflowId]: {
-              ...state[workflowId],
-              workflow: {
-                ...state[workflowId]?.workflow,
-                state: workflowState,
-              },
-            },
-          };
-        })
-      );
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.workflow.state = workflowState;
+      });
     });
   }
 
@@ -232,27 +227,12 @@ export class StateImpl implements State {
         );
       }
 
-      return yield* $(
-        Ref.update(self.stateRef, (state) => {
-          return {
-            ...state,
-            [workflowId]: {
-              ...state[workflowId],
-              tasks: {
-                ...state[workflowId]?.tasks,
-                [taskName]: {
-                  ...state[workflowId]?.tasks[taskName],
-                  generation:
-                    nextTaskState === 'fired'
-                      ? task.generation + 1
-                      : task.generation,
-                  state: nextTaskState,
-                },
-              },
-            },
-          };
-        })
-      );
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.tasks[taskName]!.state = nextTaskState;
+        if (nextTaskState === 'fired') {
+          draft[workflowId]!.tasks[taskName]!.generation += 1;
+        }
+      });
     });
   }
 
@@ -290,20 +270,9 @@ export class StateImpl implements State {
     return Effect.gen(function* ($) {
       const condition = yield* $(self.getCondition(workflowId, conditionName));
 
-      return yield* $(
-        Ref.update(self.stateRef, (state) => {
-          return {
-            ...state,
-            [workflowId]: {
-              ...state[workflowId],
-              conditions: {
-                ...state[workflowId]?.conditions,
-                [conditionName]: f(condition),
-              },
-            },
-          };
-        })
-      );
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.conditions[conditionName] = f(condition);
+      });
     });
   }
 
@@ -347,32 +316,16 @@ export class StateImpl implements State {
         state: 'initialized',
         payload,
       };
-      yield* $(
-        Ref.update(self.stateRef, (state) => {
-          return {
-            ...state,
-            [workflowId]: {
-              ...state[workflowId],
-              workItems: {
-                ...state[workflowId]?.workItems,
-                [workItemId]: workItem,
-              },
-              tasksToWorkItems: {
-                ...state[workflowId]?.tasksToWorkItems,
-                [taskName]: {
-                  ...state[workflowId]?.tasksToWorkItems[taskName],
-                  [task.generation]: [
-                    ...(state[workflowId]?.tasksToWorkItems[taskName]?.[
-                      task.generation
-                    ] ?? []),
-                    workItemId,
-                  ],
-                },
-              },
-            },
-          };
-        })
-      );
+
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.workItems[workItemId] = workItem;
+        draft[workflowId]!.tasksToWorkItems[taskName] ||= {};
+        draft[workflowId]!.tasksToWorkItems[taskName]![task.generation] ||= [];
+        draft[workflowId]!.tasksToWorkItems[taskName]![task.generation]!.push(
+          workItemId
+        );
+      });
+
       return workItem;
     });
   }
@@ -384,8 +337,7 @@ export class StateImpl implements State {
   ) {
     const self = this;
     return Effect.gen(function* ($) {
-      const state = yield* $(Ref.get(self.stateRef));
-      const workItem = state[workflowId]?.workItems[workItemId];
+      const workItem = self.store[workflowId]?.workItems[workItemId];
 
       if (!workItem || workItem.taskName !== taskName) {
         return yield* $(
@@ -422,64 +374,54 @@ export class StateImpl implements State {
         );
       }
 
-      return yield* $(
-        Ref.update(self.stateRef, (state) => {
-          return {
-            ...state,
-            [workflowId]: {
-              ...state[workflowId],
-              workItems: {
-                ...state[workflowId]?.workItems,
-                [workItemId]: {
-                  ...state[workflowId]?.workItems[workItemId],
-                  state: nextState,
-                },
-              },
-            },
-          };
-        })
-      );
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.workItems[workItemId]!.state = nextState;
+      });
     });
   }
 
-  getWorkItems(
-    workflowId: WorkflowId,
-    taskName: TaskName,
-    workItemState?: WorkItemState
-  ) {
+  getWorkItems(workflowId: WorkflowId, taskName: TaskName) {
     const self = this;
     return Effect.gen(function* ($) {
       const task = yield* $(self.getTask(workflowId, taskName));
-      return yield* $(
-        Ref.get(self.stateRef).pipe(
-          Effect.map((state) => {
-            const workItemIds =
-              state[workflowId]?.tasksToWorkItems[taskName]?.[
-                task.generation
-              ] ?? [];
-            return workItemIds.reduce<WorkItem[]>((acc, workItemId) => {
-              const workItem = state[workflowId]?.workItems[workItemId];
-              if (workItem) {
-                workItemState
-                  ? workItemState === workItem.state && acc.push(workItem)
-                  : acc.push(workItem);
-              }
-              return acc;
-            }, []);
-          })
-        )
-      );
+
+      const workItemIds =
+        self.store[workflowId]?.tasksToWorkItems[taskName]?.[task.generation] ??
+        [];
+      return workItemIds.reduce<WorkItem[]>((acc, workItemId) => {
+        const workItem = self.store[workflowId]?.workItems[workItemId];
+        if (workItem) {
+          acc.push(workItem);
+        }
+        return acc;
+      }, []);
+    });
+  }
+
+  getWorkflows(workflowId: WorkflowId, taskName: TaskName) {
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      const task = yield* $(self.getTask(workflowId, taskName));
+
+      const workflowIds =
+        self.store[workflowId]?.tasksToWorkflows[taskName]?.[task.generation] ??
+        [];
+      return workflowIds.reduce<WorkflowInstance[]>((acc, workflowId) => {
+        const workflow = self.store[workflowId]?.workflow;
+        if (workflow) {
+          acc.push(workflow);
+        }
+        return acc;
+      }, []);
     });
   }
 
   inspect() {
-    return Ref.get(this.stateRef);
+    return Effect.succeed(this.store);
   }
 }
 
 export function make(idGenerator: IdGenerator) {
-  return Effect.gen(function* ($) {
-    const stateRef = yield* $(Ref.make({}));
-    return new StateImpl(stateRef, idGenerator);
-  });
+  return new StateImpl(idGenerator);
 }

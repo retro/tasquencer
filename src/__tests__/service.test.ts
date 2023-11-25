@@ -1,9 +1,9 @@
 import { Effect } from 'effect';
 import { expect, it } from 'vitest';
 
+import * as Service from '../Service.js';
 import * as Builder from '../builder.js';
 import { compositeTask } from '../builder.js';
-import * as Interpreter from '../interpreter.js';
 import { IdGenerator, TaskName, WorkItemId, WorkflowId } from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
@@ -54,8 +54,9 @@ it('can run net with composite tasks', () => {
         .withSubWorkflow(subWorkflow)
         .onFire(({ fireTask }) =>
           Effect.gen(function* ($) {
-            const { startSubWorkflow } = yield* $(fireTask());
-            yield* $(startSubWorkflow({ foo: 'bar' }));
+            const { initializeWorkflow, startWorkflow } = yield* $(fireTask());
+            const { id } = yield* $(initializeWorkflow({ foo: 'bar' }));
+            yield* $(startWorkflow(id, { foo: 'bar' }));
           })
         )
     )
@@ -68,23 +69,29 @@ it('can run net with composite tasks', () => {
 
     const workflow = yield* $(workflowDefinition.build());
 
-    const interpreter = yield* $(
-      Interpreter.initialize(workflow, {}),
+    const service = yield* $(
+      Service.initialize(workflow, {}),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    yield* $(interpreter.fireTask('t1'));
+    yield* $(service.fireTask('t1'));
 
-    console.log(JSON.stringify(yield* $(interpreter.inspectState()), null, 2));
+    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+
+    yield* $(service.fireTask(['t1', 'workflow-2', 'subT1']));
+
+    console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
     expect(1).toBe(1);
   });
 
   Effect.runSync(program);
 });
 
-/*it('can run simple net with and-split and and-join', () => {
+it('can run simple net with and-split and and-join', () => {
+  expect(1).toBe(1);
+  return;
   const workflowDefinition = Builder.workflow('checkout')
     .startCondition('start')
     .task('scan_goods', (t) =>
@@ -114,14 +121,14 @@ it('can run net with composite tasks', () => {
 
     const workflow = yield* $(workflowDefinition.build());
 
-    const interpreter = yield* $(
-      Interpreter.initialize(workflow, {}),
+    const service = yield* $(
+      Service.initialize(workflow, {}),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    expect(yield* $(interpreter.getFullState())).toEqual({
+    expect(yield* $(service.getFullState())).toEqual({
       workflow: {
         id: 'workflow-1',
         name: 'checkout',
@@ -191,9 +198,9 @@ it('can run net with composite tasks', () => {
       ],
     });
 
-    yield* $(interpreter.fireTask('scan_goods'));
+    yield* $(service.fireTask('scan_goods'));
 
-    expect(yield* $(interpreter.getFullState())).toEqual({
+    expect(yield* $(service.getFullState())).toEqual({
       workflow: {
         id: 'workflow-1',
         name: 'checkout',
@@ -263,21 +270,17 @@ it('can run net with composite tasks', () => {
       ],
     });
 
-    const workItems = yield* $(
-      interpreter.getWorkItems(TaskName('scan_goods'))
-    );
+    const workItems = yield* $(service.getWorkItems(TaskName('scan_goods')));
 
     console.log(workItems);
 
     for (const workItem of workItems) {
-      yield* $(
-        interpreter.completeWorkItem(TaskName('scan_goods'), workItem.id)
-      );
+      yield* $(service.completeWorkItem(TaskName('scan_goods'), workItem.id));
     }
 
-    console.log(yield* $(interpreter.getFullState()));
+    console.log(yield* $(service.getFullState()));
 
-    expect(yield* $(interpreter.getFullState())).toEqual({
+    expect(yield* $(service.getFullState())).toEqual({
       workflow: {
         id: 'workflow-1',
         name: 'checkout',
@@ -347,9 +350,9 @@ it('can run net with composite tasks', () => {
       ],
     });
 
-    //  console.log(JSON.stringify(yield* $(interpreter.inspectState()), null, 2));
+    //  console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
 
-    / *expect(res1).toEqual({
+    /*expect(res1).toEqual({
       id: 'workflow-1',
       name: 'checkout',
       state: 'running',
@@ -361,9 +364,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('scan_goods'));
+    yield* $(service.fireTask('scan_goods'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -377,9 +380,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('scan_goods'));
+    yield* $(service.exitTask('scan_goods'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -399,9 +402,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('pay'));
+    yield* $(service.fireTask('pay'));
 
-    const res4 = yield* $(interpreter.getWorkflowState());
+    const res4 = yield* $(service.getWorkflowState());
 
     expect(res4).toEqual({
       id: 'workflow-1',
@@ -421,9 +424,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('pay'));
+    yield* $(service.exitTask('pay'));
 
-    const res5 = yield* $(interpreter.getWorkflowState());
+    const res5 = yield* $(service.getWorkflowState());
 
     expect(res5).toEqual({
       id: 'workflow-1',
@@ -455,9 +458,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('pack_goods'));
+    yield* $(service.fireTask('pack_goods'));
 
-    const res6 = yield* $(interpreter.getWorkflowState());
+    const res6 = yield* $(service.getWorkflowState());
 
     expect(res6).toEqual({
       id: 'workflow-1',
@@ -489,7 +492,7 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    const res7 = yield* $(interpreter.getWorkflowState());
+    const res7 = yield* $(service.getWorkflowState());
 
     expect(res7).toEqual({
       id: 'workflow-1',
@@ -521,9 +524,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('issue_receipt'));
+    yield* $(service.fireTask('issue_receipt'));
 
-    const res8 = yield* $(interpreter.getWorkflowState());
+    const res8 = yield* $(service.getWorkflowState());
 
     expect(res8).toEqual({
       id: 'workflow-1',
@@ -555,9 +558,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('pack_goods'));
+    yield* $(service.exitTask('pack_goods'));
 
-    const res9 = yield* $(interpreter.getWorkflowState());
+    const res9 = yield* $(service.getWorkflowState());
 
     expect(res9).toEqual({
       id: 'workflow-1',
@@ -594,9 +597,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('issue_receipt'));
+    yield* $(service.exitTask('issue_receipt'));
 
-    const res10 = yield* $(interpreter.getWorkflowState());
+    const res10 = yield* $(service.getWorkflowState());
 
     expect(res10).toEqual({
       id: 'workflow-1',
@@ -639,9 +642,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('check_goods'));
+    yield* $(service.fireTask('check_goods'));
 
-    const res11 = yield* $(interpreter.getWorkflowState());
+    const res11 = yield* $(service.getWorkflowState());
 
     expect(res11).toEqual({
       id: 'workflow-1',
@@ -684,9 +687,9 @@ it('can run net with composite tasks', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('check_goods'));
+    yield* $(service.exitTask('check_goods'));
 
-    const res12 = yield* $(interpreter.getWorkflowState());
+    const res12 = yield* $(service.getWorkflowState());
 
     expect(res12).toEqual({
       id: 'workflow-1',
@@ -728,11 +731,11 @@ it('can run net with composite tasks', () => {
         },
         'condition-2': { id: 'condition-2', name: 'end', marking: 1 },
       },
-    });* /
+    });*/
   });
 
   Effect.runSync(program);
-});*/
+});
 
 /*it('can run resume a workflow', () => {
   const workflowDefinition = Builder.workflow('checkout')
@@ -763,13 +766,13 @@ it('can run net with composite tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter1 = yield* $(
+    const service1 = yield* $(
       Interpreter.make(workflow1, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter1.start());
-    yield* $(interpreter1.fireTask('scan_goods'));
+    yield* $(service1.start());
+    yield* $(service1.fireTask('scan_goods'));
 
     const workflow2 = yield* $(
       workflowDefinition.build(workflow1.id),
@@ -777,14 +780,14 @@ it('can run net with composite tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter2 = yield* $(
+    const service2 = yield* $(
       Interpreter.make(workflow2, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter2.exitTask('scan_goods'));
+    yield* $(service2.exitTask('scan_goods'));
 
-    const res3 = yield* $(interpreter2.getWorkflowState());
+    const res3 = yield* $(service2.getWorkflowState());
 
     // In this case some IDs are different than in the previous test
     // because idGenerator was not reset. If the task or condition wasn't
@@ -928,31 +931,31 @@ it('can run workflow with activities', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
     const res1 = yield* $(
-      interpreter.fireTask('scan_goods', 'fire scan_goods user input')
+      service.fireTask('scan_goods', 'fire scan_goods user input')
     );
     expect(res1).toEqual('onFire: fire scan_goods user input');
 
     const res2 = yield* $(
-      interpreter.exitTask('scan_goods', 'exit scan_goods user input')
+      service.exitTask('scan_goods', 'exit scan_goods user input')
     );
     expect(res2).toEqual('onExit: exit scan_goods user input');
 
-    yield* $(interpreter.fireTask('pay'));
-    yield* $(interpreter.exitTask('pay'));
-    yield* $(interpreter.fireTask('pack_goods'));
-    yield* $(interpreter.fireTask('issue_receipt'));
-    yield* $(interpreter.exitTask('pack_goods'));
-    yield* $(interpreter.exitTask('issue_receipt'));
-    yield* $(interpreter.fireTask('check_goods'));
-    yield* $(interpreter.exitTask('check_goods'));
+    yield* $(service.fireTask('pay'));
+    yield* $(service.exitTask('pay'));
+    yield* $(service.fireTask('pack_goods'));
+    yield* $(service.fireTask('issue_receipt'));
+    yield* $(service.exitTask('pack_goods'));
+    yield* $(service.exitTask('issue_receipt'));
+    yield* $(service.fireTask('check_goods'));
+    yield* $(service.exitTask('check_goods'));
 
     expect(log).toEqual([
       { name: 'scan_goods', activityPhase: 'before', taskPhase: 'enable' },
@@ -1043,7 +1046,7 @@ it('can run workflow with activities', () => {
       },
     ]);
 
-    const workflowRes = yield* $(interpreter.getWorkflowState());
+    const workflowRes = yield* $(service.getWorkflowState());
 
     expect(workflowRes).toEqual({
       id: 'workflow-1',
@@ -1126,14 +1129,14 @@ it('can auto fire and auto exit tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -1177,14 +1180,14 @@ it('supports deferred choice pattern', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -1199,10 +1202,10 @@ it('supports deferred choice pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_1'));
-    yield* $(interpreter.exitTask('task_1'));
+    yield* $(service.fireTask('task_1'));
+    yield* $(service.exitTask('task_1'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -1223,10 +1226,10 @@ it('supports deferred choice pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_1a'));
-    yield* $(interpreter.exitTask('task_1a'));
+    yield* $(service.fireTask('task_1a'));
+    yield* $(service.exitTask('task_1a'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -1285,14 +1288,14 @@ it('supports xor join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -1306,10 +1309,10 @@ it('supports xor join', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('initial_task'));
-    yield* $(interpreter.exitTask('initial_task'));
+    yield* $(service.fireTask('initial_task'));
+    yield* $(service.exitTask('initial_task'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -1327,10 +1330,10 @@ it('supports xor join', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_b'));
-    yield* $(interpreter.exitTask('task_b'));
+    yield* $(service.fireTask('task_b'));
+    yield* $(service.exitTask('task_b'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -1395,14 +1398,14 @@ it('supports interleaved parallel routing pattern', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -1416,10 +1419,10 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('initial_task'));
-    yield* $(interpreter.exitTask('initial_task'));
+    yield* $(service.fireTask('initial_task'));
+    yield* $(service.exitTask('initial_task'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -1446,9 +1449,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_a'));
+    yield* $(service.fireTask('task_a'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -1475,9 +1478,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('task_a'));
+    yield* $(service.exitTask('task_a'));
 
-    const res4 = yield* $(interpreter.getWorkflowState());
+    const res4 = yield* $(service.getWorkflowState());
 
     expect(res4).toEqual({
       id: 'workflow-1',
@@ -1510,9 +1513,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_b'));
+    yield* $(service.fireTask('task_b'));
 
-    const res5 = yield* $(interpreter.getWorkflowState());
+    const res5 = yield* $(service.getWorkflowState());
 
     expect(res5).toEqual({
       id: 'workflow-1',
@@ -1545,9 +1548,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('task_b'));
+    yield* $(service.exitTask('task_b'));
 
-    const res6 = yield* $(interpreter.getWorkflowState());
+    const res6 = yield* $(service.getWorkflowState());
 
     expect(res6).toEqual({
       id: 'workflow-1',
@@ -1585,9 +1588,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_c'));
+    yield* $(service.fireTask('task_c'));
 
-    const res7 = yield* $(interpreter.getWorkflowState());
+    const res7 = yield* $(service.getWorkflowState());
 
     expect(res7).toEqual({
       id: 'workflow-1',
@@ -1625,9 +1628,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('task_c'));
+    yield* $(service.exitTask('task_c'));
 
-    const res8 = yield* $(interpreter.getWorkflowState());
+    const res8 = yield* $(service.getWorkflowState());
 
     expect(res8).toEqual({
       id: 'workflow-1',
@@ -1671,9 +1674,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('task_d'));
+    yield* $(service.fireTask('task_d'));
 
-    const res9 = yield* $(interpreter.getWorkflowState());
+    const res9 = yield* $(service.getWorkflowState());
 
     expect(res9).toEqual({
       id: 'workflow-1',
@@ -1717,9 +1720,9 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('task_d'));
+    yield* $(service.exitTask('task_d'));
 
-    const res10 = yield* $(interpreter.getWorkflowState());
+    const res10 = yield* $(service.getWorkflowState());
 
     expect(res10).toEqual({
       id: 'workflow-1',
@@ -1769,10 +1772,10 @@ it('supports interleaved parallel routing pattern', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('finish_task'));
-    yield* $(interpreter.exitTask('finish_task'));
+    yield* $(service.fireTask('finish_task'));
+    yield* $(service.exitTask('finish_task'));
 
-    const res11 = yield* $(interpreter.getWorkflowState());
+    const res11 = yield* $(service.getWorkflowState());
 
     expect(res11).toEqual({
       id: 'workflow-1',
@@ -1859,16 +1862,16 @@ it('supports xor join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter1 = yield* $(
+    const service1 = yield* $(
       Interpreter.make(workflow1, { foo: 'B' }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter1.start());
-    yield* $(interpreter1.fireTask('A'));
-    yield* $(interpreter1.exitTask('A'));
+    yield* $(service1.start());
+    yield* $(service1.fireTask('A'));
+    yield* $(service1.exitTask('A'));
 
-    const res1_1 = yield* $(interpreter1.getWorkflowState());
+    const res1_1 = yield* $(service1.getWorkflowState());
 
     expect(res1_1).toEqual({
       id: 'workflow-1',
@@ -1890,16 +1893,16 @@ it('supports xor join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter2 = yield* $(
+    const service2 = yield* $(
       Interpreter.make(workflow2, { foo: 'C' }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter2.start());
-    yield* $(interpreter2.fireTask('A'));
-    yield* $(interpreter2.exitTask('A'));
+    yield* $(service2.start());
+    yield* $(service2.fireTask('A'));
+    yield* $(service2.exitTask('A'));
 
-    const res2_1 = yield* $(interpreter2.getWorkflowState());
+    const res2_1 = yield* $(service2.getWorkflowState());
 
     expect(res2_1).toEqual({
       id: 'workflow-2',
@@ -1921,16 +1924,16 @@ it('supports xor join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter3 = yield* $(
+    const service3 = yield* $(
       Interpreter.make(workflow3, { foo: 'not a match' }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter3.start());
-    yield* $(interpreter3.fireTask('A'));
-    yield* $(interpreter3.exitTask('A'));
+    yield* $(service3.start());
+    yield* $(service3.fireTask('A'));
+    yield* $(service3.exitTask('A'));
 
-    const res3_1 = yield* $(interpreter3.getWorkflowState());
+    const res3_1 = yield* $(service3.getWorkflowState());
 
     expect(res3_1).toEqual({
       id: 'workflow-3',
@@ -1995,7 +1998,7 @@ it('supports or split and or join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter1 = yield* $(
+    const service1 = yield* $(
       Interpreter.make(workflow1, {
         shouldBookFlight: true,
         shouldBookCar: true,
@@ -2003,9 +2006,9 @@ it('supports or split and or join', () => {
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter1.start());
+    yield* $(service1.start());
 
-    const res1_1 = yield* $(interpreter1.getWorkflowState());
+    const res1_1 = yield* $(service1.getWorkflowState());
 
     expect(res1_1).toEqual({
       id: 'workflow-1',
@@ -2017,10 +2020,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('register'));
-    yield* $(interpreter1.exitTask('register'));
+    yield* $(service1.fireTask('register'));
+    yield* $(service1.exitTask('register'));
 
-    const res1_2 = yield* $(interpreter1.getWorkflowState());
+    const res1_2 = yield* $(service1.getWorkflowState());
 
     expect(res1_2).toEqual({
       id: 'workflow-1',
@@ -2052,10 +2055,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('book_flight'));
-    yield* $(interpreter1.exitTask('book_flight'));
+    yield* $(service1.fireTask('book_flight'));
+    yield* $(service1.exitTask('book_flight'));
 
-    const res1_3 = yield* $(interpreter1.getWorkflowState());
+    const res1_3 = yield* $(service1.getWorkflowState());
 
     expect(res1_3).toEqual({
       id: 'workflow-1',
@@ -2092,10 +2095,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('book_hotel'));
-    yield* $(interpreter1.exitTask('book_hotel'));
+    yield* $(service1.fireTask('book_hotel'));
+    yield* $(service1.exitTask('book_hotel'));
 
-    const res1_4 = yield* $(interpreter1.getWorkflowState());
+    const res1_4 = yield* $(service1.getWorkflowState());
 
     expect(res1_4).toEqual({
       id: 'workflow-1',
@@ -2137,10 +2140,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('book_car'));
-    yield* $(interpreter1.exitTask('book_car'));
+    yield* $(service1.fireTask('book_car'));
+    yield* $(service1.exitTask('book_car'));
 
-    const res1_5 = yield* $(interpreter1.getWorkflowState());
+    const res1_5 = yield* $(service1.getWorkflowState());
 
     expect(res1_5).toEqual({
       id: 'workflow-1',
@@ -2194,7 +2197,7 @@ it('supports or split and or join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter2 = yield* $(
+    const service2 = yield* $(
       Interpreter.make(workflow2, {
         shouldBookFlight: true,
         shouldBookCar: false,
@@ -2202,12 +2205,12 @@ it('supports or split and or join', () => {
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter2.start());
+    yield* $(service2.start());
 
-    yield* $(interpreter2.fireTask('register'));
-    yield* $(interpreter2.exitTask('register'));
+    yield* $(service2.fireTask('register'));
+    yield* $(service2.exitTask('register'));
 
-    const res2_1 = yield* $(interpreter2.getWorkflowState());
+    const res2_1 = yield* $(service2.getWorkflowState());
 
     expect(res2_1).toEqual({
       id: 'workflow-2',
@@ -2233,10 +2236,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('book_flight'));
-    yield* $(interpreter2.exitTask('book_flight'));
+    yield* $(service2.fireTask('book_flight'));
+    yield* $(service2.exitTask('book_flight'));
 
-    const res2_2 = yield* $(interpreter2.getWorkflowState());
+    const res2_2 = yield* $(service2.getWorkflowState());
 
     expect(res2_2).toEqual({
       id: 'workflow-2',
@@ -2267,10 +2270,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('book_hotel'));
-    yield* $(interpreter2.exitTask('book_hotel'));
+    yield* $(service2.fireTask('book_hotel'));
+    yield* $(service2.exitTask('book_hotel'));
 
-    const res2_3 = yield* $(interpreter2.getWorkflowState());
+    const res2_3 = yield* $(service2.getWorkflowState());
 
     expect(res2_3).toEqual({
       id: 'workflow-2',
@@ -2313,7 +2316,7 @@ it('supports or split and or join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter3 = yield* $(
+    const service3 = yield* $(
       Interpreter.make(workflow3, {
         shouldBookFlight: false,
         shouldBookCar: false,
@@ -2321,12 +2324,12 @@ it('supports or split and or join', () => {
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter3.start());
+    yield* $(service3.start());
 
-    yield* $(interpreter3.fireTask('register'));
-    yield* $(interpreter3.exitTask('register'));
+    yield* $(service3.fireTask('register'));
+    yield* $(service3.exitTask('register'));
 
-    const res3_1 = yield* $(interpreter3.getWorkflowState());
+    const res3_1 = yield* $(service3.getWorkflowState());
 
     expect(res3_1).toEqual({
       id: 'workflow-3',
@@ -2346,10 +2349,10 @@ it('supports or split and or join', () => {
       },
     });
 
-    yield* $(interpreter3.fireTask('book_hotel'));
-    yield* $(interpreter3.exitTask('book_hotel'));
+    yield* $(service3.fireTask('book_hotel'));
+    yield* $(service3.exitTask('book_hotel'));
 
-    const res3_2 = yield* $(interpreter3.getWorkflowState());
+    const res3_2 = yield* $(service3.getWorkflowState());
 
     expect(res3_2).toEqual({
       id: 'workflow-3',
@@ -2416,14 +2419,14 @@ it('supports multiple or splits and or joins (1)', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter1 = yield* $(
+    const service1 = yield* $(
       Interpreter.make(workflow1, { isTaskDEnabled: true }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter1.start());
+    yield* $(service1.start());
 
-    const res1_1 = yield* $(interpreter1.getWorkflowState());
+    const res1_1 = yield* $(service1.getWorkflowState());
 
     expect(res1_1).toEqual({
       id: 'workflow-1',
@@ -2435,10 +2438,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('A'));
-    yield* $(interpreter1.exitTask('A'));
+    yield* $(service1.fireTask('A'));
+    yield* $(service1.exitTask('A'));
 
-    const res1_2 = yield* $(interpreter1.getWorkflowState());
+    const res1_2 = yield* $(service1.getWorkflowState());
 
     expect(res1_2).toEqual({
       id: 'workflow-1',
@@ -2456,10 +2459,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('B'));
-    yield* $(interpreter1.exitTask('B'));
+    yield* $(service1.fireTask('B'));
+    yield* $(service1.exitTask('B'));
 
-    const res1_3 = yield* $(interpreter1.getWorkflowState());
+    const res1_3 = yield* $(service1.getWorkflowState());
 
     expect(res1_3).toEqual({
       id: 'workflow-1',
@@ -2478,10 +2481,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('C'));
-    yield* $(interpreter1.exitTask('C'));
+    yield* $(service1.fireTask('C'));
+    yield* $(service1.exitTask('C'));
 
-    const res1_4 = yield* $(interpreter1.getWorkflowState());
+    const res1_4 = yield* $(service1.getWorkflowState());
 
     expect(res1_4).toEqual({
       id: 'workflow-1',
@@ -2503,10 +2506,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('D'));
-    yield* $(interpreter1.exitTask('D'));
+    yield* $(service1.fireTask('D'));
+    yield* $(service1.exitTask('D'));
 
-    const res1_5 = yield* $(interpreter1.getWorkflowState());
+    const res1_5 = yield* $(service1.getWorkflowState());
 
     expect(res1_5).toEqual({
       id: 'workflow-1',
@@ -2530,10 +2533,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('E'));
-    yield* $(interpreter1.exitTask('E'));
+    yield* $(service1.fireTask('E'));
+    yield* $(service1.exitTask('E'));
 
-    const res1_6 = yield* $(interpreter1.getWorkflowState());
+    const res1_6 = yield* $(service1.getWorkflowState());
 
     expect(res1_6).toEqual({
       id: 'workflow-1',
@@ -2565,14 +2568,14 @@ it('supports multiple or splits and or joins (1)', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter2 = yield* $(
+    const service2 = yield* $(
       Interpreter.make(workflow2, { isTaskDEnabled: false }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter2.start());
+    yield* $(service2.start());
 
-    const res2_1 = yield* $(interpreter2.getWorkflowState());
+    const res2_1 = yield* $(service2.getWorkflowState());
 
     expect(res2_1).toEqual({
       id: 'workflow-2',
@@ -2584,10 +2587,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('A'));
-    yield* $(interpreter2.exitTask('A'));
+    yield* $(service2.fireTask('A'));
+    yield* $(service2.exitTask('A'));
 
-    const res2_2 = yield* $(interpreter2.getWorkflowState());
+    const res2_2 = yield* $(service2.getWorkflowState());
 
     expect(res2_2).toEqual({
       id: 'workflow-2',
@@ -2613,10 +2616,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('B'));
-    yield* $(interpreter2.exitTask('B'));
+    yield* $(service2.fireTask('B'));
+    yield* $(service2.exitTask('B'));
 
-    const res2_3 = yield* $(interpreter2.getWorkflowState());
+    const res2_3 = yield* $(service2.getWorkflowState());
 
     expect(res2_3).toEqual({
       id: 'workflow-2',
@@ -2647,10 +2650,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('C'));
-    yield* $(interpreter2.exitTask('C'));
+    yield* $(service2.fireTask('C'));
+    yield* $(service2.exitTask('C'));
 
-    const res2_4 = yield* $(interpreter2.getWorkflowState());
+    const res2_4 = yield* $(service2.getWorkflowState());
 
     expect(res2_4).toEqual({
       id: 'workflow-2',
@@ -2687,10 +2690,10 @@ it('supports multiple or splits and or joins (1)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('E'));
-    yield* $(interpreter2.exitTask('E'));
+    yield* $(service2.fireTask('E'));
+    yield* $(service2.exitTask('E'));
 
-    const res2_5 = yield* $(interpreter2.getWorkflowState());
+    const res2_5 = yield* $(service2.getWorkflowState());
 
     expect(res2_5).toEqual({
       id: 'workflow-2',
@@ -2775,14 +2778,14 @@ it('supports multiple or splits and or joins (2)', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter1 = yield* $(
+    const service1 = yield* $(
       Interpreter.make(workflow1, { isBToCEnabled: true }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter1.start());
+    yield* $(service1.start());
 
-    const res1_1 = yield* $(interpreter1.getWorkflowState());
+    const res1_1 = yield* $(service1.getWorkflowState());
 
     expect(res1_1).toEqual({
       id: 'workflow-1',
@@ -2794,10 +2797,10 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('A'));
-    yield* $(interpreter1.exitTask('A'));
+    yield* $(service1.fireTask('A'));
+    yield* $(service1.exitTask('A'));
 
-    const res1_2 = yield* $(interpreter1.getWorkflowState());
+    const res1_2 = yield* $(service1.getWorkflowState());
 
     expect(res1_2).toEqual({
       id: 'workflow-1',
@@ -2814,10 +2817,10 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('B'));
-    yield* $(interpreter1.exitTask('B'));
+    yield* $(service1.fireTask('B'));
+    yield* $(service1.exitTask('B'));
 
-    const res1_3 = yield* $(interpreter1.getWorkflowState());
+    const res1_3 = yield* $(service1.getWorkflowState());
 
     expect(res1_3).toEqual({
       id: 'workflow-1',
@@ -2836,10 +2839,10 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter1.fireTask('C'));
-    yield* $(interpreter1.exitTask('C'));
+    yield* $(service1.fireTask('C'));
+    yield* $(service1.exitTask('C'));
 
-    const res1_4 = yield* $(interpreter1.getWorkflowState());
+    const res1_4 = yield* $(service1.getWorkflowState());
 
     expect(res1_4).toEqual({
       id: 'workflow-1',
@@ -2866,14 +2869,14 @@ it('supports multiple or splits and or joins (2)', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter2 = yield* $(
+    const service2 = yield* $(
       Interpreter.make(workflow2, { isBToCEnabled: false }),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter2.start());
+    yield* $(service2.start());
 
-    const res2_1 = yield* $(interpreter2.getWorkflowState());
+    const res2_1 = yield* $(service2.getWorkflowState());
 
     expect(res2_1).toEqual({
       id: 'workflow-2',
@@ -2885,10 +2888,10 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('A'));
-    yield* $(interpreter2.exitTask('A'));
+    yield* $(service2.fireTask('A'));
+    yield* $(service2.exitTask('A'));
 
-    const res2_2 = yield* $(interpreter2.getWorkflowState());
+    const res2_2 = yield* $(service2.getWorkflowState());
 
     expect(res2_2).toEqual({
       id: 'workflow-2',
@@ -2913,10 +2916,10 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('B'));
-    yield* $(interpreter2.exitTask('B'));
+    yield* $(service2.fireTask('B'));
+    yield* $(service2.exitTask('B'));
 
-    const res2_3 = yield* $(interpreter2.getWorkflowState());
+    const res2_3 = yield* $(service2.getWorkflowState());
 
     expect(res2_3).toEqual({
       id: 'workflow-2',
@@ -2947,10 +2950,10 @@ it('supports multiple or splits and or joins (2)', () => {
       },
     });
 
-    yield* $(interpreter2.fireTask('C'));
-    yield* $(interpreter2.exitTask('C'));
+    yield* $(service2.fireTask('C'));
+    yield* $(service2.exitTask('C'));
 
-    const res2_4 = yield* $(interpreter2.getWorkflowState());
+    const res2_4 = yield* $(service2.getWorkflowState());
 
     expect(res2_4).toEqual({
       id: 'workflow-2',
@@ -3034,14 +3037,14 @@ it('supports or joins and cancellation regions', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -3053,10 +3056,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('A'));
-    yield* $(interpreter.exitTask('A'));
+    yield* $(service.fireTask('A'));
+    yield* $(service.exitTask('A'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -3074,10 +3077,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('C'));
-    yield* $(interpreter.exitTask('C'));
+    yield* $(service.fireTask('C'));
+    yield* $(service.exitTask('C'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -3096,10 +3099,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('B'));
-    yield* $(interpreter.exitTask('B'));
+    yield* $(service.fireTask('B'));
+    yield* $(service.exitTask('B'));
 
-    const res4 = yield* $(interpreter.getWorkflowState());
+    const res4 = yield* $(service.getWorkflowState());
 
     expect(res4).toEqual({
       id: 'workflow-1',
@@ -3122,10 +3125,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('E'));
-    yield* $(interpreter.exitTask('E'));
+    yield* $(service.fireTask('E'));
+    yield* $(service.exitTask('E'));
 
-    const res5 = yield* $(interpreter.getWorkflowState());
+    const res5 = yield* $(service.getWorkflowState());
 
     expect(res5).toEqual({
       id: 'workflow-1',
@@ -3149,10 +3152,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('B'));
-    yield* $(interpreter.exitTask('B'));
+    yield* $(service.fireTask('B'));
+    yield* $(service.exitTask('B'));
 
-    const res6 = yield* $(interpreter.getWorkflowState());
+    const res6 = yield* $(service.getWorkflowState());
 
     expect(res6).toEqual({
       id: 'workflow-1',
@@ -3176,10 +3179,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('D'));
-    yield* $(interpreter.exitTask('D'));
+    yield* $(service.fireTask('D'));
+    yield* $(service.exitTask('D'));
 
-    const res7 = yield* $(interpreter.getWorkflowState());
+    const res7 = yield* $(service.getWorkflowState());
 
     expect(res7).toEqual({
       id: 'workflow-1',
@@ -3205,10 +3208,10 @@ it('supports or joins and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('F'));
-    yield* $(interpreter.exitTask('F'));
+    yield* $(service.fireTask('F'));
+    yield* $(service.exitTask('F'));
 
-    const res8 = yield* $(interpreter.getWorkflowState());
+    const res8 = yield* $(service.getWorkflowState());
 
     expect(res8).toEqual({
       id: 'workflow-1',
@@ -3281,14 +3284,14 @@ it('supports or joins, loops and cancellation regions', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -3300,10 +3303,10 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('A'));
-    yield* $(interpreter.exitTask('A'));
+    yield* $(service.fireTask('A'));
+    yield* $(service.exitTask('A'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -3319,10 +3322,10 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('B'));
-    yield* $(interpreter.exitTask('B'));
+    yield* $(service.fireTask('B'));
+    yield* $(service.exitTask('B'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -3341,10 +3344,10 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('C'));
-    yield* $(interpreter.exitTask('C'));
+    yield* $(service.fireTask('C'));
+    yield* $(service.exitTask('C'));
 
-    const res4 = yield* $(interpreter.getWorkflowState());
+    const res4 = yield* $(service.getWorkflowState());
 
     expect(res4).toEqual({
       id: 'workflow-1',
@@ -3365,10 +3368,10 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('D'));
-    yield* $(interpreter.exitTask('D'));
+    yield* $(service.fireTask('D'));
+    yield* $(service.exitTask('D'));
 
-    const res5 = yield* $(interpreter.getWorkflowState());
+    const res5 = yield* $(service.getWorkflowState());
 
     expect(res5).toEqual({
       id: 'workflow-1',
@@ -3389,10 +3392,10 @@ it('supports or joins, loops and cancellation regions', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('E'));
-    yield* $(interpreter.exitTask('E'));
+    yield* $(service.fireTask('E'));
+    yield* $(service.exitTask('E'));
 
-    const res6 = yield* $(interpreter.getWorkflowState());
+    const res6 = yield* $(service.getWorkflowState());
 
     expect(res6).toEqual({
       id: 'workflow-1',
@@ -3483,19 +3486,19 @@ it('calls onStart and onEnd activities (1)', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    const start = yield* $(interpreter.start('starting'));
+    const start = yield* $(service.start('starting'));
 
     expect(start).toEqual(`from onStart activity: starting`);
 
-    yield* $(interpreter.fireTask('A'));
-    yield* $(interpreter.exitTask('A'));
+    yield* $(service.fireTask('A'));
+    yield* $(service.exitTask('A'));
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -3618,16 +3621,16 @@ it('calls onStart and onEnd activities (2)', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    const start = yield* $(interpreter.start('starting'));
+    const start = yield* $(service.start('starting'));
 
     expect(start).toEqual(`from onStart activity: starting`);
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -3700,14 +3703,14 @@ it('can supports workflow cancellation', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    const interpreter = yield* $(
+    const service = yield* $(
       Interpreter.make(workflow, {}),
       Effect.provideService(StateManager, stateManager)
     );
 
-    yield* $(interpreter.start());
+    yield* $(service.start());
 
-    const res1 = yield* $(interpreter.getWorkflowState());
+    const res1 = yield* $(service.getWorkflowState());
 
     expect(res1).toEqual({
       id: 'workflow-1',
@@ -3721,9 +3724,9 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('scan_goods'));
+    yield* $(service.fireTask('scan_goods'));
 
-    const res2 = yield* $(interpreter.getWorkflowState());
+    const res2 = yield* $(service.getWorkflowState());
 
     expect(res2).toEqual({
       id: 'workflow-1',
@@ -3737,9 +3740,9 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.exitTask('scan_goods'));
+    yield* $(service.exitTask('scan_goods'));
 
-    const res3 = yield* $(interpreter.getWorkflowState());
+    const res3 = yield* $(service.getWorkflowState());
 
     expect(res3).toEqual({
       id: 'workflow-1',
@@ -3759,9 +3762,9 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.fireTask('pay'));
+    yield* $(service.fireTask('pay'));
 
-    const res4 = yield* $(interpreter.getWorkflowState());
+    const res4 = yield* $(service.getWorkflowState());
 
     expect(res4).toEqual({
       id: 'workflow-1',
@@ -3781,9 +3784,9 @@ it('can supports workflow cancellation', () => {
       },
     });
 
-    yield* $(interpreter.cancelWorkflow());
+    yield* $(service.cancelWorkflow());
 
-    const res5 = yield* $(interpreter.getWorkflowState());
+    const res5 = yield* $(service.getWorkflowState());
 
     expect(res5).toEqual({
       id: 'workflow-1',

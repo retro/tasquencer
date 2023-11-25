@@ -8,6 +8,7 @@ import {
   SplitType,
   TaskActionsService,
   WorkflowId,
+  activeWorkflowInstanceStates,
   isValidTaskInstanceTransition,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
@@ -135,12 +136,17 @@ export class CompositeTask extends BaseTask {
           )
         );
 
-        const startSubWorkflow = () =>
+        const initializeWorkflow = () =>
           Effect.gen(function* ($) {
             const workflow = yield* $(
               self.subWorkflow.initialize({ workflowId, taskName: self.name })
             );
             return workflow;
+          }).pipe(Effect.provideService(State, stateManager));
+
+        const startWorkflow = (workflowId: WorkflowId) =>
+          Effect.gen(function* ($) {
+            yield* $(self.subWorkflow.interpreter.start(workflowId, {}));
           }).pipe(Effect.provideService(State, stateManager));
 
         const result = yield* $(
@@ -151,7 +157,7 @@ export class CompositeTask extends BaseTask {
             fireTask() {
               return pipe(
                 performFire,
-                Effect.map(() => ({ startSubWorkflow })),
+                Effect.map(() => ({ startWorkflow, initializeWorkflow })),
                 Effect.provideService(State, stateManager)
               );
             },
@@ -247,10 +253,14 @@ export class CompositeTask extends BaseTask {
       const stateManager = yield* $(State);
       const taskActionsService = yield* $(TaskActionsService);
       const taskWorkItems = yield* $(
-        stateManager.getWorkItems(workflowId, self.name)
+        stateManager.getWorkflows(workflowId, self.name)
       );
 
-      if (!taskWorkItems.some((workItem) => workItem.state === 'initialized')) {
+      if (
+        !taskWorkItems.some((workItem) =>
+          activeWorkflowInstanceStates.has(workItem.state)
+        )
+      ) {
         yield* $(taskActionsService.exitTask(self.name));
       }
     });

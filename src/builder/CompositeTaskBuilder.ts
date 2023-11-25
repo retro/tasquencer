@@ -269,7 +269,7 @@ export class CompositeTaskBuilder<
         activities as unknown as CompositeTaskActivities,
         { joinType, splitType }
       );
-
+      subWorkflow.setParentTask(compositeTask);
       workflow.addTask(compositeTask);
     });
   }

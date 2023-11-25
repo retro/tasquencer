@@ -184,9 +184,13 @@ export interface State {
 
   getWorkItems(
     workflowId: WorkflowId,
-    taskName: TaskName,
-    workItemState?: WorkItemState
+    taskName: TaskName
   ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItem[]>;
+
+  getWorkflows(
+    workflowId: WorkflowId,
+    taskName: TaskName
+  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkflowInstance[]>;
 
   inspect(): Effect.Effect<never, never, Store>;
 }

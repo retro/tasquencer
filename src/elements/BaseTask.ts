@@ -159,6 +159,10 @@ export abstract class BaseTask {
     unknown
   >;
 
+  abstract maybeExit(
+    workflowId: WorkflowId
+  ): Effect.Effect<State | TaskActionsService, TaskDoesNotExistInStore, void>;
+
   cancelCancellationRegion(workflowId: WorkflowId, context: object) {
     const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>
       t.cancel(workflowId, context)

@@ -1,2 +1,2 @@
 export * as Builder from './builder.js';
-export * as Interpreter from './interpreter.js';
+export * as Service from './Service.js';

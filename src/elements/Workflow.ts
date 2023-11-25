@@ -5,9 +5,14 @@ import * as TB from '../builder/TaskBuilder.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
+  ConditionDoesNotExistInStore,
   EndConditionDoesNotExist,
+  InvalidTaskStateTransition,
+  InvalidWorkflowStateTransition,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
+  TaskDoesNotExistInStore,
+  WorkflowDoesNotExist,
 } from '../errors.js';
 import {
   ConditionName,
@@ -18,8 +23,10 @@ import {
   WorkflowOnStartPayload,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
+import { CompositeTask } from './CompositeTask.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
+import { Interpreter } from './Workflow/Interpreter.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
@@ -54,12 +61,14 @@ export class Workflow<
   private startCondition?: Condition;
   private endCondition?: Condition;
   readonly name: string;
+  readonly interpreter: Interpreter;
   readonly onStart: OnStart<Context>;
   readonly onEnd: OnEnd<Context>;
+  private parentTask?: CompositeTask;
 
   constructor(name: string, onStart: OnStart<Context>, onEnd: OnEnd<Context>) {
-    //this.id = WorkflowInstanceId(id);
     this.name = name;
+    this.interpreter = new Interpreter(this);
     this.onStart = onStart;
     this.onEnd = onEnd;
   }
@@ -92,6 +101,10 @@ export class Workflow<
     );
   }
 
+  setParentTask(parentTask: CompositeTask) {
+    this.parentTask = parentTask;
+  }
+
   initialize(parent: WorkflowInstanceParent = null) {
     const { tasks, conditions, name } = this;
     return Effect.gen(function* ($) {
@@ -111,10 +124,44 @@ export class Workflow<
     });
   }
 
-  end(id: WorkflowId) {
+  start(id: WorkflowId) {
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      return yield* $(stateManager.updateWorkflowState(id, 'exited'));
+      return yield* $(stateManager.updateWorkflowState(id, 'started'));
+    });
+  }
+
+  end(
+    id: WorkflowId
+  ): Effect.Effect<
+    State,
+    | ConditionDoesNotExist
+    | WorkflowDoesNotExist
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | ConditionDoesNotExistInStore
+    | EndConditionDoesNotExist,
+    void
+  > {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const workflow = yield* $(stateManager.getWorkflow(id));
+      const result = yield* $(
+        stateManager.updateWorkflowState(id, 'completed')
+      );
+      if (self.parentTask && workflow.parent?.workflowId) {
+        yield* $(
+          self.parentTask.workflow.interpreter.maybeExitTask(
+            workflow.parent.workflowId,
+            self.parentTask.name
+          ),
+          Effect.provideService(State, stateManager)
+        );
+      }
+      return result;
     });
   }
 

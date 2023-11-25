@@ -12,6 +12,7 @@ import {
   TaskState,
   WorkItemId,
   WorkflowId,
+  activeWorkItemInstanceStates,
   isValidTaskInstanceTransition,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
@@ -257,7 +258,11 @@ export class Task extends BaseTask {
         stateManager.getWorkItems(workflowId, self.name)
       );
 
-      if (!taskWorkItems.some((workItem) => workItem.state === 'initialized')) {
+      if (
+        !taskWorkItems.some((workItem) =>
+          activeWorkItemInstanceStates.has(workItem.state)
+        )
+      ) {
         yield* $(taskActionsService.exitTask(self.name));
       }
     });

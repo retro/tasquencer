@@ -1,9 +1,11 @@
 import { Effect } from 'effect';
+import { Get, Simplify } from 'type-fest';
 import { expect, it } from 'vitest';
 
 import * as Service from '../Service.js';
 import * as Builder from '../builder.js';
 import { compositeTask } from '../builder.js';
+import { WorkflowBuilderTaskActivitiesOutputs } from '../builder/WorkflowBuilder.js';
 import { IdGenerator, TaskName, WorkItemId, WorkflowId } from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
@@ -39,9 +41,9 @@ function makeIdGenerator(): IdGenerator {
 const c = Builder.compositeTask<{ bar: string }>().withSubWorkflow(w1);*/
 
 it('can run net with composite tasks', () => {
-  const subWorkflow = Builder.workflow('subWorkflow')
+  const subWorkflow = Builder.workflow<{ bar: string }>('subWorkflow')
     .startCondition('subStart')
-    .task('subT1')
+    .task('subT1', (t) => t().onFire(() => Effect.succeed(1)))
     .endCondition('subEnd')
     .connectCondition('subStart', (to) => to.task('subT1'))
     .connectTask('subT1', (to) => to.condition('subEnd'));
@@ -55,13 +57,18 @@ it('can run net with composite tasks', () => {
         .onFire(({ fireTask }) =>
           Effect.gen(function* ($) {
             const { initializeWorkflow } = yield* $(fireTask());
-            return yield* $(initializeWorkflow({ foo: 'bar' }));
+            return yield* $(initializeWorkflow({ bar: 'foo' }));
           })
         )
     )
     .endCondition('end')
     .connectCondition('start', (to) => to.task('t1'))
     .connectTask('t1', (to) => to.condition('end'));
+
+  type A = typeof workflowDefinition;
+  type B = WorkflowBuilderTaskActivitiesOutputs<A>;
+
+  type C = Get<B, ['t1', 'someId', 'subT1']>;
 
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -73,7 +80,7 @@ it('can run net with composite tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(service.startRootWorkflow());
+    yield* $(service.start());
 
     const subWorkflow = yield* $(service.fireTask('t1'));
 
@@ -84,10 +91,10 @@ it('can run net with composite tasks', () => {
     const subWorkflow2 = yield* $(service.initializeWorkflow(['t1']));
 
     yield* $(service.startWorkflow(['t1', subWorkflow.id]));
-    yield* $(service.fireTask(['t1', subWorkflow.id, 'subT1']));
+    const a = yield* $(service.fireTask(`t1.${subWorkflow.id}.subT1`));
 
     yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
-    yield* $(service.fireTask(['t1', subWorkflow2.id, 'subT1']));
+    const b = yield* $(service.fireTask(['t1', subWorkflow2.id, 'subT1']));
 
     console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
     expect(1).toBe(1);

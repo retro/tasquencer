@@ -1,4 +1,5 @@
 import { Effect, Option, Queue } from 'effect';
+import { Get } from 'type-fest';
 
 import { State } from './State.js';
 import { TaskActivitiesReturnType } from './builder/TaskBuilder.js';
@@ -14,8 +15,8 @@ import * as StateImpl from './state/StateImpl.js';
 import { IdGenerator, TaskName, WorkItemId, WorkflowId } from './types.js';
 import { nanoidIdGenerator } from './util.js';
 
-function pathAsArray(path: string | string[]) {
-  return typeof path === 'string' ? [path] : path;
+function pathAsArray(path: string | string[] | readonly string[]) {
+  return typeof path === 'string' ? path.split('.') : path;
 }
 
 type QueueItem =
@@ -24,7 +25,7 @@ type QueueItem =
 
 // TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Service<
-  TasksActivitiesOutputs extends Record<string, TaskActivitiesReturnType>,
+  TasksActivitiesOutputs,
   OnStartReturnType = unknown,
   R = never,
   E = never
@@ -38,11 +39,11 @@ export class Service<
   ) {}
   // TODO: Check if workflow was already started
 
-  startRootWorkflow(input?: unknown) {
+  start(input?: unknown) {
     return this.startWorkflow([], input);
   }
 
-  cancelRootWorkflow() {
+  cancel() {
     return this.cancelWorkflow([]);
   }
 
@@ -110,10 +111,7 @@ export class Service<
     }).pipe(Effect.provideService(State, this.state));
   }
 
-  fireTask<T extends keyof TasksActivitiesOutputs, I>(
-    taskName: (T & string) | string[],
-    input?: I
-  ) {
+  fireTask<T extends string | readonly string[], I>(taskName: T, input?: I) {
     const self = this;
     return Effect.gen(function* ($) {
       const executionPlan = yield* $(
@@ -132,7 +130,7 @@ export class Service<
         yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
       }
 
-      return result;
+      return result as Get<Get<TasksActivitiesOutputs, T>, 'onFire'>;
     }).pipe(Effect.provideService(State, this.state));
   }
 
@@ -209,7 +207,7 @@ export class Service<
     });
   }
 
-  startWorkItem(path: [string], payload: unknown) {
+  startWorkItem(path: readonly [string], payload: unknown) {
     const self = this;
     return Effect.gen(function* ($) {
       const executionPlan = yield* $(
@@ -295,7 +293,7 @@ export class Service<
     return this.state.inspect();
   }
 
-  private taskPathToExecutionPlan(path: string[]) {
+  private taskPathToExecutionPlan(path: readonly string[]) {
     if (path.length % 2 === 0) {
       // Path should contain an odd number of items: [taskName, workflowId, taskName...]
       return Effect.fail(new InvalidPath({ path, pathType: 'task' }));
@@ -404,7 +402,7 @@ export class Service<
     });
   }
 
-  private workflowPathToExecutionPlan(path: string[]) {
+  private workflowPathToExecutionPlan(path: readonly string[]) {
     if (path.length % 2 === 1) {
       // Path should contain an even number of items: [taskName, workflowId...]
       return Effect.fail(new InvalidPath({ path, pathType: 'workflow' }));
@@ -508,7 +506,7 @@ export class Service<
     });
   }
 
-  private workItemPathToExecutionPlan(path: string[]) {
+  private workItemPathToExecutionPlan(path: readonly string[]) {
     if (path.length % 2 === 1) {
       // Path should contain an even number of items, and last item should be the workItemId: [taskName, workflowId... taskName, workItemId]
       return Effect.fail(new InvalidPath({ path, pathType: 'workItem' }));

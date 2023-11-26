@@ -4,7 +4,6 @@ import { State } from '../../State.js';
 import { InvalidTaskStateTransition } from '../../errors.js';
 import {
   TaskActionsService,
-  WorkItemId,
   WorkflowId,
   WorkflowInstanceParent,
   finalWorkflowInstanceStates,
@@ -48,9 +47,6 @@ export class Interpreter {
                 self.getTaskActionsService(workflowId)
               )
             );
-
-            yield* $(self.runQueue(workflowId));
-            yield* $(self.maybeEnd(workflowId));
           })
         )
       );
@@ -194,9 +190,6 @@ export class Interpreter {
         self.exitTaskWithoutRunningQueue(workflowId, taskName, input)
       );
 
-      yield* $(self.runQueue(workflowId));
-      yield* $(self.maybeEnd(workflowId));
-
       return output;
     });
   }
@@ -240,9 +233,6 @@ export class Interpreter {
         self.maybeExitTaskWithoutRunningQueue(workflowId, taskName)
       );
 
-      yield* $(self.runQueue(workflowId));
-      yield* $(self.maybeEnd(workflowId));
-
       return output;
     });
   }
@@ -255,31 +245,6 @@ export class Interpreter {
         return yield* $(task.getWorkItems(workflowId));
       }
       return []; // TODO: Should fail
-    });
-  }
-
-  completeWorkItem(
-    workflowId: WorkflowId,
-    taskName: string,
-    workItemId: WorkItemId
-  ) {
-    const self = this;
-    return Effect.gen(function* ($) {
-      const task = yield* $(self.workflow.getTask(taskName));
-      if (task instanceof Task) {
-        const result = yield* $(
-          task.completeWorkItem(workflowId, workItemId),
-          Effect.provideService(
-            TaskActionsService,
-            self.getTaskActionsService(workflowId)
-          )
-        );
-        yield* $(self.runQueue(workflowId));
-        yield* $(self.maybeEnd(workflowId));
-        return result;
-      } else {
-        return; // TODO: Should fail
-      }
     });
   }
 

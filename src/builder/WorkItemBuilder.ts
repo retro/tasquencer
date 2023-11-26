@@ -58,7 +58,7 @@ export type WorkItemBuilderE<T> = T extends WorkItemBuilder<
 export type AnyWorkItemActivities = WorkItemActivities<any, any>;
 
 export class WorkItemBuilder<
-  C extends object,
+  C,
   P,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   WA extends WorkItemActivities<any, any>,
@@ -164,6 +164,6 @@ export class WorkItemBuilder<
   }
 }
 
-export function workItem<C extends object, P>() {
+export function workItem<C, P>() {
   return new WorkItemBuilder<C, P, WorkItemActivities<C, P>>().initialize();
 }

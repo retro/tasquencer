@@ -86,14 +86,16 @@ export type TaskBuilderE<T> = T extends TaskBuilder<
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-export type AnyTaskBuilder<C extends object = object> = TaskBuilder<
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AnyTaskBuilder<C = any> = TaskBuilder<
   C,
   TaskActivities<C>,
   JoinType | undefined,
   SplitType | undefined
 >;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
-export type InitializedTaskBuilder<C extends object = object> = TaskBuilder<
+export type InitializedTaskBuilder<C> = TaskBuilder<
   C,
   TaskActivities<C>,
   undefined,
@@ -105,7 +107,7 @@ export interface TaskActivitiesReturnType {
 }
 
 export class TaskBuilder<
-  C extends object,
+  C,
   TA extends TaskActivities<C>,
   JT extends JoinType | undefined,
   ST extends SplitType | undefined,
@@ -136,8 +138,8 @@ export class TaskBuilder<
   initialize() {
     return this.onDisable(() => Effect.unit)
       .onEnable(() => Effect.unit)
-      .onFire(({ input }) => Effect.succeed(input))
-      .onExit(({ input }) => Effect.succeed(input))
+      .onFire((_, input) => Effect.succeed(input))
+      .onExit(() => Effect.unit)
       .onCancel(() => Effect.unit);
   }
 
@@ -181,7 +183,8 @@ export class TaskBuilder<
 
   onFire<
     F extends (
-      payload: TaskOnFirePayload<C, WIP>
+      payload: TaskOnFirePayload<C, WIP>,
+      input: unknown
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -290,7 +293,8 @@ export class TaskBuilder<
     const task = new Task(
       name,
       workflow,
-      activities as unknown as TaskActivities,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      activities as unknown as TaskActivities<any>,
       this.workItem.build() as AnyWorkItemActivities,
       {
         splitType,
@@ -303,6 +307,6 @@ export class TaskBuilder<
   }
 }
 
-export function task<C extends object = object>() {
-  return new TaskBuilder<C, TaskActivities, never, never>().initialize();
+export function task<C>() {
+  return new TaskBuilder<C, TaskActivities<C>, never, never>().initialize();
 }

@@ -1,7 +1,6 @@
 import { Effect, pipe } from 'effect';
 
 import { State } from '../State.js';
-import * as TB from '../builder/TaskBuilder.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
@@ -50,11 +49,8 @@ type OnEnd<C> = (
 export class Workflow<
   _R = never,
   _E = never,
-  Context extends object = object,
-  _WorkflowTaskActivitiesOutputs extends Record<
-    string,
-    TB.TaskActivitiesReturnType
-  > = Record<string, TB.TaskActivitiesReturnType>,
+  Context = unknown,
+  _WorkflowTaskActivitiesOutputs = unknown,
   _OnStartReturnType = unknown
 > {
   readonly tasks: Record<string, BaseTask> = {};

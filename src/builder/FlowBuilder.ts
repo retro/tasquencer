@@ -108,7 +108,7 @@ export class OrXorTaskFlowBuilder<
   R = never,
   E = never,
   HasDefault = never,
-  Context extends object = object
+  Context = unknown
 > {
   private order = 0;
   readonly from: string;

@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { Simplify } from 'type-fest';
 
 import { CompositeTask } from '../elements/CompositeTask.js';
 import { Workflow } from '../elements/Workflow.js';
@@ -23,6 +24,7 @@ import {
   WorkflowBuilderC,
   WorkflowBuilderE,
   WorkflowBuilderR,
+  WorkflowBuilderTaskActivitiesOutputs,
 } from './WorkflowBuilder.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -85,31 +87,29 @@ export type CompositeTaskBuilderE<T> = T extends CompositeTaskBuilder<
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-export type AnyCompositeTaskBuilder<C extends object = object> =
-  CompositeTaskBuilder<
-    C,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    any,
-    CompositeTaskActivities<C>,
-    JoinType | undefined,
-    SplitType | undefined
-  >;
+export type AnyCompositeTaskBuilder<C = unknown> = CompositeTaskBuilder<
+  C,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  CompositeTaskActivities<C>,
+  JoinType | undefined,
+  SplitType | undefined
+>;
 
-export type InitializedCompositeTaskBuilder<C extends object = object> =
-  CompositeTaskBuilder<
-    C,
-    object,
-    CompositeTaskActivities<C>,
-    undefined,
-    undefined
-  >;
+export type InitializedCompositeTaskBuilder<C> = CompositeTaskBuilder<
+  C,
+  object,
+  CompositeTaskActivities<C>,
+  undefined,
+  undefined
+>;
 
 export interface CompositeTaskActivitiesReturnType {
   onFire: unknown;
 }
 
 export class CompositeTaskBuilder<
-  C extends object,
+  C,
   WC extends object,
   TA extends CompositeTaskActivities<C>,
   JT extends JoinType | undefined,
@@ -267,7 +267,7 @@ export class CompositeTaskBuilder<
         name,
         workflow,
         subWorkflow,
-        activities as unknown as CompositeTaskActivities,
+        activities as unknown as CompositeTaskActivities<C>,
         { joinType, splitType }
       );
       subWorkflow.setParentTask(compositeTask);
@@ -276,11 +276,11 @@ export class CompositeTaskBuilder<
   }
 }
 
-export interface InitialCompositeTaskFnReturnType<C extends object> {
+export interface InitialCompositeTaskFnReturnType<C> {
   withSubWorkflow: (w: AnyWorkflowBuilder) => AnyCompositeTaskBuilder<C>;
 }
 
-export function compositeTask<C extends object>() {
+export function compositeTask<C>() {
   return {
     withSubWorkflow<W extends AnyWorkflowBuilder>(workflow: W) {
       return new CompositeTaskBuilder<
@@ -289,7 +289,10 @@ export function compositeTask<C extends object>() {
         CompositeTaskActivities<C>,
         undefined,
         undefined,
-        CompositeTaskActivitiesReturnType,
+        Simplify<
+          CompositeTaskActivitiesReturnType &
+            Record<string, WorkflowBuilderTaskActivitiesOutputs<W>>
+        >,
         WorkflowBuilderR<W>,
         WorkflowBuilderE<W>
       >(workflow).initialize();

@@ -35,10 +35,7 @@ type IsXorOrOrJoinSplit<T> = T extends never
   ? true
   : never;
 
-type TasksActivitiesOutputs = Record<
-  string,
-  { onExit: unknown; onFire: unknown }
->;
+type TasksActivitiesOutputs = Record<string, { onFire: unknown }>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnyWorkflowBuilder = WorkflowBuilder<
@@ -110,9 +107,26 @@ export type WorkflowBuilderE<T> = T extends WorkflowBuilder<
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type WorkflowBuilderTaskActivitiesOutputs<T> = T extends WorkflowBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer AO
+>
+  ? AO
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 // TODO: implement invariant checking
 export class WorkflowBuilder<
-  WBContext extends object,
+  WBContext,
   R,
   E,
   WBTasks = never,
@@ -549,12 +563,7 @@ export class WorkflowBuilder<
         R,
         E,
         WBContext,
-        {
-          [K in WBTasks & string]: {
-            onFire: WBTasksActivitiesOutputs[K]['onFire'];
-            onExit: WBTasksActivitiesOutputs[K]['onExit'];
-          };
-        },
+        WBTasksActivitiesOutputs,
         OnStartReturnType
         // non-null assertion is ok here, because onStartFn and onEndFn are set
         // in the initialize method which is automatically called by the `workflow`

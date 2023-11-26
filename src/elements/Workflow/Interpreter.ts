@@ -1,7 +1,14 @@
 import { Effect } from 'effect';
 
+import { State } from '../../State.js';
 import { InvalidTaskStateTransition } from '../../errors.js';
-import { TaskActionsService, WorkItemId, WorkflowId } from '../../types.js';
+import {
+  TaskActionsService,
+  WorkItemId,
+  WorkflowId,
+  WorkflowInstanceParent,
+  finalWorkflowInstanceStates,
+} from '../../types.js';
 import { Task } from '../Task.js';
 import { Workflow } from '../Workflow.js';
 
@@ -14,14 +21,19 @@ export class Interpreter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(private readonly workflow: Workflow<any, any, any, any, any>) {}
 
-  getContext() {
-    return {};
+  initializeWorkflow(
+    context: unknown,
+    parent: WorkflowInstanceParent | null = null
+  ) {
+    return this.workflow.initialize(context, parent);
   }
 
-  start(workflowId: WorkflowId, input: unknown) {
+  startWorkflow(workflowId: WorkflowId, input: unknown) {
     const self = this;
-    const context = this.getContext();
     return Effect.gen(function* ($) {
+      const defaultActivityPayload = yield* $(
+        self.getDefaultActivityPayload(workflowId)
+      );
       const performStart = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
@@ -30,7 +42,7 @@ export class Interpreter {
             yield* $(
               Effect.succeed(startCondition),
               Effect.tap((s) => s.incrementMarking(workflowId)),
-              Effect.tap((s) => s.enableTasks(workflowId, context)),
+              Effect.tap((s) => s.enableTasks(workflowId)),
               Effect.provideService(
                 TaskActionsService,
                 self.getTaskActionsService(workflowId)
@@ -44,16 +56,13 @@ export class Interpreter {
       );
 
       const result = yield* $(
-        self.workflow.onStart({
-          context: context,
-          input,
-          getWorkflowId() {
-            return Effect.succeed(workflowId);
+        self.workflow.onStart(
+          {
+            ...defaultActivityPayload,
+            startWorkflow: () => performStart,
           },
-          startWorkflow() {
-            return performStart;
-          },
-        }) as Effect.Effect<never, never, unknown>
+          input
+        ) as Effect.Effect<never, never, unknown>
       );
 
       yield* $(performStart);
@@ -62,24 +71,27 @@ export class Interpreter {
     });
   }
 
-  cancel(workflowId: WorkflowId) {
-    const context = this.getContext();
-    return this.workflow.cancel(workflowId, context);
+  cancelWorkflow(workflowId: WorkflowId) {
+    return this.workflow.cancel(workflowId);
   }
 
   maybeEnd(workflowId: WorkflowId) {
-    const { workflow } = this;
-    const context = this.getContext();
+    const self = this;
     return Effect.gen(function* ($) {
-      if (yield* $(workflow.isEndReached(workflowId))) {
-        const performEnd = yield* $(Effect.once(workflow.end(workflowId)));
+      const workflowState = yield* $(self.workflow.getState(workflowId));
+      const isEndReached = yield* $(self.workflow.isEndReached(workflowId));
+      if (
+        isEndReached &&
+        !finalWorkflowInstanceStates.has(workflowState.state)
+      ) {
+        const defaultActivityPayload = yield* $(
+          self.getDefaultActivityPayload(workflowId)
+        );
+        const performEnd = yield* $(Effect.once(self.workflow.end(workflowId)));
 
         yield* $(
-          workflow.onEnd({
-            context,
-            getWorkflowId() {
-              return Effect.succeed(workflowId);
-            },
+          self.workflow.onEnd({
+            ...defaultActivityPayload,
             endWorkflow() {
               return performEnd;
             },
@@ -97,11 +109,10 @@ export class Interpreter {
     input: unknown
   ) {
     const self = this;
-    const context = this.getContext();
 
     return Effect.gen(function* ($) {
       const task = yield* $(self.workflow.getTask(taskName));
-      const taskState = yield* $(task.getState(workflowId));
+      const taskState = yield* $(task.getTaskState(workflowId));
       const isEnabled = yield* $(task.isEnabled(workflowId));
       console.log('TASK STATE', taskState);
       if (!isEnabled) {
@@ -117,7 +128,7 @@ export class Interpreter {
         );
       }
       const output: unknown = yield* $(
-        task.fire(workflowId, context, input),
+        task.fire(workflowId, input),
         Effect.provideService(
           TaskActionsService,
           self.getTaskActionsService(workflowId)
@@ -136,9 +147,6 @@ export class Interpreter {
         self.fireTaskWithoutRunningQueue(workflowId, taskName, input)
       );
 
-      yield* $(self.runQueue(workflowId));
-      yield* $(self.maybeEnd(workflowId));
-
       return output;
     });
   }
@@ -149,11 +157,10 @@ export class Interpreter {
     input: unknown
   ) {
     const self = this;
-    const context = this.getContext();
 
     return Effect.gen(function* ($) {
       const task = yield* $(self.workflow.getTask(taskName));
-      const taskState = yield* $(task.getState(workflowId));
+      const taskState = yield* $(task.getTaskState(workflowId));
       const isFired = yield* $(task.isFired(workflowId));
       if (!isFired) {
         yield* $(
@@ -168,7 +175,7 @@ export class Interpreter {
         );
       }
       const output: unknown = yield* $(
-        task.exit(workflowId, context, input),
+        task.exit(workflowId, input),
         Effect.provideService(
           TaskActionsService,
           self.getTaskActionsService(workflowId)
@@ -199,7 +206,7 @@ export class Interpreter {
 
     return Effect.gen(function* ($) {
       const task = yield* $(self.workflow.getTask(taskName));
-      const taskState = yield* $(task.getState(workflowId));
+      const taskState = yield* $(task.getTaskState(workflowId));
       const isFired = yield* $(task.isFired(workflowId));
       if (!isFired) {
         yield* $(
@@ -319,6 +326,14 @@ export class Interpreter {
     });
   }
 
+  runQueueAndMaybeEnd(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      yield* $(self.runQueue(workflowId));
+      yield* $(self.maybeEnd(workflowId));
+    });
+  }
+
   getTaskActionsService(workflowId: WorkflowId) {
     const self = this;
     return {
@@ -329,5 +344,21 @@ export class Interpreter {
         return self.addToQueue(workflowId, { type: 'exit', taskName, input });
       },
     };
+  }
+
+  getDefaultActivityPayload(workflowId: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return {
+        getWorkflowContext() {
+          return stateManager
+            .getWorkflow(workflowId)
+            .pipe(Effect.map((w) => w.context));
+        },
+        updateWorkflowContext(context: unknown) {
+          return stateManager.updateWorkflowContext(workflowId, context);
+        },
+      };
+    });
   }
 }

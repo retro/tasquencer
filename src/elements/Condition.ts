@@ -47,45 +47,45 @@ export class Condition {
     });
   }
 
-  decrementMarking(workflowId: WorkflowId, context: object) {
+  decrementMarking(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       yield* $(stateManager.decrementConditionMarking(workflowId, self.name));
-      yield* $(self.disableTasks(workflowId, context));
+      yield* $(self.disableTasks(workflowId));
     });
   }
 
-  enableTasks(workflowId: WorkflowId, context: object) {
+  enableTasks(workflowId: WorkflowId) {
     const tasks = Object.values(this.postSet);
     return Effect.all(
-      tasks.map((task) => task.enable(workflowId, context)),
+      tasks.map((task) => task.enable(workflowId)),
       { discard: true, batching: true }
     );
   }
 
-  disableTasks(workflowId: WorkflowId, context: object) {
+  disableTasks(workflowId: WorkflowId) {
     const tasks = Object.values(this.postSet);
     return Effect.all(
-      tasks.map((task) => task.disable(workflowId, context)),
+      tasks.map((task) => task.disable(workflowId)),
       { discard: true, batching: true }
     );
   }
 
-  cancelTasks(workflowId: WorkflowId, context: object) {
+  cancelTasks(workflowId: WorkflowId) {
     const tasks = Object.values(this.postSet);
     return Effect.all(
-      tasks.map((task) => task.cancel(workflowId, context)),
+      tasks.map((task) => task.cancel(workflowId)),
       { discard: true, batching: true }
     );
   }
 
-  cancel(workflowId: WorkflowId, context: object) {
+  cancel(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       yield* $(stateManager.emptyConditionMarking(workflowId, self.name));
-      yield* $(self.disableTasks(workflowId, context));
+      yield* $(self.disableTasks(workflowId));
     });
   }
 

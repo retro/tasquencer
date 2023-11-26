@@ -32,6 +32,7 @@ export interface State {
       tasks: TaskName[];
       conditions: ConditionName[];
     },
+    context: unknown,
     parent: WorkflowInstanceParent
   ): Effect.Effect<never, never, WorkflowInstance>;
 
@@ -73,6 +74,11 @@ export interface State {
     WorkflowDoesNotExist | InvalidWorkflowStateTransition,
     void
   >;
+
+  updateWorkflowContext(
+    workflowId: WorkflowId,
+    context: unknown
+  ): Effect.Effect<never, WorkflowDoesNotExist, void>;
 
   updateTaskState(
     workflowId: WorkflowId,
@@ -159,11 +165,18 @@ export interface State {
     conditionName: ConditionName
   ): Effect.Effect<never, ConditionDoesNotExistInStore, void>;
 
-  createWorkItem(
+  initializeWorkItem(
     workflowId: WorkflowId,
     taskName: TaskName,
     payload: unknown
   ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItem>;
+
+  updateWorkItem(
+    workflowId: WorkflowId,
+    taskName: TaskName,
+    workItemId: WorkItemId,
+    payload: unknown
+  ): Effect.Effect<never, WorkItemDoesNotExist, void>;
 
   getWorkItem(
     workflowId: WorkflowId,

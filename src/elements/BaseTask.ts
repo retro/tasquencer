@@ -77,11 +77,35 @@ export abstract class BaseTask {
     ]);
   }
 
-  getState(workflowId: WorkflowId) {
+  getTask(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return yield* $(stateManager.getTask(workflowId, self.name));
+    });
+  }
+
+  getTaskState(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       return yield* $(stateManager.getTaskState(workflowId, self.name));
+    });
+  }
+
+  protected getDefaultActivityPayload(workflowId: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      return {
+        getWorkflowContext() {
+          return stateManager
+            .getWorkflow(workflowId)
+            .pipe(Effect.map((w) => w.context));
+        },
+        updateWorkflowContext(context: unknown) {
+          return stateManager.updateWorkflowContext(workflowId, context);
+        },
+      };
     });
   }
 
@@ -95,14 +119,13 @@ export abstract class BaseTask {
 
   isStateEqualTo(workflowId: WorkflowId, state: TaskState) {
     return pipe(
-      this.getState(workflowId),
+      this.getTaskState(workflowId),
       Effect.map((s) => s === state)
     );
   }
 
   abstract enable(
-    workflowId: WorkflowId,
-    context: object
+    workflowId: WorkflowId
   ): Effect.Effect<
     TaskActionsService | State,
     | TaskDoesNotExist
@@ -114,8 +137,7 @@ export abstract class BaseTask {
   >;
 
   abstract disable(
-    workflowId: WorkflowId,
-    context: object
+    workflowId: WorkflowId
   ): Effect.Effect<
     State,
     TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
@@ -124,7 +146,6 @@ export abstract class BaseTask {
 
   abstract fire(
     workflowId: WorkflowId,
-    context: object,
     input?: unknown
   ): Effect.Effect<
     TaskActionsService | State,
@@ -138,7 +159,6 @@ export abstract class BaseTask {
 
   abstract exit(
     workflowId: WorkflowId,
-    context: object,
     input?: unknown
   ): Effect.Effect<
     TaskActionsService | State,
@@ -151,8 +171,7 @@ export abstract class BaseTask {
   >;
 
   abstract cancel(
-    workflowId: WorkflowId,
-    context: object
+    workflowId: WorkflowId
   ): Effect.Effect<
     State,
     TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
@@ -163,13 +182,13 @@ export abstract class BaseTask {
     workflowId: WorkflowId
   ): Effect.Effect<State | TaskActionsService, TaskDoesNotExistInStore, void>;
 
-  cancelCancellationRegion(workflowId: WorkflowId, context: object) {
+  cancelCancellationRegion(workflowId: WorkflowId) {
     const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>
-      t.cancel(workflowId, context)
+      t.cancel(workflowId)
     );
     const conditionUpdates = Object.values(
       this.cancellationRegion.conditions
-    ).map((c) => c.cancel(workflowId, context));
+    ).map((c) => c.cancel(workflowId));
 
     return Effect.all(
       [
@@ -180,25 +199,20 @@ export abstract class BaseTask {
     );
   }
 
-  protected produceTokensInOutgoingFlows(
-    workflowId: WorkflowId,
-    context: object
-  ) {
+  protected produceTokensInOutgoingFlows(workflowId: WorkflowId) {
     switch (this.splitType) {
       case 'or':
-        return this.produceOrSplitTokensInOutgoingFlows(workflowId, context);
+        return this.produceOrSplitTokensInOutgoingFlows(workflowId);
       case 'xor':
-        return this.produceXorSplitTokensInOutgoingFlows(workflowId, context);
+        return this.produceXorSplitTokensInOutgoingFlows(workflowId);
       default:
         return this.produceAndSplitTokensInOutgoingFlows(workflowId);
     }
   }
 
-  protected produceOrSplitTokensInOutgoingFlows(
-    workflowId: WorkflowId,
-    context: object
-  ) {
+  protected produceOrSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
     const flows = this.outgoingFlows;
+    const context = {}; // TODO: Load context from store
     const updates = Array.from(flows).map((flow) => {
       return Effect.gen(function* ($) {
         if (flow.isDefault) {
@@ -213,10 +227,8 @@ export abstract class BaseTask {
     return Effect.all(updates, { batching: true, discard: true });
   }
 
-  protected produceXorSplitTokensInOutgoingFlows(
-    workflowId: WorkflowId,
-    context: object
-  ) {
+  protected produceXorSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
+    const context = {}; // TODO: Load context from store
     const flows = this.outgoingFlows;
     const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
       return flowA.order > flowB.order ? 1 : flowA.order < flowB.order ? -1 : 0;
@@ -290,10 +302,10 @@ export abstract class BaseTask {
     });
   }
 
-  protected enablePostTasks(workflowId: WorkflowId, context: object) {
+  protected enablePostTasks(workflowId: WorkflowId) {
     return Effect.all(
       Array.from(this.outgoingFlows).map((flow) =>
-        flow.nextElement.enableTasks(workflowId, context)
+        flow.nextElement.enableTasks(workflowId)
       ),
       { discard: true }
     );

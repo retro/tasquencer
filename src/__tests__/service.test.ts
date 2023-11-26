@@ -54,9 +54,8 @@ it('can run net with composite tasks', () => {
         .withSubWorkflow(subWorkflow)
         .onFire(({ fireTask }) =>
           Effect.gen(function* ($) {
-            const { initializeWorkflow, startWorkflow } = yield* $(fireTask());
-            const { id } = yield* $(initializeWorkflow({ foo: 'bar' }));
-            yield* $(startWorkflow(id, { foo: 'bar' }));
+            const { initializeWorkflow } = yield* $(fireTask());
+            return yield* $(initializeWorkflow({ foo: 'bar' }));
           })
         )
     )
@@ -74,13 +73,21 @@ it('can run net with composite tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(service.start());
+    yield* $(service.startRootWorkflow());
 
-    yield* $(service.fireTask('t1'));
+    const subWorkflow = yield* $(service.fireTask('t1'));
+
+    console.log(subWorkflow);
 
     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 
-    yield* $(service.fireTask(['t1', 'workflow-2', 'subT1']));
+    const subWorkflow2 = yield* $(service.initializeWorkflow(['t1']));
+
+    yield* $(service.startWorkflow(['t1', subWorkflow.id]));
+    yield* $(service.fireTask(['t1', subWorkflow.id, 'subT1']));
+
+    yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
+    yield* $(service.fireTask(['t1', subWorkflow2.id, 'subT1']));
 
     console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
     expect(1).toBe(1);
@@ -126,7 +133,7 @@ it('can run simple net with and-split and and-join', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(service.start());
+    yield* $(service.startWorkflow());
 
     expect(yield* $(service.getFullState())).toEqual({
       workflow: {

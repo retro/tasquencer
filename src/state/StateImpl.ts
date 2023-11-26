@@ -46,6 +46,7 @@ export class StateImpl implements State {
       tasks: TaskName[];
       conditions: ConditionName[];
     },
+    context: unknown,
     parent: WorkflowInstanceParent = null
   ) {
     const self = this;
@@ -76,6 +77,7 @@ export class StateImpl implements State {
         id: workflowId,
         name: payload.name,
         state: 'initialized',
+        context,
       };
 
       const workflowState = {
@@ -204,6 +206,17 @@ export class StateImpl implements State {
     });
   }
 
+  updateWorkflowContext(workflowId: WorkflowId, context: unknown) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      yield* $(self.getWorkflow(workflowId));
+
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.workflow.context = context;
+      });
+    });
+  }
+
   updateTaskState(
     workflowId: WorkflowId,
     taskName: TaskName,
@@ -300,7 +313,7 @@ export class StateImpl implements State {
     });
   }
 
-  createWorkItem(
+  initializeWorkItem(
     workflowId: WorkflowId,
     taskName: TaskName,
     payload: unknown = null
@@ -346,6 +359,28 @@ export class StateImpl implements State {
       }
 
       return workItem;
+    });
+  }
+
+  updateWorkItem(
+    workflowId: WorkflowId,
+    taskName: TaskName,
+    workItemId: WorkItemId,
+    payload: unknown
+  ) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const workItem = self.store[workflowId]?.workItems[workItemId];
+
+      if (!workItem || workItem.taskName !== taskName) {
+        return yield* $(
+          Effect.fail(new WorkItemDoesNotExist({ workflowId, workItemId }))
+        );
+      }
+
+      self.store = create(self.store, (draft) => {
+        draft[workflowId]!.workItems[workItemId]!.payload = payload;
+      });
     });
   }
 

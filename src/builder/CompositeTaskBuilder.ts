@@ -144,8 +144,8 @@ export class CompositeTaskBuilder<
   initialize() {
     return this.onDisable(() => Effect.unit)
       .onEnable(() => Effect.unit)
-      .onFire(({ input }) => Effect.succeed(input))
-      .onExit(({ input }) => Effect.succeed(input))
+      .onFire((_, input) => Effect.succeed(input))
+      .onExit(() => Effect.unit)
       .onCancel(() => Effect.unit);
   }
 
@@ -189,7 +189,8 @@ export class CompositeTaskBuilder<
 
   onFire<
     F extends (
-      payload: CompositeTaskOnFirePayload<C, WC>
+      payload: CompositeTaskOnFirePayload<C, WC>,
+      input?: unknown
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(

@@ -1,56 +1,18 @@
 import { Effect } from 'effect';
 
 import {
-  TaskName,
-  TaskState,
-  WorkItem,
-  WorkItemId,
-  WorkflowId,
+  WorkItemActivities,
+  WorkItemOnCancelPayload,
+  WorkItemOnCompletePayload,
+  WorkItemOnFailPayload,
+  WorkItemOnStartPayload,
 } from '../types.js';
 
 export interface WorkItemActivitiesReturnType {
-  onInitialize: unknown;
   onStart: unknown;
   onComplete: unknown;
   onCancel: unknown;
   onFail: unknown;
-}
-
-export interface WorkItemOnPayload<C extends object, P> {
-  context: C;
-  workflow: {
-    id: WorkflowId;
-  };
-  task: {
-    name: TaskName;
-    generation: number;
-    state: TaskState;
-  };
-  workItem: WorkItem<P>;
-  getWorkItems: () => Effect.Effect<never, never, WorkItem<P>[]>;
-  startWorkItem: (id: WorkItemId) => Effect.Effect<never, never, void>;
-  completeWorkItem: (id: WorkItemId) => Effect.Effect<never, never, void>;
-  failWorkItem: (id: WorkItemId) => Effect.Effect<never, never, void>;
-  cancelWorkItem: (id: WorkItemId) => Effect.Effect<never, never, void>;
-  createWokItem: (payload: P) => Effect.Effect<never, never, WorkItem<P>>;
-}
-
-export interface WorkItemActivities<C extends object, P> {
-  onInitialize: (
-    payload: WorkItemOnPayload<C, P>
-  ) => Effect.Effect<unknown, unknown, unknown>;
-  onStart: (
-    payload: WorkItemOnPayload<C, P>
-  ) => Effect.Effect<unknown, unknown, unknown>;
-  onComplete: (
-    payload: WorkItemOnPayload<C, P>
-  ) => Effect.Effect<unknown, unknown, unknown>;
-  onCancel: (
-    payload: WorkItemOnPayload<C, P>
-  ) => Effect.Effect<unknown, unknown, unknown>;
-  onFail: (
-    payload: WorkItemOnPayload<C, P>
-  ) => Effect.Effect<unknown, unknown, unknown>;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -98,7 +60,8 @@ export type AnyWorkItemActivities = WorkItemActivities<any, any>;
 export class WorkItemBuilder<
   C extends object,
   P,
-  WA extends WorkItemActivities<C, P>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  WA extends WorkItemActivities<any, any>,
   ART = WorkItemActivitiesReturnType,
   R = never,
   E = never
@@ -106,33 +69,22 @@ export class WorkItemBuilder<
   private activities: WA = {} as WA;
 
   initialize() {
-    return this.onInitialize(({ workItem }) => Effect.succeed(workItem))
-      .onStart(({ workItem }) => Effect.succeed(workItem))
-      .onComplete(({ workItem }) => Effect.succeed(workItem))
-      .onCancel(({ workItem }) => Effect.succeed(workItem))
-      .onFail(({ workItem }) => Effect.succeed(workItem));
-  }
-
-  onInitialize<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: WorkItemOnPayload<C, P>) => Effect.Effect<any, any, any>
-  >(
-    f: F
-  ): WorkItemBuilder<
-    C,
-    P,
-    WA,
-    ART,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
-  > {
-    this.activities.onInitialize = f;
-    return this;
+    return this.onStart(({ startWorkItem }) =>
+      Effect.gen(function* ($) {
+        yield* $(startWorkItem());
+      })
+    )
+      .onComplete(({ completeWorkItem }) => completeWorkItem())
+      .onCancel(({ cancelWorkItem }) => cancelWorkItem())
+      .onFail(({ failWorkItem }) => failWorkItem());
   }
 
   onStart<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: WorkItemOnPayload<C, P>) => Effect.Effect<any, any, any>
+    F extends (
+      payload: WorkItemOnStartPayload<C, P>,
+      input?: unknown
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): WorkItemBuilder<
@@ -148,8 +100,11 @@ export class WorkItemBuilder<
   }
 
   onComplete<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: WorkItemOnPayload<C, P>) => Effect.Effect<any, any, any>
+    F extends (
+      payload: WorkItemOnCompletePayload<C, P>,
+      input?: unknown
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): WorkItemBuilder<
@@ -165,8 +120,11 @@ export class WorkItemBuilder<
   }
 
   onCancel<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: WorkItemOnPayload<C, P>) => Effect.Effect<any, any, any>
+    F extends (
+      payload: WorkItemOnCancelPayload<C, P>,
+      input?: unknown
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): WorkItemBuilder<
@@ -182,8 +140,11 @@ export class WorkItemBuilder<
   }
 
   onFail<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    F extends (payload: WorkItemOnPayload<C, P>) => Effect.Effect<any, any, any>
+    F extends (
+      payload: WorkItemOnFailPayload<C, P>,
+      input?: unknown
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): WorkItemBuilder<

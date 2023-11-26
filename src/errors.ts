@@ -81,3 +81,8 @@ export class InvalidWorkflowStateTransition extends Data.TaggedClass(
   readonly from: string;
   readonly to: string;
 }> {}
+
+export class InvalidPath extends Data.TaggedClass('InvalidPath')<{
+  readonly path: string[];
+  readonly pathType: 'workflow' | 'workItem' | 'task';
+}> {}

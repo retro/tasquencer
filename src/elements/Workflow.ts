@@ -40,7 +40,8 @@ export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 type OnStart<C> = (
-  payload: WorkflowOnStartPayload<C>
+  payload: WorkflowOnStartPayload<C>,
+  input?: unknown
 ) => Effect.Effect<unknown, unknown, unknown>;
 
 type OnEnd<C> = (
@@ -105,7 +106,7 @@ export class Workflow<
     this.parentTask = parentTask;
   }
 
-  initialize(parent: WorkflowInstanceParent = null) {
+  initialize(context: unknown, parent: WorkflowInstanceParent = null) {
     const { tasks, conditions, name } = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
@@ -118,6 +119,7 @@ export class Workflow<
             tasks: taskNames,
             conditions: conditionNames,
           },
+          context,
           parent
         )
       );
@@ -165,17 +167,17 @@ export class Workflow<
     });
   }
 
-  cancel(id: WorkflowId, context: object) {
+  cancel(id: WorkflowId) {
     return pipe(
       Effect.all(
         [
           Effect.all(
-            Object.values(this.tasks).map((task) => task.cancel(id, context)),
+            Object.values(this.tasks).map((task) => task.cancel(id)),
             { batching: true }
           ),
           Effect.all(
             Object.values(this.conditions).map((condition) =>
-              condition.cancel(id, context)
+              condition.cancel(id)
             ),
             { batching: true }
           ),

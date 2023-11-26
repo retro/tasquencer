@@ -127,7 +127,8 @@ export class WorkflowBuilder<
   readonly name: string;
   readonly definition: WorkflowBuilderDefinition;
   onStartFn?: (
-    payload: WorkflowOnStartPayload<WBContext>
+    payload: WorkflowOnStartPayload<WBContext>,
+    input: unknown
   ) => Effect.Effect<unknown, unknown, unknown>;
   onEndFn?: (
     payload: WorkflowOnEndPayload<WBContext>
@@ -151,7 +152,7 @@ export class WorkflowBuilder<
   }
 
   initialize() {
-    return this.onStart(({ input }) => Effect.succeed(input)).onEnd(
+    return this.onStart((_, input) => Effect.succeed(input)).onEnd(
       () => Effect.unit
     );
   }
@@ -496,7 +497,8 @@ export class WorkflowBuilder<
   }
   onStart<
     F extends (
-      payload: WorkflowOnStartPayload<WBContext>
+      payload: WorkflowOnStartPayload<WBContext>,
+      input: unknown
     ) => Effect.Effect<unknown, unknown, unknown>
   >(
     f: F

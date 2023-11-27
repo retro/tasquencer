@@ -2,17 +2,19 @@ import { Effect, Option, Queue } from 'effect';
 import { Get } from 'type-fest';
 
 import { State } from './State.js';
-import { TaskActivitiesReturnType } from './builder/TaskBuilder.js';
 import { BaseTask } from './elements/BaseTask.js';
 import { CompositeTask } from './elements/CompositeTask.js';
 import { Task } from './elements/Task.js';
-import {
-  Workflow,
-  WorkflowTasksActivitiesOutputs,
-} from './elements/Workflow.js';
+import { Workflow, WorkflowMetadata } from './elements/Workflow.js';
 import { InvalidPath } from './errors.js';
 import * as StateImpl from './state/StateImpl.js';
-import { IdGenerator, TaskName, WorkItemId, WorkflowId } from './types.js';
+import {
+  IdGenerator,
+  TaskName,
+  TaskOnFireSym,
+  WorkItemId,
+  WorkflowId,
+} from './types.js';
 import { nanoidIdGenerator } from './util.js';
 
 function pathAsArray(path: string | string[] | readonly string[]) {
@@ -25,7 +27,7 @@ type QueueItem =
 
 // TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Service<
-  TasksActivitiesOutputs,
+  WorkflowMetadata,
   OnStartReturnType = unknown,
   R = never,
   E = never
@@ -130,7 +132,13 @@ export class Service<
         yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
       }
 
-      return result as Get<Get<TasksActivitiesOutputs, T>, 'onFire'>;
+      return result as Get<
+        ({ [TaskOnFireSym]: unknown } & Get<
+          WorkflowMetadata,
+          T
+        >)[TaskOnFireSym],
+        'returnType'
+      >;
     }).pipe(Effect.provideService(State, this.state));
   }
 
@@ -667,7 +675,7 @@ export function initialize<
     );
 
     const interpreter = new Service<
-      WorkflowTasksActivitiesOutputs<W>,
+      WorkflowMetadata<W>,
       WorkflowOnStartReturnType<W>,
       R,
       E
@@ -688,7 +696,7 @@ export function initialize<
     const queue = yield* $(Queue.unbounded<QueueItem>());
 
     return new Interpreter<
-      WorkflowTasksActivitiesOutputs<W>,
+      WorkflowWorkflowMetadata<W>,
       WorkflowOnStartReturnType<W>,
       R,
       E

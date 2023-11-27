@@ -82,7 +82,7 @@ export interface TaskActionsService {
 export const TaskActionsService = Context.Tag<TaskActionsService>();
 
 export interface DefaultTaskOrWorkItemActivityPayload<C> {
-  getWorkflowContext(): Effect.Effect<never, WorkflowDoesNotExist, unknown>;
+  getWorkflowContext(): Effect.Effect<never, WorkflowDoesNotExist, C>;
   updateWorkflowContext(
     context: C
   ): Effect.Effect<never, WorkflowDoesNotExist, void>;
@@ -226,7 +226,8 @@ export interface TaskActivities<C> {
   onFire: (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: TaskOnFirePayload<C, any>,
-    input?: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onExit: (
     payload: TaskOnExitPayload<C>
@@ -239,7 +240,8 @@ export type CompositeTaskActivities<C> = Omit<TaskActivities<C>, 'onFire'> & {
   onFire: (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: CompositeTaskOnFirePayload<C, any>,
-    input?: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
 };
 
@@ -317,19 +319,23 @@ export type WorkItemOnFailPayload<C, P> =
 export interface WorkItemActivities<C, P> {
   onStart: (
     payload: WorkItemOnStartPayload<C, P>,
-    input?: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onComplete: (
     payload: WorkItemOnCompletePayload<C, P>,
-    input?: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onCancel: (
     payload: WorkItemOnCancelPayload<C, P>,
-    input?: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onFail: (
     payload: WorkItemOnFailPayload<C, P>,
-    input?: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
 
@@ -474,3 +480,67 @@ interface WorkflowState {
   tasksToWorkflows: Record<TaskName, Record<number, WorkflowId[]>>;
 }
 export type Store = Record<WorkflowId, WorkflowState>;
+
+export const WorkflowContextSym = Symbol('WorkflowContext');
+export type WorkflowContextSym = typeof WorkflowContextSym;
+export const WorkflowOnStartSym = Symbol('WorkflowOnStart');
+export type WorkflowOnStartSym = typeof WorkflowOnStartSym;
+export const WorkflowOnCancelSym = Symbol('WorkflowOnCancel');
+export type WorkflowOnCancelSym = typeof WorkflowOnCancelSym;
+export const TaskOnFireSym = Symbol('TaskOnFire');
+export type TaskOnFireSym = typeof TaskOnFireSym;
+
+/*type T = {
+  [WorkflowContextSym]: string;
+  [WorkflowOnStartSym]: {
+    context: string;
+    input: number;
+  };
+  t1: {
+    [TaskOnFireSym]: {
+      context: string;
+      input: number;
+    };
+    [k: string]: {
+      onInitialize: {
+        input: number;
+        context: string;
+        payload: boolean;
+      };
+    };
+  };
+  ct1: {
+    [TaskOnFireSym]: {
+      context: string;
+      input: number;
+    };
+    [k: string]: {
+      [WorkflowContextSym]: string;
+      [WorkflowOnStartSym]: {
+        context: string;
+        input: number;
+      };
+      t1: {
+        [TaskOnFireSym]: {
+          context: string;
+          input: number;
+        };
+        [k: string]: {
+          onInitialize: {
+            input: number;
+            context: string;
+            payload: boolean;
+          };
+        };
+      };
+      ct1: {
+        [TaskOnFireSym]: {
+          context: string;
+          input: number;
+        };
+      };
+    };
+  };
+};
+
+*/

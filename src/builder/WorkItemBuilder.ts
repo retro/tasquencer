@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { Simplify } from 'type-fest';
 
 import {
   WorkItemActivities,
@@ -7,13 +8,6 @@ import {
   WorkItemOnFailPayload,
   WorkItemOnStartPayload,
 } from '../types.js';
-
-export interface WorkItemActivitiesReturnType {
-  onStart: unknown;
-  onComplete: unknown;
-  onCancel: unknown;
-  onFail: unknown;
-}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnyWorkItemBuilder = WorkItemBuilder<
@@ -54,35 +48,82 @@ export type WorkItemBuilderE<T> = T extends WorkItemBuilder<
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type WorkItemBuilderWIM<T> = T extends WorkItemBuilder<
+  any,
+  any,
+  any,
+  infer WIM,
+  any,
+  any
+>
+  ? WIM
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyWorkItemActivities = WorkItemActivities<any, any>;
+
+interface WorkItemActivityMetadata<I, P, R> {
+  input: I;
+  returnType: R;
+  payload: P;
+}
+
+export interface DefaultWIM {
+  onStart: WorkItemActivityMetadata<undefined, undefined, undefined>;
+  onComplete: WorkItemActivityMetadata<undefined, undefined, undefined>;
+  onCancel: WorkItemActivityMetadata<undefined, undefined, undefined>;
+  onFail: WorkItemActivityMetadata<undefined, undefined, undefined>;
+}
+
+export interface InitializedWIM<P> {
+  onStart: WorkItemActivityMetadata<undefined, P, undefined>;
+  onComplete: WorkItemActivityMetadata<undefined, P, undefined>;
+  onCancel: WorkItemActivityMetadata<undefined, P, undefined>;
+  onFail: WorkItemActivityMetadata<undefined, P, undefined>;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type InitializedWorkItemBuilder<C, P> = WorkItemBuilder<
+  C,
+  P,
+  WorkItemActivities<any, any>,
+  InitializedWIM<P>
+>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export class WorkItemBuilder<
   C,
   P,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  WA extends WorkItemActivities<any, any>,
-  ART = WorkItemActivitiesReturnType,
+  WIA extends WorkItemActivities<any, any>,
+  WIM = {
+    payload: P;
+  },
   R = never,
   E = never
 > {
-  private activities: WA = {} as WA;
+  private activities: WIA = {} as WIA;
 
   initialize() {
-    return this.onStart(({ startWorkItem }) =>
+    return this.onStart(({ startWorkItem }, _input?: undefined) =>
       Effect.gen(function* ($) {
         yield* $(startWorkItem());
       })
     )
-      .onComplete(({ completeWorkItem }) => completeWorkItem())
-      .onCancel(({ cancelWorkItem }) => cancelWorkItem())
-      .onFail(({ failWorkItem }) => failWorkItem());
+      .onComplete(({ completeWorkItem }, _input?: undefined) =>
+        completeWorkItem()
+      )
+      .onCancel(({ cancelWorkItem }, _input?: undefined) => cancelWorkItem())
+      .onFail(({ failWorkItem }, _input?: undefined) => failWorkItem());
   }
 
   onStart<
+    I,
     F extends (
       payload: WorkItemOnStartPayload<C, P>,
-      input?: unknown
+      input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -90,8 +131,16 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     C,
     P,
-    WA,
-    ART,
+    WIA,
+    Simplify<
+      Omit<WIM, 'onStart'> & {
+        onStart: WorkItemActivityMetadata<
+          I,
+          P,
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -100,9 +149,10 @@ export class WorkItemBuilder<
   }
 
   onComplete<
+    I,
     F extends (
       payload: WorkItemOnCompletePayload<C, P>,
-      input?: unknown
+      input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -110,8 +160,16 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     C,
     P,
-    WA,
-    ART,
+    WIA,
+    Simplify<
+      Omit<WIM, 'onComplete'> & {
+        onComplete: WorkItemActivityMetadata<
+          I,
+          P,
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -120,9 +178,10 @@ export class WorkItemBuilder<
   }
 
   onCancel<
+    I,
     F extends (
       payload: WorkItemOnCancelPayload<C, P>,
-      input?: unknown
+      input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -130,8 +189,16 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     C,
     P,
-    WA,
-    ART,
+    WIA,
+    Simplify<
+      Omit<WIM, 'onCancel'> & {
+        onCancel: WorkItemActivityMetadata<
+          I,
+          P,
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -140,9 +207,10 @@ export class WorkItemBuilder<
   }
 
   onFail<
+    I,
     F extends (
       payload: WorkItemOnFailPayload<C, P>,
-      input?: unknown
+      input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -150,8 +218,16 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     C,
     P,
-    WA,
-    ART,
+    WIA,
+    Simplify<
+      Omit<WIM, 'onFail'> & {
+        onFail: WorkItemActivityMetadata<
+          I,
+          P,
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {

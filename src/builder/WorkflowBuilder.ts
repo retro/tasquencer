@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { Simplify } from 'type-fest';
 
 import { Condition } from '../elements/Condition.js';
 import { Workflow } from '../elements/Workflow.js';
@@ -10,6 +11,7 @@ import {
   ConditionNode,
   NotExtends,
   WorkflowBuilderDefinition,
+  WorkflowContextSym,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
@@ -34,8 +36,6 @@ type IsXorOrOrJoinSplit<T> = T extends never
   : T extends 'or' | 'xor'
   ? true
   : never;
-
-type TasksActivitiesOutputs = Record<string, { onFire: unknown }>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnyWorkflowBuilder = WorkflowBuilder<
@@ -124,6 +124,24 @@ export type WorkflowBuilderTaskActivitiesOutputs<T> = T extends WorkflowBuilder<
   : never;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type WorkflowBuilderMetadata<T> = T extends WorkflowBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer M,
+  any
+>
+  ? M
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 // TODO: implement invariant checking
 export class WorkflowBuilder<
   WBContext,
@@ -135,7 +153,7 @@ export class WorkflowBuilder<
   WBTasksWithOrXorSplit = never,
   WBConnectedTasks = never,
   WBConnectedConditions = never,
-  WBTasksActivitiesOutputs extends TasksActivitiesOutputs = TasksActivitiesOutputs,
+  Metadata = { [WorkflowContextSym]: WBContext },
   OnStartReturnType = unknown
 > {
   readonly name: string;
@@ -183,7 +201,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   > {
     return this.addConditionUnsafe(conditionName);
@@ -201,7 +219,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   > {
     this.definition.startCondition = conditionName;
@@ -220,7 +238,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   > {
     this.definition.endCondition = conditionName;
@@ -246,9 +264,11 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit | X,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.TaskBuilderActivitiesReturnType<T>;
-    },
+    Simplify<
+      Metadata & {
+        [tn in TN]: TB.TaskBuilderMetadata<T>;
+      }
+    >,
     OnStartReturnType
   >;
   task<
@@ -274,9 +294,11 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit | X,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.TaskBuilderActivitiesReturnType<ReturnType<T>>;
-    },
+    Simplify<
+      Metadata & {
+        [tn in TN]: TB.TaskBuilderMetadata<ReturnType<T>>;
+      }
+    >,
     OnStartReturnType
   >;
   task<TN extends string>(
@@ -291,9 +313,11 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs & {
-      [tn in TN]: TB.TaskActivitiesReturnType;
-    },
+    Simplify<
+      Metadata & {
+        [tn in TN]: TB.TaskBuilderMetadata<TB.AnyTaskBuilder>;
+      }
+    >,
     OnStartReturnType
   >;
   task(
@@ -334,8 +358,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit | X,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs & {
-      [tn in TN]: CTB.CompositeTaskBuilderActivitiesReturnType<T>;
+    Metadata & {
+      [tn in TN]: CTB.CompositeTaskBuilderMetadata<T>;
     },
     OnStartReturnType
   >;
@@ -362,8 +386,8 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit | X,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs & {
-      [tn in TN]: CTB.CompositeTaskBuilderActivitiesReturnType<ReturnType<T>>;
+    Metadata & {
+      [tn in TN]: CTB.CompositeTaskBuilderMetadata<ReturnType<T>>;
     },
     OnStartReturnType
   >;
@@ -403,7 +427,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
@@ -425,7 +449,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions | CN,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   > {
     this.definition.flows.conditions[conditionName] = builder(
@@ -458,7 +482,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks | TN,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   >;
 
@@ -477,7 +501,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks | TN,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   >;
 
@@ -526,7 +550,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     Effect.Effect.Success<ReturnType<F>>
   > {
     this.onStartFn = f;
@@ -548,7 +572,7 @@ export class WorkflowBuilder<
     WBTasksWithOrXorSplit,
     WBConnectedTasks,
     WBConnectedConditions,
-    WBTasksActivitiesOutputs,
+    Metadata,
     OnStartReturnType
   > {
     this.onEndFn = f;
@@ -563,7 +587,7 @@ export class WorkflowBuilder<
         R,
         E,
         WBContext,
-        WBTasksActivitiesOutputs,
+        Metadata,
         OnStartReturnType
         // non-null assertion is ok here, because onStartFn and onEndFn are set
         // in the initialize method which is automatically called by the `workflow`

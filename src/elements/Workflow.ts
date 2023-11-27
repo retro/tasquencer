@@ -28,11 +28,12 @@ import { Marking } from './Marking.js';
 import { Interpreter } from './Workflow/Interpreter.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type WorkflowTasksActivitiesOutputs<T> = T extends Workflow<
+export type WorkflowMetadata<T> = T extends Workflow<
   any,
   any,
-  object,
-  infer U
+  any,
+  infer U,
+  any
 >
   ? U
   : never;
@@ -50,7 +51,7 @@ export class Workflow<
   _R = never,
   _E = never,
   Context = unknown,
-  _WorkflowTaskActivitiesOutputs = unknown,
+  _WorkflowMetadata = object,
   _OnStartReturnType = unknown
 > {
   readonly tasks: Record<string, BaseTask> = {};

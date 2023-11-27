@@ -18,6 +18,7 @@ import {
   TaskOnDisablePayload,
   TaskOnEnablePayload,
   TaskOnExitPayload,
+  TaskOnFireSym,
 } from '../types.js';
 import {
   AnyWorkflowBuilder,
@@ -66,6 +67,7 @@ export type CompositeTaskBuilderR<T> = T extends CompositeTaskBuilder<
   any,
   any,
   any,
+  any,
   infer R
 >
   ? R
@@ -74,6 +76,7 @@ export type CompositeTaskBuilderR<T> = T extends CompositeTaskBuilder<
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type CompositeTaskBuilderE<T> = T extends CompositeTaskBuilder<
+  any,
   any,
   any,
   any,
@@ -104,8 +107,44 @@ export type InitializedCompositeTaskBuilder<C> = CompositeTaskBuilder<
   undefined
 >;
 
-export interface CompositeTaskActivitiesReturnType {
-  onFire: unknown;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type CompositeTaskBuilderCTM<T> = T extends CompositeTaskBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer CTM,
+  any
+>
+  ? CTM
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type CompositeTaskBuilderWIM<T> = T extends CompositeTaskBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer WIM
+>
+  ? WIM
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+export type CompositeTaskBuilderMetadata<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends AnyCompositeTaskBuilder<any>
+> = Simplify<
+  CompositeTaskBuilderCTM<T> & Record<string, CompositeTaskBuilderWIM<T>>
+>;
+
+interface CompositeTaskActivityMetadata<I, R> {
+  input: I;
+  returnType: R;
 }
 
 export class CompositeTaskBuilder<
@@ -114,7 +153,8 @@ export class CompositeTaskBuilder<
   TA extends CompositeTaskActivities<C>,
   JT extends JoinType | undefined,
   ST extends SplitType | undefined,
-  ART = CompositeTaskActivitiesReturnType,
+  CTM = object,
+  WM = never,
   R = never,
   E = never
 > {
@@ -129,14 +169,14 @@ export class CompositeTaskBuilder<
 
   withJoinType<T extends JoinType | undefined>(
     joinType: T
-  ): CompositeTaskBuilder<C, WC, TA, T, ST, ART, R, E> {
+  ): CompositeTaskBuilder<C, WC, TA, T, ST, CTM, WM, R, E> {
     this.joinType = joinType;
     return this;
   }
 
   withSplitType<T extends SplitType | undefined>(
     splitType: T
-  ): CompositeTaskBuilder<C, WC, TA, JT, T, ART, R, E> {
+  ): CompositeTaskBuilder<C, WC, TA, JT, T, CTM, WM, R, E> {
     this.splitType = splitType;
     return this;
   }
@@ -160,7 +200,8 @@ export class CompositeTaskBuilder<
     TA,
     JT,
     ST,
-    ART,
+    CTM,
+    WM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -179,7 +220,8 @@ export class CompositeTaskBuilder<
     TA,
     JT,
     ST,
-    ART,
+    CTM,
+    WM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -188,9 +230,10 @@ export class CompositeTaskBuilder<
   }
 
   onFire<
+    I,
     F extends (
       payload: CompositeTaskOnFirePayload<C, WC>,
-      input?: unknown
+      input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -201,7 +244,15 @@ export class CompositeTaskBuilder<
     TA,
     JT,
     ST,
-    ART & { onFire: Effect.Effect.Success<ReturnType<F>> },
+    Simplify<
+      Omit<CTM, TaskOnFireSym> & {
+        [TaskOnFireSym]: CompositeTaskActivityMetadata<
+          I,
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
+    WM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -222,7 +273,8 @@ export class CompositeTaskBuilder<
     TA,
     JT,
     ST,
-    ART,
+    CTM,
+    WM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -241,7 +293,8 @@ export class CompositeTaskBuilder<
     TA,
     JT,
     ST,
-    ART,
+    CTM,
+    WM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -289,10 +342,8 @@ export function compositeTask<C>() {
         CompositeTaskActivities<C>,
         undefined,
         undefined,
-        Simplify<
-          CompositeTaskActivitiesReturnType &
-            Record<string, WorkflowBuilderTaskActivitiesOutputs<W>>
-        >,
+        object,
+        WorkflowBuilderTaskActivitiesOutputs<W>,
         WorkflowBuilderR<W>,
         WorkflowBuilderE<W>
       >(workflow).initialize();

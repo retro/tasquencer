@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { Simplify } from 'type-fest';
 
 import { Task } from '../elements/Task.js';
 import { Workflow } from '../elements/Workflow.js';
@@ -11,14 +12,18 @@ import {
   TaskOnEnablePayload,
   TaskOnExitPayload,
   TaskOnFirePayload,
+  TaskOnFireSym,
 } from '../types.js';
 import {
   AnyWorkItemActivities,
   AnyWorkItemBuilder,
+  DefaultWIM,
+  InitializedWorkItemBuilder,
   WorkItemBuilder,
   WorkItemBuilderE,
   WorkItemBuilderP,
   WorkItemBuilderR,
+  WorkItemBuilderWIM,
   workItem,
 } from './WorkItemBuilder.js';
 
@@ -102,9 +107,42 @@ export type InitializedTaskBuilder<C> = TaskBuilder<
   undefined
 >;
 
-export interface TaskActivitiesReturnType {
-  onFire: unknown;
+interface TaskActivityMetadata<I, R> {
+  input: I;
+  returnType: R;
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type TaskBuilderTM<T> = T extends TaskBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer TM,
+  any
+>
+  ? TM
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type TaskBuilderWIM<T> = T extends TaskBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer WIM
+>
+  ? WIM
+  : never;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+export type TaskBuilderMetadata<T extends AnyTaskBuilder> = Simplify<
+  TaskBuilderTM<T> & Record<string, TaskBuilderWIM<T>>
+>;
 
 export class TaskBuilder<
   C,
@@ -112,7 +150,8 @@ export class TaskBuilder<
   JT extends JoinType | undefined,
   ST extends SplitType | undefined,
   WIP = undefined,
-  ART = TaskActivitiesReturnType,
+  TM = object,
+  WIM = DefaultWIM,
   R = never,
   E = never
 > {
@@ -123,14 +162,14 @@ export class TaskBuilder<
 
   withJoinType<T extends JoinType | undefined>(
     joinType: T
-  ): TaskBuilder<C, TA, T, ST, WIP, ART, R, E> {
+  ): TaskBuilder<C, TA, T, ST, WIP, TM, WIM, R, E> {
     this.joinType = joinType;
     return this;
   }
 
   withSplitType<T extends SplitType | undefined>(
     splitType: T
-  ): TaskBuilder<C, TA, JT, T, WIP, ART, R, E> {
+  ): TaskBuilder<C, TA, JT, T, WIP, TM, WIM, R, E> {
     this.splitType = splitType;
     return this;
   }
@@ -154,7 +193,8 @@ export class TaskBuilder<
     JT,
     ST,
     WIP,
-    ART,
+    TM,
+    WIM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -173,7 +213,8 @@ export class TaskBuilder<
     JT,
     ST,
     WIP,
-    ART,
+    TM,
+    WIM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -182,9 +223,10 @@ export class TaskBuilder<
   }
 
   onFire<
+    I,
     F extends (
       payload: TaskOnFirePayload<C, WIP>,
-      input: unknown
+      input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
@@ -195,7 +237,15 @@ export class TaskBuilder<
     JT,
     ST,
     WIP,
-    ART & { onFire: Effect.Effect.Success<ReturnType<F>> },
+    Simplify<
+      Omit<TM, TaskOnFireSym> & {
+        [TaskOnFireSym]: TaskActivityMetadata<
+          I,
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
+    WIM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -216,7 +266,8 @@ export class TaskBuilder<
     JT,
     ST,
     WIP,
-    ART,
+    TM,
+    WIM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -235,7 +286,8 @@ export class TaskBuilder<
     JT,
     ST,
     WIP,
-    ART,
+    TM,
+    WIM,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -252,16 +304,17 @@ export class TaskBuilder<
     JT,
     ST,
     P,
-    ART,
+    TM,
+    WorkItemBuilderWIM<W>,
     R | WorkItemBuilderR<W>,
     E | WorkItemBuilderE<W>
   >;
 
   withWorkItem<
-    P,
     /* eslint-disable @typescript-eslint/no-explicit-any */
+    P,
     F extends (
-      w: <P>() => WorkItemBuilder<C, P, any>
+      w: <P>() => InitializedWorkItemBuilder<C, P>
     ) => WorkItemBuilder<C, P, any>
     /* eslint-enable @typescript-eslint/no-explicit-any */
   >(
@@ -272,7 +325,8 @@ export class TaskBuilder<
     JT,
     ST,
     WorkItemBuilderP<ReturnType<F>>,
-    ART,
+    TM,
+    WorkItemBuilderWIM<ReturnType<F>>,
     R | WorkItemBuilderR<ReturnType<F>>,
     E | WorkItemBuilderE<ReturnType<F>>
   >;

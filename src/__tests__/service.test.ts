@@ -1,12 +1,18 @@
 import { Effect } from 'effect';
-import { Get, Simplify } from 'type-fest';
+import { Get } from 'type-fest';
 import { expect, it } from 'vitest';
 
 import * as Service from '../Service.js';
 import * as Builder from '../builder.js';
 import { compositeTask } from '../builder.js';
 import { WorkflowBuilderTaskActivitiesOutputs } from '../builder/WorkflowBuilder.js';
-import { IdGenerator, TaskName, WorkItemId, WorkflowId } from '../types.js';
+import {
+  IdGenerator,
+  TaskName,
+  WorkItemId,
+  WorkflowContextSymbol,
+  WorkflowId,
+} from '../types.js';
 
 function makeIdGenerator(): IdGenerator {
   const ids = {
@@ -48,7 +54,7 @@ it('can run net with composite tasks', () => {
     .connectCondition('subStart', (to) => to.task('subT1'))
     .connectTask('subT1', (to) => to.condition('subEnd'));
 
-  const workflowDefinition = Builder.workflow('parent')
+  const workflowDefinition = Builder.workflow<{ foo: string }>('parent')
     .startCondition('start')
     .compositeTask(
       't1',
@@ -64,11 +70,6 @@ it('can run net with composite tasks', () => {
     .endCondition('end')
     .connectCondition('start', (to) => to.task('t1'))
     .connectTask('t1', (to) => to.condition('end'));
-
-  type A = typeof workflowDefinition;
-  type B = WorkflowBuilderTaskActivitiesOutputs<A>;
-
-  type C = Get<B, ['t1', 'someId', 'subT1']>;
 
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -94,7 +95,9 @@ it('can run net with composite tasks', () => {
     const a = yield* $(service.fireTask(`t1.${subWorkflow.id}.subT1`));
 
     yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
-    const b = yield* $(service.fireTask(['t1', subWorkflow2.id, 'subT1']));
+    const b = yield* $(
+      service.fireTask(['t1', subWorkflow2.id, 'subT1'] as const)
+    );
 
     console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
     expect(1).toBe(1);

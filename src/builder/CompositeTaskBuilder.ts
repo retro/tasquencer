@@ -144,7 +144,7 @@ export type CompositeTaskBuilderMetadata<
 
 interface CompositeTaskActivityMetadata<I, R> {
   input: I;
-  returnType: R;
+  return: R;
 }
 
 export class CompositeTaskBuilder<
@@ -247,7 +247,7 @@ export class CompositeTaskBuilder<
     Simplify<
       Omit<CTM, TaskOnFireSym> & {
         [TaskOnFireSym]: CompositeTaskActivityMetadata<
-          I,
+          Parameters<F>[1],
           Effect.Effect.Success<ReturnType<F>>
         >;
       }

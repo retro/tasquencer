@@ -5,10 +5,14 @@ import { expect, it } from 'vitest';
 import * as Service from '../Service.js';
 import * as Builder from '../builder.js';
 import { compositeTask } from '../builder.js';
-import { WorkflowBuilderTaskActivitiesOutputs } from '../builder/WorkflowBuilder.js';
+import {
+  WorkflowBuilderMetadata,
+  WorkflowBuilderTaskActivitiesOutputs,
+} from '../builder/WorkflowBuilder.js';
 import {
   IdGenerator,
   TaskName,
+  TaskOnFireSym,
   WorkItemId,
   WorkflowContextSymbol,
   WorkflowId,
@@ -49,7 +53,15 @@ const c = Builder.compositeTask<{ bar: string }>().withSubWorkflow(w1);*/
 it('can run net with composite tasks', () => {
   const subWorkflow = Builder.workflow<{ bar: string }>('subWorkflow')
     .startCondition('subStart')
-    .task('subT1', (t) => t().onFire(() => Effect.succeed(1)))
+    .task('subT1', (t) =>
+      t()
+        .onFire(() => Effect.succeed(1))
+        .withWorkItem((w) =>
+          w<{ workItem: string }>().onComplete((_, input?: { foo: string }) =>
+            Effect.succeed(input?.foo)
+          )
+        )
+    )
     .endCondition('subEnd')
     .connectCondition('subStart', (to) => to.task('subT1'))
     .connectTask('subT1', (to) => to.condition('subEnd'));
@@ -60,8 +72,10 @@ it('can run net with composite tasks', () => {
       't1',
       compositeTask()
         .withSubWorkflow(subWorkflow)
-        .onFire(({ fireTask }) =>
+        .onFire(({ fireTask }, input?: { foo: number }) =>
           Effect.gen(function* ($) {
+            //yield* $(Effect.fail(new Error('t1 canceled')));
+            console.log('CALLING FIRE TASK WITH INPUT', input);
             const { initializeWorkflow } = yield* $(fireTask());
             return yield* $(initializeWorkflow({ bar: 'foo' }));
           })
@@ -77,27 +91,37 @@ it('can run net with composite tasks', () => {
     const workflow = yield* $(workflowDefinition.build());
 
     const service = yield* $(
-      Service.initialize(workflow, {}),
+      Service.initialize(workflow, { foo: 'aa' }),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
     yield* $(service.start());
 
-    const subWorkflow = yield* $(service.fireTask('t1'));
+    const subWorkflow = yield* $(service.fireTask('t1', { foo: 1 }));
+    //const subWorkflow3 = yield* $(service.fireTask('t1'));
 
     console.log(subWorkflow);
 
     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 
-    const subWorkflow2 = yield* $(service.initializeWorkflow(['t1']));
+    const subWorkflow2 = yield* $(
+      service.initializeWorkflow('t1', { bar: 'aaa' })
+    );
 
     yield* $(service.startWorkflow(['t1', subWorkflow.id]));
     const a = yield* $(service.fireTask(`t1.${subWorkflow.id}.subT1`));
 
-    yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
-    const b = yield* $(
-      service.fireTask(['t1', subWorkflow2.id, 'subT1'] as const)
+    const wi = yield* $(
+      service.initializeWorkItem(`t1.${subWorkflow.id}.subT1`, {
+        workItem: 'foo',
+      })
     );
+
+    const c = yield* $(
+      service.completeWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`)
+    );
+
+    yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
 
     console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
     expect(1).toBe(1);

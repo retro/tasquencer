@@ -70,6 +70,7 @@ export type TaskBuilderR<T> = T extends TaskBuilder<
   any,
   any,
   any,
+  any,
   infer R
 >
   ? R
@@ -78,6 +79,7 @@ export type TaskBuilderR<T> = T extends TaskBuilder<
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderE<T> = T extends TaskBuilder<
+  any,
   any,
   any,
   any,
@@ -109,7 +111,7 @@ export type InitializedTaskBuilder<C> = TaskBuilder<
 
 interface TaskActivityMetadata<I, R> {
   input: I;
-  returnType: R;
+  return: R;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -227,8 +229,8 @@ export class TaskBuilder<
     F extends (
       payload: TaskOnFirePayload<C, WIP>,
       input: I
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) => Effect.Effect<any, any, any>
+    ) => // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -240,7 +242,7 @@ export class TaskBuilder<
     Simplify<
       Omit<TM, TaskOnFireSym> & {
         [TaskOnFireSym]: TaskActivityMetadata<
-          I,
+          Parameters<F>[1],
           Effect.Effect.Success<ReturnType<F>>
         >;
       }

@@ -7,6 +7,7 @@ import {
   WorkItemOnCompletePayload,
   WorkItemOnFailPayload,
   WorkItemOnStartPayload,
+  WorkItemPayloadSym,
 } from '../types.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -66,11 +67,12 @@ export type AnyWorkItemActivities = WorkItemActivities<any, any>;
 
 interface WorkItemActivityMetadata<I, P, R> {
   input: I;
-  returnType: R;
+  return: R;
   payload: P;
 }
 
 export interface DefaultWIM {
+  [WorkItemPayloadSym]: undefined;
   onStart: WorkItemActivityMetadata<undefined, undefined, undefined>;
   onComplete: WorkItemActivityMetadata<undefined, undefined, undefined>;
   onCancel: WorkItemActivityMetadata<undefined, undefined, undefined>;
@@ -78,6 +80,7 @@ export interface DefaultWIM {
 }
 
 export interface InitializedWIM<P> {
+  [WorkItemPayloadSym]: P;
   onStart: WorkItemActivityMetadata<undefined, P, undefined>;
   onComplete: WorkItemActivityMetadata<undefined, P, undefined>;
   onCancel: WorkItemActivityMetadata<undefined, P, undefined>;
@@ -99,7 +102,7 @@ export class WorkItemBuilder<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   WIA extends WorkItemActivities<any, any>,
   WIM = {
-    payload: P;
+    [WorkItemPayloadSym]: P;
   },
   R = never,
   E = never
@@ -135,7 +138,7 @@ export class WorkItemBuilder<
     Simplify<
       Omit<WIM, 'onStart'> & {
         onStart: WorkItemActivityMetadata<
-          I,
+          Parameters<F>[1],
           P,
           Effect.Effect.Success<ReturnType<F>>
         >;
@@ -164,7 +167,7 @@ export class WorkItemBuilder<
     Simplify<
       Omit<WIM, 'onComplete'> & {
         onComplete: WorkItemActivityMetadata<
-          I,
+          Parameters<F>[1],
           P,
           Effect.Effect.Success<ReturnType<F>>
         >;
@@ -193,7 +196,7 @@ export class WorkItemBuilder<
     Simplify<
       Omit<WIM, 'onCancel'> & {
         onCancel: WorkItemActivityMetadata<
-          I,
+          Parameters<F>[1],
           P,
           Effect.Effect.Success<ReturnType<F>>
         >;
@@ -222,7 +225,7 @@ export class WorkItemBuilder<
     Simplify<
       Omit<WIM, 'onFail'> & {
         onFail: WorkItemActivityMetadata<
-          I,
+          Parameters<F>[1],
           P,
           Effect.Effect.Success<ReturnType<F>>
         >;

@@ -489,58 +489,12 @@ export const WorkflowOnCancelSym = Symbol('WorkflowOnCancel');
 export type WorkflowOnCancelSym = typeof WorkflowOnCancelSym;
 export const TaskOnFireSym = Symbol('TaskOnFire');
 export type TaskOnFireSym = typeof TaskOnFireSym;
+export const WorkItemPayloadSym = Symbol('WorkItemPayload');
+export type WorkItemPayloadSym = typeof WorkItemPayloadSym;
 
-/*type T = {
-  [WorkflowContextSym]: string;
-  [WorkflowOnStartSym]: {
-    context: string;
-    input: number;
-  };
-  t1: {
-    [TaskOnFireSym]: {
-      context: string;
-      input: number;
-    };
-    [k: string]: {
-      onInitialize: {
-        input: number;
-        context: string;
-        payload: boolean;
-      };
-    };
-  };
-  ct1: {
-    [TaskOnFireSym]: {
-      context: string;
-      input: number;
-    };
-    [k: string]: {
-      [WorkflowContextSym]: string;
-      [WorkflowOnStartSym]: {
-        context: string;
-        input: number;
-      };
-      t1: {
-        [TaskOnFireSym]: {
-          context: string;
-          input: number;
-        };
-        [k: string]: {
-          onInitialize: {
-            input: number;
-            context: string;
-            payload: boolean;
-          };
-        };
-      };
-      ct1: {
-        [TaskOnFireSym]: {
-          context: string;
-          input: number;
-        };
-      };
-    };
-  };
-};
-
-*/
+export type GetSym<T, U extends symbol> = [T] extends [
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Record<string | number | symbol, any>
+]
+  ? T[U]
+  : never;

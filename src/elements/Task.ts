@@ -4,9 +4,9 @@ import { State } from '../State.js';
 import { AnyWorkItemActivities } from '../builder/WorkItemBuilder.js';
 import { InvalidTaskState } from '../errors.js';
 import {
+  ExecutionContext,
   JoinType,
   SplitType,
-  TaskActionsService,
   TaskActivities,
   TaskState,
   WorkItemId,
@@ -21,13 +21,13 @@ import { Workflow } from './Workflow.js';
 // have positive marking, so it should transition to enabled again
 
 export class Task extends BaseTask {
-  readonly activities: TaskActivities;
+  readonly activities: TaskActivities<any>;
   readonly workItemActivities: AnyWorkItemActivities;
 
   constructor(
     name: string,
     workflow: Workflow,
-    activities: TaskActivities,
+    activities: TaskActivities<any>,
     workItemActivities: AnyWorkItemActivities,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
@@ -54,12 +54,13 @@ export class Task extends BaseTask {
       if (isValidTaskInstanceTransition(state, 'enabled')) {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied(workflowId));
         if (isJoinSatisfied) {
-          const defaultActivityPayload = yield* $(
-            self.getDefaultActivityPayload(workflowId)
-          );
-          const taskActionsService = yield* $(TaskActionsService);
+          const executionContext = yield* $(ExecutionContext);
           const enqueueFireTask = (input?: unknown) => {
-            return taskActionsService.fireTask(self.name, input);
+            return executionContext.queue.offer({
+              path: executionContext.path,
+              type: 'fireTask',
+              input,
+            });
           };
 
           const perform = yield* $(
@@ -68,7 +69,7 @@ export class Task extends BaseTask {
 
           const result = yield* $(
             self.activities.onEnable({
-              ...defaultActivityPayload,
+              ...executionContext.defaultActivityPayload,
               enableTask() {
                 return pipe(
                   perform,
@@ -93,24 +94,22 @@ export class Task extends BaseTask {
       const stateManager = yield* $(State);
 
       if (isValidTaskInstanceTransition(state, 'disabled')) {
-        const defaultActivityPayload = yield* $(
-          self.getDefaultActivityPayload(workflowId)
-        );
+        const executionContext = yield* $(ExecutionContext);
 
-        const performDisable = yield* $(
+        const perform = yield* $(
           Effect.once(stateManager.disableTask(workflowId, self.name))
         );
 
         const result = yield* $(
           self.activities.onDisable({
-            ...defaultActivityPayload,
+            ...executionContext.defaultActivityPayload,
             disableTask() {
-              return performDisable;
+              return perform;
             },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performDisable);
+        yield* $(perform);
 
         return result;
       }
@@ -124,12 +123,9 @@ export class Task extends BaseTask {
       const stateManager = yield* $(State);
 
       if (isValidTaskInstanceTransition(state, 'fired')) {
-        const defaultActivityPayload = yield* $(
-          self.getDefaultActivityPayload(workflowId)
-        );
-        const taskActionsService = yield* $(TaskActionsService);
+        const executionContext = yield* $(ExecutionContext);
 
-        const performFire = yield* $(
+        const perform = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
               yield* $(stateManager.fireTask(workflowId, self.name));
@@ -139,21 +135,38 @@ export class Task extends BaseTask {
                 condition.decrementMarking(workflowId)
               );
               yield* $(Effect.all(updates, { discard: true, batching: true }));
-            }).pipe(Effect.provideService(State, stateManager))
+            }).pipe(
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            )
           )
         );
 
         const initializeWorkItem = (payload: unknown) =>
           self.initializeWorkItem(workflowId, payload);
 
+        const enqueueStartWorkItem = (
+          workItemId: WorkItemId,
+          input?: unknown
+        ) => {
+          return executionContext.queue.offer({
+            path: [...executionContext.path, workItemId],
+            type: 'startWorkItem',
+            input,
+          });
+        };
+
         const result = yield* $(
           self.activities.onFire(
             {
-              ...defaultActivityPayload,
+              ...executionContext.defaultActivityPayload,
               fireTask() {
                 return pipe(
-                  performFire,
-                  Effect.map(() => ({ initializeWorkItem }))
+                  perform,
+                  Effect.map(() => ({
+                    initializeWorkItem,
+                    enqueueStartWorkItem,
+                  }))
                 );
               },
             },
@@ -161,12 +174,9 @@ export class Task extends BaseTask {
           ) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performFire);
+        yield* $(perform);
 
-        yield* $(
-          self.maybeExit(workflowId),
-          Effect.provideService(TaskActionsService, taskActionsService)
-        );
+        yield* $(self.maybeExit(workflowId));
 
         return result;
       }
@@ -180,35 +190,32 @@ export class Task extends BaseTask {
       const stateManager = yield* $(State);
 
       if (isValidTaskInstanceTransition(state, 'exited')) {
-        const defaultActivityPayload = yield* $(
-          self.getDefaultActivityPayload(workflowId)
-        );
-        const taskActionsService = yield* $(TaskActionsService);
-
-        const performExit = yield* $(
+        const executionContext = yield* $(ExecutionContext);
+        const perform = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
               yield* $(stateManager.exitTask(workflowId, self.name));
               yield* $(self.cancelCancellationRegion(workflowId));
               yield* $(self.produceTokensInOutgoingFlows(workflowId));
               yield* $(self.enablePostTasks(workflowId));
-            }).pipe(Effect.provideService(State, stateManager))
+              yield* $(self.workflow.maybeComplete(workflowId));
+            }).pipe(
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            )
           )
         );
 
         const result = yield* $(
           self.activities.onExit({
-            ...defaultActivityPayload,
+            ...executionContext.defaultActivityPayload,
             exitTask() {
-              return pipe(
-                performExit,
-                Effect.provideService(TaskActionsService, taskActionsService)
-              );
+              return perform;
             },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performExit);
+        yield* $(perform);
 
         return result;
       }
@@ -222,24 +229,22 @@ export class Task extends BaseTask {
       const stateManager = yield* $(State);
 
       if (isValidTaskInstanceTransition(state, 'canceled')) {
-        const defaultActivityPayload = yield* $(
-          self.getDefaultActivityPayload(workflowId)
-        );
+        const executionContext = yield* $(ExecutionContext);
 
-        const performCancel = yield* $(
+        const perform = yield* $(
           Effect.once(stateManager.cancelTask(workflowId, self.name))
         );
 
         const result = yield* $(
           self.activities.onCancel({
-            ...defaultActivityPayload,
+            ...executionContext.defaultActivityPayload,
             cancelTask() {
-              return performCancel;
+              return perform;
             },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performCancel);
+        yield* $(perform);
 
         return result;
       }
@@ -250,7 +255,6 @@ export class Task extends BaseTask {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      const taskActionsService = yield* $(TaskActionsService);
       const taskWorkItems = yield* $(
         stateManager.getWorkItems(workflowId, self.name)
       );
@@ -260,7 +264,7 @@ export class Task extends BaseTask {
           activeWorkItemInstanceStates.has(workItem.state)
         )
       ) {
-        yield* $(taskActionsService.exitTask(self.name));
+        yield* $(self.exit(workflowId));
       }
     });
   }
@@ -272,11 +276,10 @@ export class Task extends BaseTask {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      const defaultActivityPayload = yield* $(
-        self.getDefaultActivityPayload(workflowId)
-      );
+      const executionContext = yield* $(ExecutionContext);
+
       return {
-        ...defaultActivityPayload,
+        ...executionContext.defaultActivityPayload,
         getWorkItem() {
           return self
             .getWorkItem(workflowId, workItemId)
@@ -313,7 +316,7 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsFired(workflowId));
 
       const stateManager = yield* $(State);
-      const performUpdate = yield* $(
+      const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
             yield* $(
@@ -328,6 +331,8 @@ export class Task extends BaseTask {
         )
       );
 
+      const executionContext = yield* $(ExecutionContext);
+
       const workItemActivityPayload = yield* $(
         self.getWorkItemActivityPayload(workflowId, workItemId)
       );
@@ -338,16 +343,28 @@ export class Task extends BaseTask {
             ...workItemActivityPayload,
             startWorkItem() {
               return Effect.gen(function* ($) {
-                yield* $(performUpdate);
+                yield* $(perform);
                 return {
-                  enqueueCompleteWorkItem() {
-                    return Effect.unit;
+                  enqueueCompleteWorkItem(input?: unknown) {
+                    return executionContext.queue.offer({
+                      path: executionContext.path,
+                      type: 'completeWorkItem',
+                      input,
+                    });
                   },
-                  enqueueFailWorkItem() {
-                    return Effect.unit;
+                  enqueueFailWorkItem(input?: unknown) {
+                    return executionContext.queue.offer({
+                      path: executionContext.path,
+                      type: 'failWorkItem',
+                      input,
+                    });
                   },
-                  enqueueCancelWorkItem() {
-                    return Effect.unit;
+                  enqueueCancelWorkItem(input?: unknown) {
+                    return executionContext.queue.offer({
+                      path: executionContext.path,
+                      type: 'cancelWorkItem',
+                      input,
+                    });
                   },
                 };
               });
@@ -357,7 +374,7 @@ export class Task extends BaseTask {
         ) as Effect.Effect<never, never, unknown>
       );
 
-      yield* $(performUpdate);
+      yield* $(perform);
       yield* $(self.maybeExit(workflowId));
 
       return result;
@@ -374,7 +391,7 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsFired(workflowId));
 
       const stateManager = yield* $(State);
-      const performUpdate = yield* $(
+      const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
             yield* $(
@@ -398,14 +415,14 @@ export class Task extends BaseTask {
           {
             ...workItemActivityPayload,
             completeWorkItem() {
-              return performUpdate;
+              return perform;
             },
           },
           input
         ) as Effect.Effect<never, never, unknown>
       );
 
-      yield* $(performUpdate);
+      yield* $(perform);
       yield* $(self.maybeExit(workflowId));
 
       return result;
@@ -422,7 +439,7 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsFired(workflowId));
 
       const stateManager = yield* $(State);
-      const performUpdate = yield* $(
+      const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
             yield* $(
@@ -446,14 +463,14 @@ export class Task extends BaseTask {
           {
             ...workItemActivityPayload,
             cancelWorkItem() {
-              return performUpdate;
+              return perform;
             },
           },
           input
         ) as Effect.Effect<never, never, unknown>
       );
 
-      yield* $(performUpdate);
+      yield* $(perform);
       yield* $(self.maybeExit(workflowId));
 
       return result;
@@ -470,7 +487,7 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsFired(workflowId));
 
       const stateManager = yield* $(State);
-      const performUpdate = yield* $(
+      const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
             yield* $(
@@ -494,14 +511,14 @@ export class Task extends BaseTask {
           {
             ...workItemActivityPayload,
             failWorkItem() {
-              return performUpdate;
+              return perform;
             },
           },
           input
         ) as Effect.Effect<never, never, unknown>
       );
 
-      yield* $(performUpdate);
+      yield* $(perform);
       yield* $(self.maybeExit(workflowId));
 
       return result;

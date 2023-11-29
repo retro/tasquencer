@@ -9,11 +9,9 @@ import {
 import { Workflow } from '../elements/Workflow.js';
 
 type AnyFlowPredicate = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...args: any[]
 ) => Effect.Effect<unknown, unknown, boolean>;
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
   any,
   any,
@@ -26,7 +24,6 @@ export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
     ? F
     : never
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export class ConditionFlowBuilder<BNTasks> {
   private readonly from: string;

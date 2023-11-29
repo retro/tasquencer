@@ -1,4 +1,4 @@
-import { Effect, Option, Queue } from 'effect';
+import { Effect, Match, Option, Queue, pipe } from 'effect';
 import { Get } from 'type-fest';
 
 import { State } from './State.js';
@@ -6,9 +6,25 @@ import { BaseTask } from './elements/BaseTask.js';
 import { CompositeTask } from './elements/CompositeTask.js';
 import { Task } from './elements/Task.js';
 import { Workflow, WorkflowMetadata } from './elements/Workflow.js';
-import { InvalidPath } from './errors.js';
+import {
+  ConditionDoesNotExist,
+  ConditionDoesNotExistInStore,
+  EndConditionDoesNotExist,
+  InvalidPath,
+  InvalidTaskState,
+  InvalidTaskStateTransition,
+  InvalidWorkItemTransition,
+  InvalidWorkflowStateTransition,
+  StartConditionDoesNotExist,
+  TaskDoesNotExist,
+  TaskDoesNotExistInStore,
+  WorkItemDoesNotExist,
+  WorkflowDoesNotExist,
+} from './errors.js';
 import * as StateImpl from './state/StateImpl.js';
 import {
+  ExecutionContext,
+  ExecutionContextQueueItem,
   GetSym,
   IdGenerator,
   TaskName,
@@ -26,16 +42,13 @@ function pathAsArray(path: string | string[] | readonly string[]) {
   return typeof path === 'string' ? path.split('.') : path;
 }
 
-type QueueItem =
-  | { type: 'fire'; taskName: string; input: unknown }
-  | { type: 'exit'; taskName: string; input: unknown };
-
 // TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Service<WorkflowMetadata, R = never, E = never> {
   constructor(
     private workflowId: WorkflowId,
     private workflow: Workflow,
-    private state: State
+    private state: State,
+    private queue: Queue.Queue<ExecutionContextQueueItem>
   ) {}
   // TODO: Check if workflow was already started
 
@@ -47,7 +60,12 @@ export class Service<WorkflowMetadata, R = never, E = never> {
     return this.cancelWorkflow([]);
   }
 
-  startWorkflow<I>(path: string[] | string, input?: I) {
+  startWorkflow<I>(
+    pathOrArray: readonly string[] | string,
+    input?: I,
+    executePostActions = true
+  ) {
+    const path = pathAsArray(pathOrArray);
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -56,14 +74,18 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       );
 
       const result = yield* $(
-        executionPlan.workflow.workflow.interpreter.startWorkflow(
-          executionPlan.workflow.id,
-          input
+        executionPlan.workflow.workflow.start(executionPlan.workflow.id, input),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
         )
       );
 
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
+      if (executePostActions) {
+        yield* $(self.executePostActions());
       }
 
       return result;
@@ -86,7 +108,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       const executionPlan = yield* $(self.taskPathToExecutionPlan(path));
       if (executionPlan.task instanceof CompositeTask) {
         const result = yield* $(
-          executionPlan.task.subWorkflow.interpreter.initializeWorkflow(input, {
+          executionPlan.task.subWorkflow.initialize(input, {
             workflowId: executionPlan.workflow.id,
             taskName: executionPlan.taskName,
           })
@@ -108,17 +130,41 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       );
 
       const result = yield* $(
-        executionPlan.workflow.workflow.interpreter.cancelWorkflow(
-          executionPlan.workflow.id
-        )
+        executionPlan.workflow.workflow.cancel(executionPlan.workflow.id)
       );
-
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
-      }
 
       return result;
     }).pipe(Effect.provideService(State, this.state));
+  }
+
+  private unsafeFireTask(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const executionPlan = yield* $(self.taskPathToExecutionPlan(path));
+
+      const result = yield* $(
+        executionPlan.task.fire(executionPlan.workflow.id, input),
+        self.decorateReturnType,
+        Effect.provideService(State, self.state),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
+        )
+      );
+
+      if (executePostActions) {
+        yield* $(self.executePostActions());
+      }
+
+      return result;
+    });
   }
 
   fireTask<
@@ -130,29 +176,48 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       : [T, Get<M, 'input'>]
   ) {
     const [pathOrArray, input] = args;
+    const path = pathAsArray(pathOrArray);
+
+    return pipe(
+      this.unsafeFireTask(path, input, true),
+      Effect.map((r) => r as Get<M, 'return'>)
+    );
+  }
+
+  private unsafeInitializeWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
     const self = this;
+    return Effect.gen(function* ($) {
+      const executionPlan = yield* $(self.taskPathToExecutionPlan(path));
 
-    return this.decorateReturnType(
-      Effect.gen(function* ($) {
-        const executionPlan = yield* $(
-          self.taskPathToExecutionPlan(pathAsArray(pathOrArray))
+      if (!(executionPlan.task instanceof Task)) {
+        return yield* $(
+          Effect.fail(new InvalidPath({ path, pathType: 'task' }))
         );
+      }
 
-        const result = yield* $(
-          executionPlan.workflow.workflow.interpreter.fireTask(
-            executionPlan.workflow.id,
-            executionPlan.taskName,
-            input
-          )
-        );
+      const result = yield* $(
+        executionPlan.task.initializeWorkItem(executionPlan.workflow.id, input),
+        self.decorateReturnType,
+        Effect.provideService(State, self.state),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
+        )
+      );
 
-        for (const queue of executionPlan.queuesToRun) {
-          yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
-        }
+      if (executePostActions) {
+        yield* $(self.executePostActions());
+      }
 
-        return result as Get<M, 'return'>;
-      })
-    ).pipe(Effect.provideService(State, this.state));
+      return result;
+    });
   }
 
   initializeWorkItem<
@@ -165,26 +230,45 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   ) {
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
+
+    return pipe(
+      this.unsafeInitializeWorkItem(path, input, true),
+      Effect.map((r) => r as WorkItem<GetSym<M, WorkItemPayloadSym>>)
+    );
+  }
+
+  private unsafeCompleteWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
     const self = this;
     return Effect.gen(function* ($) {
-      const executionPlan = yield* $(self.taskPathToExecutionPlan(path));
-
-      if (!(executionPlan.task instanceof Task)) {
-        return yield* $(
-          Effect.fail(new InvalidPath({ path, pathType: 'task' }))
-        );
-      }
+      const executionPlan = yield* $(self.workItemPathToExecutionPlan(path));
 
       const result = yield* $(
-        executionPlan.task.initializeWorkItem(executionPlan.workflow.id, input)
+        executionPlan.task.completeWorkItem(
+          executionPlan.workflow.id,
+          executionPlan.workItemId,
+          input
+        ),
+        self.decorateReturnType,
+        Effect.provideService(State, self.state),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
+        )
       );
 
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
+      if (executePostActions) {
+        yield* $(self.executePostActions());
       }
 
-      return result as WorkItem<GetSym<M, WorkItemPayloadSym>>;
-    }).pipe(Effect.provideService(State, this.state));
+      return result;
+    });
   }
 
   completeWorkItem<
@@ -197,25 +281,45 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   ) {
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
-    const self = this;
 
+    return pipe(
+      this.unsafeCompleteWorkItem(path, input, true),
+      Effect.map((r) => r as Get<M, ['onComplete', 'return']>)
+    );
+  }
+
+  private unsafeCancelWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
+    const self = this;
     return Effect.gen(function* ($) {
       const executionPlan = yield* $(self.workItemPathToExecutionPlan(path));
 
       const result = yield* $(
-        executionPlan.task.completeWorkItem(
+        executionPlan.task.cancelWorkItem(
           executionPlan.workflow.id,
           executionPlan.workItemId,
           input
+        ),
+        self.decorateReturnType,
+        Effect.provideService(State, self.state),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
         )
       );
 
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
+      if (executePostActions) {
+        yield* $(self.executePostActions());
       }
 
-      return result as Get<M, ['onComplete', 'return']>;
-    }).pipe(Effect.provideService(State, this.state));
+      return result;
+    });
   }
 
   cancelWorkItem<
@@ -228,23 +332,44 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   ) {
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
+
+    return pipe(
+      this.unsafeCancelWorkItem(path, input, true),
+      Effect.map((r) => r as Get<M, ['onCancel', 'return']>)
+    );
+  }
+
+  private unsafeStartWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
     const self = this;
     return Effect.gen(function* ($) {
       const executionPlan = yield* $(self.workItemPathToExecutionPlan(path));
 
       const result = yield* $(
-        executionPlan.task.cancelWorkItem(
+        executionPlan.task.startWorkItem(
           executionPlan.workflow.id,
           executionPlan.workItemId,
           input
+        ),
+        self.decorateReturnType,
+        Effect.provideService(State, self.state),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
         )
       );
 
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
+      if (executePostActions) {
+        yield* $(self.executePostActions());
       }
 
-      return result as Get<M, ['onCancel', 'return']>;
+      return result;
     });
   }
 
@@ -258,23 +383,44 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   ) {
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
+
+    return pipe(
+      this.unsafeStartWorkItem(path, input, true),
+      Effect.map((r) => r as Get<M, ['onStart', 'return']>)
+    );
+  }
+
+  private unsafeFailWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
     const self = this;
     return Effect.gen(function* ($) {
       const executionPlan = yield* $(self.workItemPathToExecutionPlan(path));
 
       const result = yield* $(
-        executionPlan.task.startWorkItem(
+        executionPlan.task.failWorkItem(
           executionPlan.workflow.id,
           executionPlan.workItemId,
           input
+        ),
+        self.decorateReturnType,
+        Effect.provideService(State, self.state),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
         )
       );
 
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
+      if (executePostActions) {
+        yield* $(self.executePostActions());
       }
 
-      return result as Get<M, ['onStart', 'return']>;
+      return result;
     });
   }
 
@@ -288,30 +434,15 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   ) {
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
-    const self = this;
-    return Effect.gen(function* ($) {
-      const executionPlan = yield* $(self.workItemPathToExecutionPlan(path));
 
-      const result = yield* $(
-        executionPlan.task.failWorkItem(
-          executionPlan.workflow.id,
-          executionPlan.workItemId,
-          input
-        )
-      );
-
-      for (const queue of executionPlan.queuesToRun) {
-        yield* $(queue.workflow.interpreter.runQueueAndMaybeEnd(queue.id));
-      }
-
-      return result as Get<M, ['onFail', 'return']>;
-    });
+    return pipe(
+      this.unsafeFailWorkItem(path, input, true),
+      Effect.map((r) => r as Get<M, ['onFail', 'return']>)
+    );
   }
 
   getWorkItems(taskName: string) {
-    return this.workflow.interpreter
-      .getWorkItems(this.workflowId, taskName)
-      .pipe(Effect.provideService(State, this.state));
+    return this.state.getWorkItems(this.workflowId, TaskName(taskName));
   }
 
   getWorkflowState() {
@@ -346,6 +477,95 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   }
   inspectState() {
     return this.state.inspect();
+  }
+
+  private runQueue(): Effect.Effect<
+    R,
+    | E
+    | InvalidPath
+    | TaskDoesNotExist
+    | WorkItemDoesNotExist
+    | TaskDoesNotExistInStore
+    | InvalidWorkflowStateTransition
+    | InvalidWorkItemTransition
+    | InvalidTaskState
+    | InvalidTaskStateTransition
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | StartConditionDoesNotExist
+    | EndConditionDoesNotExist
+    | WorkflowDoesNotExist,
+    void
+  > {
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      while (true) {
+        const item = yield* $(
+          Queue.poll(self.queue),
+          Effect.map(Option.getOrNull)
+        );
+
+        if (item === null) {
+          return;
+        }
+
+        const match = pipe(
+          Match.type<ExecutionContextQueueItem>(),
+          Match.when({ type: 'fireTask' }, ({ path, input }) =>
+            self.unsafeFireTask(path, input, false)
+          ),
+          Match.when(
+            { type: 'startWorkflow' },
+            ({ path, input }) => self.startWorkflow(path, input, false) // TODO: make unsafe version
+          ),
+          Match.when({ type: 'startWorkItem' }, ({ path, input }) =>
+            self.unsafeStartWorkItem(path, input, false)
+          ),
+          Match.when({ type: 'completeWorkItem' }, ({ path, input }) =>
+            self.unsafeCompleteWorkItem(path, input, false)
+          ),
+          Match.when({ type: 'cancelWorkItem' }, ({ path, input }) =>
+            self.unsafeCancelWorkItem(path, input, false)
+          ),
+          Match.when({ type: 'failWorkItem' }, ({ path, input }) =>
+            self.unsafeFailWorkItem(path, input, false)
+          ),
+          Match.exhaustive
+        );
+
+        yield* $(match(item));
+      }
+    });
+  }
+
+  private executePostActions() {
+    return this.runQueue();
+  }
+
+  private makeExecutionContext(input: {
+    path: readonly string[];
+    workflowId: WorkflowId;
+  }): ExecutionContext {
+    const { queue, state } = this;
+    return {
+      ...input,
+      defaultActivityPayload: {
+        getWorkflowContext() {
+          return state
+            .getWorkflow(input.workflowId)
+            .pipe(Effect.map((w) => w.context));
+        },
+        updateWorkflowContext(context: unknown) {
+          return state.updateWorkflowContext(input.workflowId, context);
+        },
+      },
+      queue: {
+        offer(item: ExecutionContextQueueItem) {
+          return queue.offer(item);
+        },
+      },
+    };
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -622,6 +842,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
                     current,
                     index: state.index + 2,
                     restPath: [],
+                    taskNames: [...state.taskNames, TaskName(taskName)],
                     workItemId: WorkItemId(restPath[0]),
                   };
                 }
@@ -710,7 +931,7 @@ export function initialize<
   C extends WorkflowContext<W> = WorkflowContext<W>
 >(workflow: W, context: C) {
   return Effect.gen(function* ($) {
-    const queue = yield* $(Queue.unbounded<QueueItem>());
+    const queue = yield* $(Queue.unbounded<ExecutionContextQueueItem>());
     const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));
     const idGenerator = Option.getOrElse(
       maybeIdGenerator,
@@ -727,7 +948,8 @@ export function initialize<
     const interpreter = new Service<WorkflowMetadata<W>, R, E>(
       id,
       workflow,
-      state
+      state,
+      queue
     );
 
     return interpreter;
@@ -742,7 +964,7 @@ export function initialize<
   C extends WorkflowContext<W> = WorkflowContext<W>
 >(workflow: W, context: C) {
   return Effect.gen(function* ($) {
-    const queue = yield* $(Queue.unbounded<QueueItem>());
+    const queue = yield* $(Queue.unbounded<ExecutionContextQueueItem>());
 
     return new Interpreter<
       WorkflowWorkflowMetadata<W>,

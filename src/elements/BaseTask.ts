@@ -4,14 +4,17 @@ import { State } from '../State.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
+  EndConditionDoesNotExist,
   InvalidTaskStateTransition,
+  InvalidWorkflowStateTransition,
   TaskDoesNotExist,
   TaskDoesNotExistInStore,
+  WorkflowDoesNotExist,
 } from '../errors.js';
 import {
+  ExecutionContext,
   JoinType,
   SplitType,
-  TaskActionsService,
   TaskName,
   TaskState,
   WorkflowId,
@@ -93,22 +96,6 @@ export abstract class BaseTask {
     });
   }
 
-  protected getDefaultActivityPayload(workflowId: WorkflowId) {
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      return {
-        getWorkflowContext() {
-          return stateManager
-            .getWorkflow(workflowId)
-            .pipe(Effect.map((w) => w.context));
-        },
-        updateWorkflowContext(context: unknown) {
-          return stateManager.updateWorkflowContext(workflowId, context);
-        },
-      };
-    });
-  }
-
   isEnabled(workflowId: WorkflowId) {
     return this.isStateEqualTo(workflowId, 'enabled');
   }
@@ -127,7 +114,7 @@ export abstract class BaseTask {
   abstract enable(
     workflowId: WorkflowId
   ): Effect.Effect<
-    TaskActionsService | State,
+    ExecutionContext | State,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -139,7 +126,7 @@ export abstract class BaseTask {
   abstract disable(
     workflowId: WorkflowId
   ): Effect.Effect<
-    State,
+    ExecutionContext | State,
     TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
     unknown
   >;
@@ -148,12 +135,15 @@ export abstract class BaseTask {
     workflowId: WorkflowId,
     input?: unknown
   ): Effect.Effect<
-    TaskActionsService | State,
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
+    ExecutionContext | State,
     | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
-    | InvalidTaskStateTransition,
+    | EndConditionDoesNotExist
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | WorkflowDoesNotExist,
     unknown
   >;
 
@@ -161,26 +151,40 @@ export abstract class BaseTask {
     workflowId: WorkflowId,
     input?: unknown
   ): Effect.Effect<
-    TaskActionsService | State,
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
+    ExecutionContext | State,
     | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
-    | InvalidTaskStateTransition,
+    | EndConditionDoesNotExist
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | WorkflowDoesNotExist,
     unknown
   >;
 
   abstract cancel(
     workflowId: WorkflowId
   ): Effect.Effect<
-    State,
+    ExecutionContext | State,
     TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
     unknown
   >;
 
   abstract maybeExit(
     workflowId: WorkflowId
-  ): Effect.Effect<State | TaskActionsService, TaskDoesNotExistInStore, void>;
+  ): Effect.Effect<
+    State | ExecutionContext,
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | EndConditionDoesNotExist
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | WorkflowDoesNotExist,
+    void
+  >;
 
   cancelCancellationRegion(workflowId: WorkflowId) {
     const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>

@@ -55,11 +55,29 @@ it('can run net with composite tasks', () => {
     .startCondition('subStart')
     .task('subT1', (t) =>
       t()
-        .onFire(() => Effect.succeed(1))
         .withWorkItem((w) =>
-          w<{ workItem: string }>().onComplete((_, input?: { foo: string }) =>
-            Effect.succeed(input?.foo)
-          )
+          w<{ workItem: string }>()
+            .onComplete((_, input?: { foo: string }) =>
+              Effect.succeed(input?.foo)
+            )
+            .onStart(({ startWorkItem }) =>
+              Effect.gen(function* ($) {
+                const { enqueueCompleteWorkItem } = yield* $(startWorkItem());
+                yield* $(enqueueCompleteWorkItem());
+              })
+            )
+        )
+        .onFire(({ fireTask }) =>
+          Effect.gen(function* ($) {
+            const { initializeWorkItem, enqueueStartWorkItem } = yield* $(
+              fireTask()
+            );
+            const workItem1 = yield* $(initializeWorkItem({ workItem: 'foo' }));
+            const _workItem2 = yield* $(
+              initializeWorkItem({ workItem: 'foo' })
+            );
+            yield* $(enqueueStartWorkItem(workItem1.id));
+          })
         )
     )
     .endCondition('subEnd')
@@ -104,9 +122,9 @@ it('can run net with composite tasks', () => {
 
     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 
-    const subWorkflow2 = yield* $(
+    /*const subWorkflow2 = yield* $(
       service.initializeWorkflow('t1', { bar: 'aaa' })
-    );
+    );*/
 
     yield* $(service.startWorkflow(['t1', subWorkflow.id]));
     const a = yield* $(service.fireTask(`t1.${subWorkflow.id}.subT1`));
@@ -117,11 +135,14 @@ it('can run net with composite tasks', () => {
       })
     );
 
-    const c = yield* $(
-      service.completeWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`)
-    );
+    yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`));
+    yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.workItem-2`));
 
-    yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
+    /*const c = yield* $(
+      service.completeWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`)
+    );*/
+
+    //yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
 
     console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
     expect(1).toBe(1);

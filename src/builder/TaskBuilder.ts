@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { Simplify } from 'type-fest';
+import { Get, Simplify } from 'type-fest';
 
 import { Task } from '../elements/Task.js';
 import { Workflow } from '../elements/Workflow.js';
@@ -27,7 +27,6 @@ import {
   workItem,
 } from './WorkItemBuilder.js';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderContext<T> = T extends TaskBuilder<
   infer C,
   any,
@@ -36,9 +35,7 @@ export type TaskBuilderContext<T> = T extends TaskBuilder<
 >
   ? C
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderSplitType<T> = T extends TaskBuilder<
   any,
   any,
@@ -47,9 +44,7 @@ export type TaskBuilderSplitType<T> = T extends TaskBuilder<
 >
   ? ST
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderActivitiesReturnType<T> = T extends TaskBuilder<
   any,
   any,
@@ -60,9 +55,7 @@ export type TaskBuilderActivitiesReturnType<T> = T extends TaskBuilder<
 >
   ? AO
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderR<T> = T extends TaskBuilder<
   any,
   any,
@@ -75,9 +68,7 @@ export type TaskBuilderR<T> = T extends TaskBuilder<
 >
   ? R
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type TaskBuilderE<T> = T extends TaskBuilder<
   any,
   any,
@@ -91,16 +82,13 @@ export type TaskBuilderE<T> = T extends TaskBuilder<
 >
   ? E
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnyTaskBuilder<C = any> = TaskBuilder<
   C,
   TaskActivities<C>,
   JoinType | undefined,
   SplitType | undefined
 >;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type InitializedTaskBuilder<C> = TaskBuilder<
   C,
@@ -114,7 +102,6 @@ interface TaskActivityMetadata<I, R> {
   return: R;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type TaskBuilderTM<T> = T extends TaskBuilder<
   any,
   any,
@@ -126,9 +113,7 @@ type TaskBuilderTM<T> = T extends TaskBuilder<
 >
   ? TM
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type TaskBuilderWIM<T> = T extends TaskBuilder<
   any,
   any,
@@ -140,7 +125,6 @@ type TaskBuilderWIM<T> = T extends TaskBuilder<
 >
   ? WIM
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type TaskBuilderMetadata<T extends AnyTaskBuilder> = Simplify<
   TaskBuilderTM<T> & Record<string, TaskBuilderWIM<T>>
@@ -185,7 +169,6 @@ export class TaskBuilder<
   }
 
   onDisable<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     F extends (payload: TaskOnDisablePayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -205,7 +188,6 @@ export class TaskBuilder<
   }
 
   onEnable<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     F extends (payload: TaskOnEnablePayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -227,10 +209,9 @@ export class TaskBuilder<
   onFire<
     I,
     F extends (
-      payload: TaskOnFirePayload<C, WIP>,
+      payload: TaskOnFirePayload<C, WIP, Get<WIM, ['onStart', 'input']>>,
       input: I
-    ) => // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Effect.Effect<any, any, any>
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -256,10 +237,7 @@ export class TaskBuilder<
   }
 
   onExit<
-    F extends (
-      payload: TaskOnExitPayload<C>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) => Effect.Effect<any, any, any>
+    F extends (payload: TaskOnExitPayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -278,7 +256,6 @@ export class TaskBuilder<
   }
 
   onCancel<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     F extends (payload: TaskOnCancelPayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -297,7 +274,6 @@ export class TaskBuilder<
     return this;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   withWorkItem<P, W extends WorkItemBuilder<C, P, any>>(
     workItem: W
   ): TaskBuilder<
@@ -313,12 +289,10 @@ export class TaskBuilder<
   >;
 
   withWorkItem<
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     P,
     F extends (
       w: <P>() => InitializedWorkItemBuilder<C, P>
     ) => WorkItemBuilder<C, P, any>
-    /* eslint-enable @typescript-eslint/no-explicit-any */
   >(
     f: F
   ): TaskBuilder<
@@ -349,7 +323,7 @@ export class TaskBuilder<
     const task = new Task(
       name,
       workflow,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       activities as unknown as TaskActivities<any>,
       this.workItem.build() as AnyWorkItemActivities,
       {

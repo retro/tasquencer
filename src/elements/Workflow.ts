@@ -15,19 +15,19 @@ import {
 } from '../errors.js';
 import {
   ConditionName,
+  ExecutionContext,
   TaskName,
   WorkflowId,
   WorkflowInstanceParent,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
+  finalWorkflowInstanceStates,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
 import { CompositeTask } from './CompositeTask.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
-import { Interpreter } from './Workflow/Interpreter.js';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowMetadata<T> = T extends Workflow<
   any,
   any,
@@ -37,7 +37,6 @@ export type WorkflowMetadata<T> = T extends Workflow<
 >
   ? U
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 type OnStart<C> = (
   payload: WorkflowOnStartPayload<C>,
@@ -59,14 +58,12 @@ export class Workflow<
   private startCondition?: Condition;
   private endCondition?: Condition;
   readonly name: string;
-  readonly interpreter: Interpreter;
   readonly onStart: OnStart<Context>;
   readonly onEnd: OnEnd<Context>;
   private parentTask?: CompositeTask;
 
   constructor(name: string, onStart: OnStart<Context>, onEnd: OnEnd<Context>) {
     this.name = name;
-    this.interpreter = new Interpreter(this);
     this.onStart = onStart;
     this.onEnd = onEnd;
   }
@@ -123,17 +120,57 @@ export class Workflow<
     });
   }
 
-  start(id: WorkflowId) {
+  start(id: WorkflowId, input?: unknown) {
+    const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      return yield* $(stateManager.updateWorkflowState(id, 'started'));
+      const executionContext = yield* $(ExecutionContext);
+      const perform = yield* $(
+        Effect.once(
+          Effect.gen(function* ($) {
+            const startCondition = yield* $(self.getStartCondition());
+            yield* $(
+              Effect.succeed(startCondition),
+              Effect.tap((s) => s.incrementMarking(id)),
+              Effect.tap((s) => s.enableTasks(id))
+            );
+            yield* $(stateManager.updateWorkflowState(id, 'started'));
+          }).pipe(
+            Effect.provideService(State, stateManager),
+            Effect.provideService(ExecutionContext, executionContext)
+          )
+        )
+      );
+
+      const result = yield* $(
+        self.onStart(
+          {
+            getWorkflowContext() {
+              return stateManager
+                .getWorkflow(id)
+                .pipe(Effect.map((w) => w.context as Context));
+            },
+            updateWorkflowContext(context: unknown) {
+              return stateManager.updateWorkflowContext(id, context);
+            },
+            startWorkflow() {
+              return perform;
+            },
+          },
+          input
+        ) as Effect.Effect<never, never, unknown>
+      );
+
+      yield* $(perform);
+
+      return result;
     });
   }
 
-  end(
+  complete(
     id: WorkflowId
   ): Effect.Effect<
-    State,
+    State | ExecutionContext,
     | ConditionDoesNotExist
     | WorkflowDoesNotExist
     | InvalidWorkflowStateTransition
@@ -147,20 +184,53 @@ export class Workflow<
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
       const workflow = yield* $(stateManager.getWorkflow(id));
-      const result = yield* $(
-        stateManager.updateWorkflowState(id, 'completed')
+      const perform = yield* $(
+        Effect.once(
+          Effect.gen(function* ($) {
+            yield* $(stateManager.updateWorkflowState(id, 'completed'));
+            if (self.parentTask && workflow.parent?.workflowId) {
+              yield* $(self.parentTask.maybeExit(workflow.parent.workflowId));
+            }
+          }).pipe(
+            Effect.provideService(State, stateManager),
+            Effect.provideService(ExecutionContext, executionContext)
+          )
+        )
       );
-      if (self.parentTask && workflow.parent?.workflowId) {
-        yield* $(
-          self.parentTask.workflow.interpreter.maybeExitTask(
-            workflow.parent.workflowId,
-            self.parentTask.name
-          ),
-          Effect.provideService(State, stateManager)
-        );
+
+      yield* $(
+        self.onEnd({
+          getWorkflowContext() {
+            return stateManager
+              .getWorkflow(id)
+              .pipe(Effect.map((w) => w.context as Context));
+          },
+          updateWorkflowContext(context: unknown) {
+            return stateManager.updateWorkflowContext(id, context);
+          },
+          endWorkflow() {
+            return perform;
+          },
+        }) as Effect.Effect<never, never, unknown>
+      );
+
+      yield* $(perform);
+    });
+  }
+
+  maybeComplete(id: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const workflowState = yield* $(self.getState(id));
+      const isEndReached = yield* $(self.isEndReached(id));
+      if (
+        isEndReached &&
+        !finalWorkflowInstanceStates.has(workflowState.state)
+      ) {
+        yield* $(self.complete(id));
       }
-      return result;
     });
   }
 

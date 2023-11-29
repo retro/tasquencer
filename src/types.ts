@@ -36,9 +36,7 @@ export type SplitType = JoinSplitType;
 export type JoinType = SplitType;
 
 export type FlowType = 'task->condition' | 'condition->task';
-
 export interface OutgoingTaskFlow {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   predicate?: (...args: any[]) => Effect.Effect<any, any, boolean>;
   order?: number;
   isDefault?: true;
@@ -59,27 +57,13 @@ export interface WorkflowBuilderDefinition {
   tasks: Record<string, AnyTaskBuilder | AnyCompositeTaskBuilder>;
   cancellationRegions: Record<string, CancellationRegion>;
   flows: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     conditions: Record<string, ConditionFlowBuilder<any>>;
     tasks: Record<
       string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       TaskFlowBuilder<any, any> | OrXorTaskFlowBuilder<any, any>
     >;
   };
 }
-
-export interface TaskActionsService {
-  fireTask(
-    taskName: string,
-    input?: unknown
-  ): Effect.Effect<never, never, void>;
-  exitTask(
-    taskName: string,
-    input?: unknown
-  ): Effect.Effect<never, never, void>;
-}
-export const TaskActionsService = Context.Tag<TaskActionsService>();
 
 export interface DefaultTaskOrWorkItemActivityPayload<C> {
   getWorkflowContext(): Effect.Effect<never, WorkflowDoesNotExist, C>;
@@ -152,7 +136,8 @@ export type TaskOnEnablePayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
 
 export type TaskOnFirePayload<
   C,
-  P = unknown
+  P = unknown,
+  SWI = unknown
 > = DefaultTaskOrWorkItemActivityPayload<C> & {
   fireTask: () => Effect.Effect<
     never,
@@ -162,6 +147,10 @@ export type TaskOnFirePayload<
     | ConditionDoesNotExistInStore
     | InvalidTaskStateTransition,
     {
+      enqueueStartWorkItem(
+        id: WorkItemId,
+        ...args: undefined extends SWI ? [SWI?] : [SWI]
+      ): Effect.Effect<never, never, void>;
       initializeWorkItem: (
         payload: P
       ) => Effect.Effect<
@@ -175,7 +164,8 @@ export type TaskOnFirePayload<
 
 export type CompositeTaskOnFirePayload<
   C,
-  P = unknown
+  P = unknown,
+  SWI = unknown
 > = DefaultTaskOrWorkItemActivityPayload<C> & {
   fireTask: () => Effect.Effect<
     never,
@@ -185,6 +175,10 @@ export type CompositeTaskOnFirePayload<
     | ConditionDoesNotExistInStore
     | InvalidTaskStateTransition,
     {
+      enqueueStartWorkflow(
+        id: WorkflowId,
+        ...args: undefined extends SWI ? [SWI?] : [SWI]
+      ): Effect.Effect<never, never, void>;
       initializeWorkflow: (
         payload: P
       ) => Effect.Effect<State, TaskDoesNotExist, WorkflowInstance<P>>;
@@ -195,11 +189,14 @@ export type CompositeTaskOnFirePayload<
 export type TaskOnExitPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
   exitTask: () => Effect.Effect<
     never,
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
     | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
-    | InvalidTaskStateTransition,
+    | EndConditionDoesNotExist
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | WorkflowDoesNotExist,
     void
   >;
 };
@@ -224,9 +221,8 @@ export interface TaskActivities<C> {
     payload: TaskOnEnablePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onFire: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: TaskOnFirePayload<C, any>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onExit: (
@@ -238,33 +234,43 @@ export interface TaskActivities<C> {
 }
 export type CompositeTaskActivities<C> = Omit<TaskActivities<C>, 'onFire'> & {
   onFire: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: CompositeTaskOnFirePayload<C, any>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
 };
 
-export type WorkItemOnStartPayload<C, P> =
-  DefaultTaskOrWorkItemActivityPayload<C> & {
-    getWorkItem(): Effect.Effect<
-      never,
-      WorkItemDoesNotExist | TaskDoesNotExistInStore,
-      WorkItem<P>
-    >;
-    updateWorkItem: (
-      workItemPayload: P
-    ) => Effect.Effect<never, WorkItemDoesNotExist, void>;
-    startWorkItem: () => Effect.Effect<
-      never,
-      WorkItemDoesNotExist | InvalidWorkItemTransition,
-      {
-        enqueueCompleteWorkItem(): Effect.Effect<never, never, void>;
-        enqueueFailWorkItem(): Effect.Effect<never, never, void>;
-        enqueueCancelWorkItem(): Effect.Effect<never, never, void>;
-      }
-    >;
-  };
+export type WorkItemOnStartPayload<
+  C,
+  P,
+  OCOI = unknown,
+  OCAI = unknown,
+  OFI = unknown
+> = DefaultTaskOrWorkItemActivityPayload<C> & {
+  getWorkItem(): Effect.Effect<
+    never,
+    WorkItemDoesNotExist | TaskDoesNotExistInStore,
+    WorkItem<P>
+  >;
+  updateWorkItem: (
+    workItemPayload: P
+  ) => Effect.Effect<never, WorkItemDoesNotExist, void>;
+  startWorkItem: () => Effect.Effect<
+    never,
+    WorkItemDoesNotExist | InvalidWorkItemTransition,
+    {
+      enqueueCompleteWorkItem(
+        ...args: undefined extends OCOI ? [OCOI?] : [OCOI]
+      ): Effect.Effect<never, never, void>;
+      enqueueCancelWorkItem(
+        ...args: undefined extends OCAI ? [OCAI?] : [OCAI]
+      ): Effect.Effect<never, never, void>;
+      enqueueFailWorkItem(
+        ...args: undefined extends OFI ? [OFI?] : [OFI]
+      ): Effect.Effect<never, never, void>;
+    }
+  >;
+};
 
 export type WorkItemOnCompletePayload<C, P> =
   DefaultTaskOrWorkItemActivityPayload<C> & {
@@ -318,23 +324,19 @@ export type WorkItemOnFailPayload<C, P> =
   };
 export interface WorkItemActivities<C, P> {
   onStart: (
-    payload: WorkItemOnStartPayload<C, P>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: WorkItemOnStartPayload<C, P, any, any, any>,
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onComplete: (
     payload: WorkItemOnCompletePayload<C, P>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onCancel: (
     payload: WorkItemOnCancelPayload<C, P>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
   onFail: (
     payload: WorkItemOnFailPayload<C, P>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
@@ -461,7 +463,7 @@ export const validWorkItemStateTransitions: Record<
   WorkItemState,
   Set<WorkItemState>
 > = {
-  initialized: new Set(['started', 'canceled', 'completed']), // TODO: remove completed from here
+  initialized: new Set(['started', 'canceled']), // TODO: remove completed from here
   started: new Set(['completed', 'canceled', 'failed']),
   completed: new Set(),
   canceled: new Set(),
@@ -493,8 +495,44 @@ export const WorkItemPayloadSym = Symbol('WorkItemPayload');
 export type WorkItemPayloadSym = typeof WorkItemPayloadSym;
 
 export type GetSym<T, U extends symbol> = [T] extends [
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Record<string | number | symbol, any>
 ]
   ? T[U]
   : never;
+
+export type ExecutionContextQueueItem =
+  | {
+      type: 'fireTask';
+      path: readonly string[];
+      input: unknown;
+    }
+  | { type: 'startWorkflow'; path: readonly string[]; input: unknown }
+  | {
+      type: 'startWorkItem';
+      path: readonly string[];
+      input: unknown;
+    }
+  | { type: 'completeWorkItem'; path: readonly string[]; input: unknown }
+  | { type: 'cancelWorkItem'; path: readonly string[]; input: unknown }
+  | { type: 'failWorkItem'; path: readonly string[]; input: unknown };
+export interface ExecutionContext {
+  path: readonly string[];
+  workflowId: WorkflowId;
+  defaultActivityPayload: {
+    getWorkflowContext: () => Effect.Effect<
+      never,
+      WorkflowDoesNotExist,
+      unknown
+    >;
+    updateWorkflowContext: (
+      context: unknown
+    ) => Effect.Effect<never, WorkflowDoesNotExist, void>;
+  };
+  queue: {
+    offer: (
+      item: ExecutionContextQueueItem
+    ) => Effect.Effect<never, never, void>;
+  };
+}
+
+export const ExecutionContext = Context.Tag<ExecutionContext>();

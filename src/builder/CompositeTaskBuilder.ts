@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { Simplify } from 'type-fest';
+import { Get, Simplify } from 'type-fest';
 
 import { CompositeTask } from '../elements/CompositeTask.js';
 import { Workflow } from '../elements/Workflow.js';
@@ -232,7 +232,7 @@ export class CompositeTaskBuilder<
   onFire<
     I,
     F extends (
-      payload: CompositeTaskOnFirePayload<C, WC>,
+      payload: CompositeTaskOnFirePayload<C, WC, Get<WM, ['onStart', 'input']>>,
       input: I
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>

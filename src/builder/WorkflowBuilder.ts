@@ -37,7 +37,6 @@ type IsXorOrOrJoinSplit<T> = T extends never
   ? true
   : never;
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type AnyWorkflowBuilder = WorkflowBuilder<
   any,
   any,
@@ -51,9 +50,7 @@ export type AnyWorkflowBuilder = WorkflowBuilder<
   any,
   any
 >;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowBuilderC<T> = T extends WorkflowBuilder<
   infer C,
   any,
@@ -69,9 +66,7 @@ export type WorkflowBuilderC<T> = T extends WorkflowBuilder<
 >
   ? C
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowBuilderR<T> = T extends WorkflowBuilder<
   any,
   infer R,
@@ -87,9 +82,7 @@ export type WorkflowBuilderR<T> = T extends WorkflowBuilder<
 >
   ? R
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowBuilderE<T> = T extends WorkflowBuilder<
   any,
   any,
@@ -105,9 +98,7 @@ export type WorkflowBuilderE<T> = T extends WorkflowBuilder<
 >
   ? E
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowBuilderTaskActivitiesOutputs<T> = T extends WorkflowBuilder<
   any,
   any,
@@ -122,9 +113,7 @@ export type WorkflowBuilderTaskActivitiesOutputs<T> = T extends WorkflowBuilder<
 >
   ? AO
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type WorkflowBuilderMetadata<T> = T extends WorkflowBuilder<
   any,
   any,
@@ -140,7 +129,6 @@ export type WorkflowBuilderMetadata<T> = T extends WorkflowBuilder<
 >
   ? M
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // TODO: implement invariant checking
 export class WorkflowBuilder<

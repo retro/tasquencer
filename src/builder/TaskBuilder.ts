@@ -5,6 +5,7 @@ import { Task } from '../elements/Task.js';
 import { Workflow } from '../elements/Workflow.js';
 import {
   JoinType,
+  ShouldTaskExitFn,
   SplitType,
   TaskActivities,
   TaskOnCancelPayload,
@@ -13,6 +14,7 @@ import {
   TaskOnExitPayload,
   TaskOnFirePayload,
   TaskOnFireSym,
+  activeWorkItemInstanceStates,
 } from '../types.js';
 import {
   AnyWorkItemActivities,
@@ -145,6 +147,12 @@ export class TaskBuilder<
   splitType: SplitType | undefined;
   private activities: TA = {} as TA;
   private workItem: AnyWorkItemBuilder = workItem<C, undefined>();
+  private shouldExit: ShouldTaskExitFn<any, any> = ({ workItems }) => {
+    const hasActiveWorkItems = workItems.some((w) =>
+      activeWorkItemInstanceStates.has(w.state)
+    );
+    return Effect.succeed(workItems.length > 0 && !hasActiveWorkItems);
+  };
 
   withJoinType<T extends JoinType | undefined>(
     joinType: T
@@ -317,8 +325,25 @@ export class TaskBuilder<
     return this;
   }
 
+  withShouldExit<F extends ShouldTaskExitFn<C, WIP>>(
+    f: F
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    WIP,
+    TM,
+    WIM,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.shouldExit = f;
+    return this;
+  }
+
   build(workflow: Workflow, name: string) {
-    const { splitType, joinType, activities } = this;
+    const { splitType, joinType, activities, shouldExit } = this;
 
     const task = new Task(
       name,
@@ -326,6 +351,7 @@ export class TaskBuilder<
 
       activities as unknown as TaskActivities<any>,
       this.workItem.build() as AnyWorkItemActivities,
+      shouldExit as ShouldTaskExitFn<any, any, never, never>,
       {
         splitType,
         joinType,

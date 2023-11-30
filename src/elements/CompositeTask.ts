@@ -5,9 +5,9 @@ import {
   CompositeTaskActivities,
   ExecutionContext,
   JoinType,
+  ShouldCompositeTaskExitFn,
   SplitType,
   WorkflowId,
-  activeWorkflowInstanceStates,
   isValidTaskInstanceTransition,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
@@ -19,17 +19,20 @@ import { Workflow } from './Workflow.js';
 export class CompositeTask extends BaseTask {
   readonly activities: CompositeTaskActivities<any>;
   readonly subWorkflow: Workflow;
+  readonly shouldExit: ShouldCompositeTaskExitFn<any, any, never, never>;
 
   constructor(
     name: string,
     workflow: Workflow,
     subWorkflow: Workflow,
     activities: CompositeTaskActivities<any>,
+    shouldExit: ShouldCompositeTaskExitFn<any, any, never, never>,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     super(name, workflow, props);
     this.subWorkflow = subWorkflow;
     this.activities = activities;
+    this.shouldExit = shouldExit;
   }
 
   enable(workflowId: WorkflowId) {
@@ -124,6 +127,7 @@ export class CompositeTask extends BaseTask {
               );
               yield* $(
                 Effect.all(updates, { discard: true, batching: true }),
+                Effect.provideService(State, stateManager),
                 Effect.provideService(ExecutionContext, executionContext)
               );
             })
@@ -159,8 +163,7 @@ export class CompositeTask extends BaseTask {
                   Effect.map(() => ({
                     initializeWorkflow,
                     enqueueStartWorkflow,
-                  })),
-                  Effect.provideService(State, stateManager)
+                  }))
                 );
               },
             },
@@ -226,7 +229,7 @@ export class CompositeTask extends BaseTask {
       if (isValidTaskInstanceTransition(state, 'canceled')) {
         const executionContext = yield* $(ExecutionContext);
 
-        const performCancel = yield* $(
+        const perform = yield* $(
           Effect.once(stateManager.cancelTask(workflowId, self.name))
         );
 
@@ -234,12 +237,12 @@ export class CompositeTask extends BaseTask {
           self.activities.onCancel({
             ...executionContext.defaultActivityPayload,
             cancelTask() {
-              return performCancel;
+              return perform;
             },
           }) as Effect.Effect<never, never, unknown>
         );
 
-        yield* $(performCancel);
+        yield* $(perform);
 
         return result;
       }
@@ -250,15 +253,20 @@ export class CompositeTask extends BaseTask {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      const taskWorkItems = yield* $(
+      const workflows = yield* $(
         stateManager.getWorkflows(workflowId, self.name)
       );
 
-      if (
-        !taskWorkItems.some((workItem) =>
-          activeWorkflowInstanceStates.has(workItem.state)
-        )
-      ) {
+      const result = yield* $(
+        self.shouldExit({
+          workflows,
+          getWorkflowContext() {
+            return stateManager.getWorkflowContext(workflowId);
+          },
+        })
+      );
+
+      if (result) {
         yield* $(self.exit(workflowId));
       }
     });

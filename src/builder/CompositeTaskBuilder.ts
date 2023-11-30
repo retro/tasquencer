@@ -13,12 +13,14 @@ import {
   CompositeTaskActivities,
   CompositeTaskOnFirePayload,
   JoinType,
+  ShouldCompositeTaskExitFn,
   SplitType,
   TaskOnCancelPayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
   TaskOnExitPayload,
   TaskOnFireSym,
+  activeWorkflowInstanceStates,
 } from '../types.js';
 import {
   AnyWorkflowBuilder,
@@ -162,6 +164,12 @@ export class CompositeTaskBuilder<
   splitType: SplitType | undefined;
   private activities: TA = {} as TA;
   private workflowBuilder: AnyWorkflowBuilder;
+  private shouldExit: ShouldCompositeTaskExitFn<any, any> = ({ workflows }) => {
+    const hasActiveWorkflows = workflows.some((w) =>
+      activeWorkflowInstanceStates.has(w.state)
+    );
+    return Effect.succeed(workflows.length > 0 && !hasActiveWorkflows);
+  };
 
   constructor(workflowBuilder: AnyWorkflowBuilder) {
     this.workflowBuilder = workflowBuilder;
@@ -302,6 +310,23 @@ export class CompositeTaskBuilder<
     return this;
   }
 
+  withShouldExit<F extends ShouldCompositeTaskExitFn<C, WC>>(
+    f: F
+  ): CompositeTaskBuilder<
+    C,
+    WC,
+    TA,
+    JT,
+    ST,
+    CTM,
+    WM,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.shouldExit = f;
+    return this;
+  }
+
   build(
     workflow: Workflow,
     name: string
@@ -313,7 +338,8 @@ export class CompositeTaskBuilder<
     | TaskDoesNotExist,
     void
   > {
-    const { splitType, joinType, activities, workflowBuilder } = this;
+    const { splitType, joinType, activities, workflowBuilder, shouldExit } =
+      this;
     return Effect.gen(function* ($) {
       const subWorkflow = yield* $(workflowBuilder.build());
       const compositeTask = new CompositeTask(
@@ -321,6 +347,7 @@ export class CompositeTaskBuilder<
         workflow,
         subWorkflow,
         activities as unknown as CompositeTaskActivities<C>,
+        shouldExit as ShouldCompositeTaskExitFn<any, any, never, never>,
         { joinType, splitType }
       );
       subWorkflow.setParentTask(compositeTask);

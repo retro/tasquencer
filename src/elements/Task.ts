@@ -6,12 +6,12 @@ import { InvalidTaskState } from '../errors.js';
 import {
   ExecutionContext,
   JoinType,
+  ShouldTaskExitFn,
   SplitType,
   TaskActivities,
   TaskState,
   WorkItemId,
   WorkflowId,
-  activeWorkItemInstanceStates,
   isValidTaskInstanceTransition,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
@@ -23,17 +23,20 @@ import { Workflow } from './Workflow.js';
 export class Task extends BaseTask {
   readonly activities: TaskActivities<any>;
   readonly workItemActivities: AnyWorkItemActivities;
+  readonly shouldExit: ShouldTaskExitFn<any, any, never, never>;
 
   constructor(
     name: string,
     workflow: Workflow,
     activities: TaskActivities<any>,
     workItemActivities: AnyWorkItemActivities,
+    shouldExit: ShouldTaskExitFn<any, any, never, never>,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     super(name, workflow, props);
     this.activities = activities;
     this.workItemActivities = workItemActivities;
+    this.shouldExit = shouldExit;
   }
 
   getWorkItems(workflowId: WorkflowId) {
@@ -143,7 +146,9 @@ export class Task extends BaseTask {
         );
 
         const initializeWorkItem = (payload: unknown) =>
-          self.initializeWorkItem(workflowId, payload);
+          self
+            .initializeWorkItem(workflowId, payload)
+            .pipe(Effect.provideService(State, stateManager));
 
         const enqueueStartWorkItem = (
           workItemId: WorkItemId,
@@ -255,15 +260,20 @@ export class Task extends BaseTask {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      const taskWorkItems = yield* $(
+      const workItems = yield* $(
         stateManager.getWorkItems(workflowId, self.name)
       );
 
-      if (
-        !taskWorkItems.some((workItem) =>
-          activeWorkItemInstanceStates.has(workItem.state)
-        )
-      ) {
+      const result = yield* $(
+        self.shouldExit({
+          workItems,
+          getWorkflowContext() {
+            return stateManager.getWorkflowContext(workflowId);
+          },
+        })
+      );
+
+      if (result) {
         yield* $(self.exit(workflowId));
       }
     });

@@ -149,12 +149,12 @@ export type TaskOnFirePayload<
     {
       enqueueStartWorkItem(
         id: WorkItemId,
-        ...args: undefined extends SWI ? [SWI?] : [SWI]
+        ...input: undefined extends SWI ? [SWI?] : [SWI]
       ): Effect.Effect<never, never, void>;
       initializeWorkItem: (
         payload: P
       ) => Effect.Effect<
-        State,
+        never,
         TaskDoesNotExistInStore | InvalidTaskState,
         WorkItem<P>
       >;
@@ -177,11 +177,11 @@ export type CompositeTaskOnFirePayload<
     {
       enqueueStartWorkflow(
         id: WorkflowId,
-        ...args: undefined extends SWI ? [SWI?] : [SWI]
+        ...input: undefined extends SWI ? [SWI?] : [SWI]
       ): Effect.Effect<never, never, void>;
       initializeWorkflow: (
         payload: P
-      ) => Effect.Effect<State, TaskDoesNotExist, WorkflowInstance<P>>;
+      ) => Effect.Effect<never, TaskDoesNotExist, WorkflowInstance<P>>;
     }
   >;
 };
@@ -260,13 +260,13 @@ export type WorkItemOnStartPayload<
     WorkItemDoesNotExist | InvalidWorkItemTransition,
     {
       enqueueCompleteWorkItem(
-        ...args: undefined extends OCOI ? [OCOI?] : [OCOI]
+        ...input: undefined extends OCOI ? [OCOI?] : [OCOI]
       ): Effect.Effect<never, never, void>;
       enqueueCancelWorkItem(
-        ...args: undefined extends OCAI ? [OCAI?] : [OCAI]
+        ...input: undefined extends OCAI ? [OCAI?] : [OCAI]
       ): Effect.Effect<never, never, void>;
       enqueueFailWorkItem(
-        ...args: undefined extends OFI ? [OFI?] : [OFI]
+        ...input: undefined extends OFI ? [OFI?] : [OFI]
       ): Effect.Effect<never, never, void>;
     }
   >;
@@ -420,6 +420,7 @@ export type TaskInstanceState =
 
 export interface TaskInstance {
   name: TaskName;
+  workflowName: string;
   workflowId: WorkflowId;
   generation: number;
   state: TaskInstanceState;
@@ -447,14 +448,20 @@ export function isValidTaskInstanceTransition(
 export interface ConditionInstance {
   name: ConditionName;
   workflowId: WorkflowId;
+  workflowName: string;
   marking: number;
 }
 
 export type WorkItemState = WorkflowInstanceState;
 
-export interface WorkItem<P = unknown> {
+export interface WorkItem<
+  P = unknown,
+  WN extends string = string,
+  TN extends TaskName = TaskName
+> {
   id: WorkItemId;
-  taskName: TaskName;
+  taskName: TN;
+  workflowName: WN;
   state: WorkItemState;
   payload: P;
 }
@@ -536,3 +543,18 @@ export interface ExecutionContext {
 }
 
 export const ExecutionContext = Context.Tag<ExecutionContext>();
+
+export type ShouldTaskExitFn<C, WIP, R = unknown, E = unknown> = (payload: {
+  getWorkflowContext: () => Effect.Effect<any, any, C>;
+  workItems: WorkItem<WIP>[];
+}) => Effect.Effect<R, E, boolean>;
+
+export type ShouldCompositeTaskExitFn<
+  C,
+  WC,
+  R = unknown,
+  E = unknown
+> = (payload: {
+  getWorkflowContext: () => Effect.Effect<any, any, C>;
+  workflows: WorkflowInstance<WC>[];
+}) => Effect.Effect<R, E, boolean>;

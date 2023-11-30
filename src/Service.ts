@@ -568,17 +568,15 @@ export class Service<WorkflowMetadata, R = never, E = never> {
     };
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   private decorateReturnType<T extends Effect.Effect<any, any, any>>(
     payload: T
   ): Effect.Effect<
-    Effect.Effect.Context<T> | R,
+    Effect.Effect.Context<T> | Exclude<R, State>,
     Effect.Effect.Error<T> | E,
     Effect.Effect.Success<T>
   > {
     return payload;
   }
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   private taskPathToExecutionPlan(path: readonly string[]) {
     if (path.length % 2 === 0) {
@@ -681,7 +679,6 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       }
 
       return {
-        queuesToRun: result.workflows.reverse(),
         workflow,
         taskName,
         task: result.current,
@@ -787,7 +784,6 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       }
 
       return {
-        queuesToRun: result.workflows.reverse(),
         workflow,
       };
     });
@@ -890,7 +886,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
         })
       );
 
-      // Last processed item should be a BaseTask, because when in case where we encounter a BaseTask, and there is only one item left in the path, we assume that the last item is the workItemId
+      // Last processed item should be a BaseTask, because when in case where we encounter a BaseTask, and there is only one item left in the path, we assume that the last item is the workItemId and exit the loop
       if (!(result.current instanceof Task)) {
         return yield* $(
           Effect.fail(new InvalidPath({ path, pathType: 'workItem' }))
@@ -908,7 +904,6 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       }
 
       return {
-        queuesToRun: result.workflows.reverse(),
         workflow,
         task: result.current,
         workItemId,
@@ -917,14 +912,11 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   }
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type WorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
 type WorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
 type WorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function initialize<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
   E extends WorkflowE<W> = WorkflowE<W>,
@@ -957,7 +949,7 @@ export function initialize<
 }
 
 /*export function resume<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
   W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
   E extends WorkflowE<W> = WorkflowE<W>,

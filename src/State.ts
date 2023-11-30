@@ -40,6 +40,10 @@ export interface State {
     id: WorkflowId
   ): Effect.Effect<never, WorkflowDoesNotExist, WorkflowInstance>;
 
+  getWorkflowContext(
+    id: WorkflowId
+  ): Effect.Effect<never, WorkflowDoesNotExist, unknown>;
+
   getTasks(id: WorkflowId): Effect.Effect<never, never, TaskInstance[]>;
 
   getConditions(

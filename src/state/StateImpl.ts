@@ -58,6 +58,7 @@ export class StateImpl implements State {
       >((acc, task) => {
         acc[task] = {
           name: task,
+          workflowName: payload.name,
           workflowId,
           generation: 0,
           state: 'disabled',
@@ -68,7 +69,12 @@ export class StateImpl implements State {
       const workflowConditions = payload.conditions.reduce<
         Record<ConditionName, ConditionInstance>
       >((acc, condition) => {
-        acc[condition] = { name: condition, workflowId, marking: 0 };
+        acc[condition] = {
+          name: condition,
+          workflowId,
+          workflowName: payload.name,
+          marking: 0,
+        };
         return acc;
       }, {});
 
@@ -124,6 +130,12 @@ export class StateImpl implements State {
       }
       return workflow;
     });
+  }
+
+  getWorkflowContext(workflowId: WorkflowId) {
+    return this.getWorkflow(workflowId).pipe(
+      Effect.map((workflow) => workflow.context)
+    );
   }
 
   getTasks(workflowId: WorkflowId) {
@@ -326,6 +338,7 @@ export class StateImpl implements State {
       const workItem: WorkItem = {
         taskName,
         id: workItemId,
+        workflowName: task.workflowName,
         state: 'initialized',
         payload,
       };

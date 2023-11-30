@@ -146,9 +146,11 @@ export class Workflow<
         self.onStart(
           {
             getWorkflowContext() {
-              return stateManager
-                .getWorkflow(id)
-                .pipe(Effect.map((w) => w.context as Context));
+              return Effect.gen(function* ($) {
+                return (yield* $(
+                  stateManager.getWorkflowContext(id)
+                )) as Context;
+              });
             },
             updateWorkflowContext(context: unknown) {
               return stateManager.updateWorkflowContext(id, context);
@@ -203,9 +205,9 @@ export class Workflow<
       yield* $(
         self.onEnd({
           getWorkflowContext() {
-            return stateManager
-              .getWorkflow(id)
-              .pipe(Effect.map((w) => w.context as Context));
+            return Effect.gen(function* ($) {
+              return (yield* $(stateManager.getWorkflowContext(id))) as Context;
+            });
           },
           updateWorkflowContext(context: unknown) {
             return stateManager.updateWorkflowContext(id, context);

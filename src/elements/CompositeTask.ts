@@ -110,10 +110,10 @@ export class CompositeTask extends BaseTask {
   fire(workflowId: WorkflowId, input: unknown = undefined) {
     const self = this;
     return Effect.gen(function* ($) {
-      const taskData = yield* $(self.getTask(workflowId));
+      const state = yield* $(self.getTaskState(workflowId));
       const stateManager = yield* $(State);
 
-      if (isValidTaskInstanceTransition(taskData.state, 'fired')) {
+      if (isValidTaskInstanceTransition(state, 'fired')) {
         const executionContext = yield* $(ExecutionContext);
 
         const perform = yield* $(
@@ -136,6 +136,7 @@ export class CompositeTask extends BaseTask {
 
         const initializeWorkflow = (context: unknown) =>
           Effect.gen(function* ($) {
+            const taskData = yield* $(self.getTask(workflowId));
             const workflow = yield* $(
               self.subWorkflow.initialize(context, {
                 workflowId,

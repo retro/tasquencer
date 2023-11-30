@@ -16,6 +16,7 @@ import {
   ConditionInstance,
   ConditionName,
   IdGenerator,
+  StateChangeLogger,
   Store,
   StorePersistableState,
   TaskInstance,
@@ -32,6 +33,44 @@ import {
   validWorkItemStateTransitions,
   validWorkflowInstanceTransitions,
 } from '../types.js';
+
+function storeToPersistableState(store: Store): StorePersistableState {
+  const workflows: WorkflowInstance[] = [];
+  const tasks: TaskInstance[] = [];
+  const conditions: ConditionInstance[] = [];
+  const workItems: WorkItem[] = [];
+
+  for (const workflowIdStr in store) {
+    const workflowId = WorkflowId(workflowIdStr);
+    const workflow = store[workflowId]!.workflow;
+    workflows.push(workflow);
+
+    for (const taskNameStr in store[workflowId]!.tasks) {
+      const taskName = TaskName(taskNameStr);
+      const task = store[workflowId]!.tasks[taskName]!;
+      tasks.push(task);
+    }
+
+    for (const conditionNameStr in store[workflowId]!.conditions) {
+      const conditionName = ConditionName(conditionNameStr);
+      const condition = store[workflowId]!.conditions[conditionName]!;
+      conditions.push(condition);
+    }
+
+    for (const workItemIdStr in store[workflowId]!.workItems) {
+      const workItemId = WorkItemId(workItemIdStr);
+      const workItem = store[workflowId]!.workItems[workItemId]!;
+      workItems.push(workItem);
+    }
+  }
+
+  return {
+    workflows,
+    tasks,
+    conditions,
+    workItems,
+  };
+}
 
 function persistableStateToStore(state: StorePersistableState): Store {
   const store: Store = {};
@@ -82,12 +121,23 @@ function persistableStateToStore(state: StorePersistableState): Store {
 
   return store;
 }
+
+function makeGetState(store: Store) {
+  return () => storeToPersistableState(store);
+}
+
 export class StateImpl implements State {
   private store: Store;
   private idGenerator: IdGenerator;
+  private changeLogger: StateChangeLogger;
 
-  constructor(idGenerator: IdGenerator, state?: StorePersistableState) {
+  constructor(
+    idGenerator: IdGenerator,
+    changeLogger: StateChangeLogger,
+    state?: StorePersistableState
+  ) {
     this.idGenerator = idGenerator;
+    this.changeLogger = changeLogger;
     if (state) {
       this.store = persistableStateToStore(state);
     } else {
@@ -170,6 +220,11 @@ export class StateImpl implements State {
           ]!.push(workflowId);
         });
       }
+
+      self.changeLogger.log({
+        change: { type: 'WORKFLOW_INITIALIZED', workflow },
+        getState: makeGetState(self.store),
+      });
 
       return workflow;
     });
@@ -270,6 +325,14 @@ export class StateImpl implements State {
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.workflow.state = workflowState;
       });
+
+      self.changeLogger.log({
+        change: {
+          type: 'WORKFLOW_STATE_UPDATED',
+          workflow: self.store[workflowId]!.workflow,
+        },
+        getState: makeGetState(self.store),
+      });
     });
   }
 
@@ -280,6 +343,14 @@ export class StateImpl implements State {
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.workflow.context = context;
+      });
+
+      self.changeLogger.log({
+        change: {
+          type: 'WORKFLOW_CONTEXT_UPDATED',
+          workflow: self.store[workflowId]!.workflow,
+        },
+        getState: makeGetState(self.store),
       });
     });
   }
@@ -312,6 +383,14 @@ export class StateImpl implements State {
         if (nextTaskState === 'fired') {
           draft[workflowId]!.tasks[taskName]!.generation += 1;
         }
+      });
+
+      self.changeLogger.log({
+        change: {
+          type: 'TASK_STATE_UPDATED',
+          task: self.store[workflowId]!.tasks[taskName]!,
+        },
+        getState: makeGetState(self.store),
       });
     });
   }
@@ -352,6 +431,14 @@ export class StateImpl implements State {
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.conditions[conditionName] = f(condition);
+      });
+
+      self.changeLogger.log({
+        change: {
+          type: 'CONDITION_MARKING_UPDATED',
+          condition: self.store[workflowId]!.conditions[conditionName]!,
+        },
+        getState: makeGetState(self.store),
       });
     });
   }
@@ -409,6 +496,11 @@ export class StateImpl implements State {
         );
       });
 
+      self.changeLogger.log({
+        change: { type: 'WORK_ITEM_INITIALIZED', workItem },
+        getState: makeGetState(self.store),
+      });
+
       return workItem;
     });
   }
@@ -432,7 +524,7 @@ export class StateImpl implements State {
     });
   }
 
-  updateWorkItem(
+  updateWorkItemPayload(
     workflowId: WorkflowId,
     taskName: TaskName,
     workItemId: WorkItemId,
@@ -450,6 +542,14 @@ export class StateImpl implements State {
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.workItems[workItemId]!.payload = payload;
+      });
+
+      self.changeLogger.log({
+        change: {
+          type: 'WORK_ITEM_PAYLOAD_UPDATED',
+          workItem: self.store[workflowId]!.workItems[workItemId]!,
+        },
+        getState: makeGetState(self.store),
       });
     });
   }
@@ -481,6 +581,14 @@ export class StateImpl implements State {
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.workItems[workItemId]!.state = nextState;
+      });
+
+      self.changeLogger.log({
+        change: {
+          type: 'WORK_ITEM_STATE_UPDATED',
+          workItem: self.store[workflowId]!.workItems[workItemId]!,
+        },
+        getState: makeGetState(self.store),
       });
     });
   }
@@ -523,47 +631,10 @@ export class StateImpl implements State {
   }
 
   getState() {
-    const workflows: WorkflowInstance[] = [];
-    const tasks: TaskInstance[] = [];
-    const conditions: ConditionInstance[] = [];
-    const workItems: WorkItem[] = [];
-
-    for (const workflowIdStr in this.store) {
-      const workflowId = WorkflowId(workflowIdStr);
-      const workflow = this.store[workflowId]!.workflow;
-      workflows.push(workflow);
-
-      for (const taskNameStr in this.store[workflowId]!.tasks) {
-        const taskName = TaskName(taskNameStr);
-        const task = this.store[workflowId]!.tasks[taskName]!;
-        tasks.push(task);
-      }
-
-      for (const conditionNameStr in this.store[workflowId]!.conditions) {
-        const conditionName = ConditionName(conditionNameStr);
-        const condition = this.store[workflowId]!.conditions[conditionName]!;
-        conditions.push(condition);
-      }
-
-      for (const workItemIdStr in this.store[workflowId]!.workItems) {
-        const workItemId = WorkItemId(workItemIdStr);
-        const workItem = this.store[workflowId]!.workItems[workItemId]!;
-        workItems.push(workItem);
-      }
-    }
-    return Effect.succeed({
-      workflows,
-      tasks,
-      conditions,
-      workItems,
-    });
+    return Effect.succeed(storeToPersistableState(this.store));
   }
 
   inspect() {
     return Effect.succeed(this.store);
   }
-}
-
-export function make(idGenerator: IdGenerator) {
-  return new StateImpl(idGenerator);
 }

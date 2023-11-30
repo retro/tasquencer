@@ -552,7 +552,12 @@ export class Task extends BaseTask {
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       return yield* $(
-        stateManager.updateWorkItem(workflowId, name, workItemId, payload)
+        stateManager.updateWorkItemPayload(
+          workflowId,
+          name,
+          workItemId,
+          payload
+        )
       );
     });
   }

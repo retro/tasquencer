@@ -176,7 +176,7 @@ export interface State {
     payload: unknown
   ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItem>;
 
-  updateWorkItem(
+  updateWorkItemPayload(
     workflowId: WorkflowId,
     taskName: TaskName,
     workItemId: WorkItemId,

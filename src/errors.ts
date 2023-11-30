@@ -86,3 +86,5 @@ export class InvalidPath extends Data.TaggedClass('InvalidPath')<{
   readonly path: readonly string[];
   readonly pathType: 'workflow' | 'workItem' | 'task';
 }> {}
+
+export const InvalidResumableState = Data.TaggedError('InvalidResumableState');

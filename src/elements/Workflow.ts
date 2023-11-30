@@ -129,12 +129,12 @@ export class Workflow<
         Effect.once(
           Effect.gen(function* ($) {
             const startCondition = yield* $(self.getStartCondition());
+            yield* $(stateManager.updateWorkflowState(id, 'started'));
             yield* $(
               Effect.succeed(startCondition),
               Effect.tap((s) => s.incrementMarking(id)),
               Effect.tap((s) => s.enableTasks(id))
             );
-            yield* $(stateManager.updateWorkflowState(id, 'started'));
           }).pipe(
             Effect.provideService(State, stateManager),
             Effect.provideService(ExecutionContext, executionContext)

@@ -93,7 +93,7 @@ it('can run net with composite tasks', () => {
         .onFire(({ fireTask }, input?: { foo: number }) =>
           Effect.gen(function* ($) {
             //yield* $(Effect.fail(new Error('t1 canceled')));
-            console.log('CALLING FIRE TASK WITH INPUT', input);
+            //console.log('CALLING FIRE TASK WITH INPUT', input);
             const { initializeWorkflow } = yield* $(fireTask());
             return yield* $(initializeWorkflow({ bar: 'foo' }));
           })
@@ -113,14 +113,24 @@ it('can run net with composite tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
+    service.onStateChange((changes) => {
+      console.log('+++++++++++++++++++++++++++++++++++++++');
+      for (const change of changes) {
+        console.log(change.change);
+        console.log(change.getState());
+      }
+      console.log('---------------------------------------');
+      return Effect.unit;
+    });
+
     yield* $(service.start());
 
     const subWorkflow = yield* $(service.fireTask('t1', { foo: 1 }));
     //const subWorkflow3 = yield* $(service.fireTask('t1'));
 
-    console.log(subWorkflow);
+    //console.log(subWorkflow);
 
-    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+    //console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 
     /*const subWorkflow2 = yield* $(
       service.initializeWorkflow('t1', { bar: 'aaa' })
@@ -135,14 +145,10 @@ it('can run net with composite tasks', () => {
       })
     );
 
-    yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`));
+    const state = yield* $(service.getState());
+
     yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.workItem-2`));
-
-    /*const c = yield* $(
-      service.completeWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`)
-    );*/
-
-    //yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
+    yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`));
 
     console.log(JSON.stringify(yield* $(service.getState()), null, 2));
     expect(1).toBe(1);

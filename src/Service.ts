@@ -11,6 +11,7 @@ import {
   ConditionDoesNotExistInStore,
   EndConditionDoesNotExist,
   InvalidPath,
+  InvalidResumableState,
   InvalidTaskState,
   InvalidTaskStateTransition,
   InvalidWorkItemTransition,
@@ -27,6 +28,10 @@ import {
   ExecutionContextQueueItem,
   GetSym,
   IdGenerator,
+  OnStateChangeFn,
+  StateChangeItem,
+  StateChangeLogger,
+  StorePersistableState,
   TaskName,
   TaskOnFireSym,
   WorkItem,
@@ -42,15 +47,21 @@ function pathAsArray(path: string | string[] | readonly string[]) {
   return typeof path === 'string' ? path.split('.') : path;
 }
 
-// TODO: Think about refactoring this class so everything is in the Workflow class instead
 export class Service<WorkflowMetadata, R = never, E = never> {
+  private onStateChangeListener: OnStateChangeFn | undefined;
+
   constructor(
     private workflowId: WorkflowId,
     private workflow: Workflow,
     private state: State,
-    private queue: Queue.Queue<ExecutionContextQueueItem>
+    private queue: Queue.Queue<ExecutionContextQueueItem>,
+    private stateChangeLogger: StateChangeLogger
   ) {}
   // TODO: Check if workflow was already started
+
+  onStateChange(fn: OnStateChangeFn) {
+    this.onStateChangeListener = fn;
+  }
 
   start(input?: unknown) {
     return this.startWorkflow([], input);
@@ -451,6 +462,15 @@ export class Service<WorkflowMetadata, R = never, E = never> {
     return this.state.getState();
   }
 
+  private emitStateChanges() {
+    const stateChanges = this.stateChangeLogger.drain();
+    if (stateChanges.length && this.onStateChangeListener) {
+      return this.onStateChangeListener(stateChanges);
+    } else {
+      return Effect.unit;
+    }
+  }
+
   private runQueue(): Effect.Effect<
     R,
     | E
@@ -472,6 +492,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
     const self = this;
 
     return Effect.gen(function* ($) {
+      yield* $(self.emitStateChanges());
       while (true) {
         const item = yield* $(
           Queue.poll(self.queue),
@@ -507,6 +528,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
         );
 
         yield* $(match(item));
+        yield* $(self.emitStateChanges());
       }
     });
   }
@@ -889,6 +911,20 @@ export class Service<WorkflowMetadata, R = never, E = never> {
   }
 }
 
+function makeStateChangeLogger(): StateChangeLogger {
+  let stateChanges: StateChangeItem[] = [];
+  return {
+    log: (item) => {
+      stateChanges.push(item);
+    },
+    drain: () => {
+      const result = stateChanges;
+      stateChanges = [];
+      return result;
+    },
+  };
+}
+
 type WorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
 type WorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
 type WorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
@@ -906,8 +942,9 @@ export function initialize<
       maybeIdGenerator,
       () => nanoidIdGenerator
     );
+    const stateChangeLogger = makeStateChangeLogger();
 
-    const state = new StateImpl.StateImpl(idGenerator);
+    const state = new StateImpl.StateImpl(idGenerator, stateChangeLogger);
 
     const { id } = yield* $(
       workflow.initialize(context),
@@ -918,28 +955,48 @@ export function initialize<
       id,
       workflow,
       state,
-      queue
+      queue,
+      stateChangeLogger
     );
 
     return interpreter;
   });
 }
 
-/*export function resume<
- 
+export function resume<
   W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
-  E extends WorkflowE<W> = WorkflowE<W>,
-  C extends WorkflowContext<W> = WorkflowContext<W>
->(workflow: W, context: C) {
+  E extends WorkflowE<W> = WorkflowE<W>
+>(workflow: W, resumableState: StorePersistableState) {
   return Effect.gen(function* ($) {
     const queue = yield* $(Queue.unbounded<ExecutionContextQueueItem>());
+    const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));
+    const idGenerator = Option.getOrElse(
+      maybeIdGenerator,
+      () => nanoidIdGenerator
+    );
 
-    return new Interpreter<
-      WorkflowWorkflowMetadata<W>,
-      WorkflowOnStartReturnType<W>,
-      R,
-      E
-    >(workflow, context, queue);
+    const stateChangeLogger = makeStateChangeLogger();
+
+    const state = new StateImpl.StateImpl(
+      idGenerator,
+      stateChangeLogger,
+      resumableState
+    );
+    const rootWorkflow = resumableState.workflows.filter((w) => !w.parent)[0];
+
+    if (!rootWorkflow) {
+      return yield* $(Effect.fail(new InvalidResumableState({})));
+    }
+
+    const interpreter = new Service<WorkflowMetadata<W>, R, E>(
+      rootWorkflow.id,
+      workflow,
+      state,
+      queue,
+      stateChangeLogger
+    );
+
+    return interpreter;
   });
-}*/
+}

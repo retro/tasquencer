@@ -181,7 +181,7 @@ export type CompositeTaskOnFirePayload<
       ): Effect.Effect<never, never, void>;
       initializeWorkflow: (
         payload: P
-      ) => Effect.Effect<never, TaskDoesNotExist, WorkflowInstance<P>>;
+      ) => Effect.Effect<never, TaskDoesNotExistInStore, WorkflowInstance<P>>;
     }
   >;
 };
@@ -568,3 +568,26 @@ export type ShouldCompositeTaskExitFn<
   getWorkflowContext: () => Effect.Effect<any, any, C>;
   workflows: WorkflowInstance<WC>[];
 }) => Effect.Effect<R, E, boolean>;
+
+export type StateChange =
+  | { type: 'WORKFLOW_INITIALIZED'; workflow: WorkflowInstance }
+  | { type: 'WORKFLOW_STATE_UPDATED'; workflow: WorkflowInstance }
+  | { type: 'WORKFLOW_CONTEXT_UPDATED'; workflow: WorkflowInstance }
+  | { type: 'CONDITION_MARKING_UPDATED'; condition: ConditionInstance }
+  | { type: 'TASK_STATE_UPDATED'; task: TaskInstance }
+  | { type: 'WORK_ITEM_INITIALIZED'; workItem: WorkItem }
+  | { type: 'WORK_ITEM_STATE_UPDATED'; workItem: WorkItem }
+  | { type: 'WORK_ITEM_PAYLOAD_UPDATED'; workItem: WorkItem };
+
+export interface StateChangeItem {
+  change: StateChange;
+  getState: () => StorePersistableState;
+}
+export interface StateChangeLogger {
+  log: (item: StateChangeItem) => void;
+  drain: () => StateChangeItem[];
+}
+
+export type OnStateChangeFn = (
+  changes: StateChangeItem[]
+) => Effect.Effect<never, never, void>;

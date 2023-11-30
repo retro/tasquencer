@@ -17,6 +17,7 @@ import {
   ConditionName,
   IdGenerator,
   Store,
+  StorePersistableState,
   TaskInstance,
   TaskInstanceState,
   TaskName,
@@ -32,12 +33,66 @@ import {
   validWorkflowInstanceTransitions,
 } from '../types.js';
 
+function persistableStateToStore(state: StorePersistableState): Store {
+  const store: Store = {};
+  for (const workflow of state.workflows) {
+    store[workflow.id] = {
+      workflow,
+      tasks: {},
+      conditions: {},
+      workItems: {},
+      tasksToWorkItems: {},
+      tasksToWorkflows: {},
+    };
+  }
+
+  for (const task of state.tasks) {
+    store[task.workflowId]!.tasks[task.name] = task;
+  }
+
+  for (const condition of state.conditions) {
+    store[condition.workflowId]!.conditions[condition.name] = condition;
+  }
+
+  for (const workItem of state.workItems) {
+    store[workItem.workflowId]!.workItems[workItem.id] = workItem;
+    store[workItem.workflowId]!.tasksToWorkItems[workItem.taskName] ||= {};
+    store[workItem.workflowId]!.tasksToWorkItems[workItem.taskName]![
+      workItem.taskGeneration
+    ] ||= [];
+    store[workItem.workflowId]!.tasksToWorkItems[workItem.taskName]![
+      workItem.taskGeneration
+    ]!.push(workItem.id);
+  }
+
+  for (const workflow of state.workflows) {
+    if (workflow.parent) {
+      const taskGeneration = workflow.parent.taskGeneration;
+      store[workflow.parent.workflowId]!.tasksToWorkflows[
+        workflow.parent.taskName
+      ] ||= {};
+      store[workflow.parent.workflowId]!.tasksToWorkflows[
+        workflow.parent.taskName
+      ]![taskGeneration] ||= [];
+      store[workflow.parent.workflowId]!.tasksToWorkflows[
+        workflow.parent.taskName
+      ]![taskGeneration]!.push(workflow.id);
+    }
+  }
+
+  return store;
+}
 export class StateImpl implements State {
-  private store: Store = {};
+  private store: Store;
   private idGenerator: IdGenerator;
 
-  constructor(idGenerator: IdGenerator) {
+  constructor(idGenerator: IdGenerator, state?: StorePersistableState) {
     this.idGenerator = idGenerator;
+    if (state) {
+      this.store = persistableStateToStore(state);
+    } else {
+      this.store = {};
+    }
   }
 
   initializeWorkflow(
@@ -336,8 +391,10 @@ export class StateImpl implements State {
 
       const task = yield* $(self.getTask(workflowId, taskName));
       const workItem: WorkItem = {
-        taskName,
         id: workItemId,
+        taskName,
+        taskGeneration: task.generation,
+        workflowId: task.workflowId,
         workflowName: task.workflowName,
         state: 'initialized',
         payload,
@@ -462,6 +519,43 @@ export class StateImpl implements State {
         }
         return acc;
       }, []);
+    });
+  }
+
+  getState() {
+    const workflows: WorkflowInstance[] = [];
+    const tasks: TaskInstance[] = [];
+    const conditions: ConditionInstance[] = [];
+    const workItems: WorkItem[] = [];
+
+    for (const workflowIdStr in this.store) {
+      const workflowId = WorkflowId(workflowIdStr);
+      const workflow = this.store[workflowId]!.workflow;
+      workflows.push(workflow);
+
+      for (const taskNameStr in this.store[workflowId]!.tasks) {
+        const taskName = TaskName(taskNameStr);
+        const task = this.store[workflowId]!.tasks[taskName]!;
+        tasks.push(task);
+      }
+
+      for (const conditionNameStr in this.store[workflowId]!.conditions) {
+        const conditionName = ConditionName(conditionNameStr);
+        const condition = this.store[workflowId]!.conditions[conditionName]!;
+        conditions.push(condition);
+      }
+
+      for (const workItemIdStr in this.store[workflowId]!.workItems) {
+        const workItemId = WorkItemId(workItemIdStr);
+        const workItem = this.store[workflowId]!.workItems[workItemId]!;
+        workItems.push(workItem);
+      }
+    }
+    return Effect.succeed({
+      workflows,
+      tasks,
+      conditions,
+      workItems,
     });
   }
 

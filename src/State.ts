@@ -13,6 +13,7 @@ import {
   ConditionInstance,
   ConditionName,
   Store,
+  StorePersistableState,
   TaskInstance,
   TaskInstanceState,
   TaskName,
@@ -208,6 +209,8 @@ export interface State {
     workflowId: WorkflowId,
     taskName: TaskName
   ): Effect.Effect<never, TaskDoesNotExistInStore, WorkflowInstance[]>;
+
+  getState(): Effect.Effect<never, never, StorePersistableState>;
 
   inspect(): Effect.Effect<never, never, Store>;
 }

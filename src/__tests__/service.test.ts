@@ -144,7 +144,7 @@ it('can run net with composite tasks', () => {
 
     //yield* $(service.startWorkflow(['t1', subWorkflow2.id]));
 
-    console.log(JSON.stringify(yield* $(service.inspectState()), null, 2));
+    console.log(JSON.stringify(yield* $(service.getState()), null, 2));
     expect(1).toBe(1);
   });
 

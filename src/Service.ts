@@ -110,7 +110,9 @@ export class Service<WorkflowMetadata, R = never, E = never> {
         const result = yield* $(
           executionPlan.task.subWorkflow.initialize(input, {
             workflowId: executionPlan.workflow.id,
+            workflowName: executionPlan.workflow.workflow.name,
             taskName: executionPlan.taskName,
+            taskGeneration: executionPlan.taskData.generation,
           })
         );
         return result as WorkflowInstance<
@@ -445,38 +447,8 @@ export class Service<WorkflowMetadata, R = never, E = never> {
     return this.state.getWorkItems(this.workflowId, TaskName(taskName));
   }
 
-  getWorkflowState() {
-    return this.workflow
-      .getState(this.workflowId)
-      .pipe(Effect.provideService(State, this.state));
-  }
-  getWorkflowTasks() {
-    return this.workflow
-      .getTasks(this.workflowId)
-      .pipe(Effect.provideService(State, this.state));
-  }
-  getWorkflowConditions() {
-    return this.workflow
-      .getConditions(this.workflowId)
-      .pipe(Effect.provideService(State, this.state));
-  }
-
-  getFullState() {
-    const self = this;
-    return Effect.gen(function* ($) {
-      const workflowState = yield* $(self.getWorkflowState());
-      const workflowTasks = yield* $(self.getWorkflowTasks());
-      const workflowConditions = yield* $(self.getWorkflowConditions());
-
-      return {
-        workflow: workflowState,
-        tasks: workflowTasks,
-        conditions: workflowConditions,
-      };
-    });
-  }
-  inspectState() {
-    return this.state.inspect();
+  getState() {
+    return this.state.getState();
   }
 
   private runQueue(): Effect.Effect<
@@ -584,6 +556,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       return Effect.fail(new InvalidPath({ path, pathType: 'task' }));
     }
 
+    const self = this;
     const initialState: {
       index: number;
       current: Workflow | BaseTask;
@@ -600,6 +573,7 @@ export class Service<WorkflowMetadata, R = never, E = never> {
       taskNames: [],
       workflows: [{ workflow: this.workflow, id: this.workflowId }],
     };
+
     return Effect.gen(function* ($) {
       const result = yield* $(
         Effect.iterate(initialState, {
@@ -678,9 +652,12 @@ export class Service<WorkflowMetadata, R = never, E = never> {
         );
       }
 
+      const taskData = yield* $(self.state.getTask(workflow.id, taskName));
+
       return {
         workflow,
         taskName,
+        taskData,
         task: result.current,
       };
     });

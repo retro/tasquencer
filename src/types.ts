@@ -380,7 +380,9 @@ export type WorkflowInstanceState =
 
 export type WorkflowInstanceParent = {
   workflowId: WorkflowId;
+  workflowName: string;
   taskName: TaskName;
+  taskGeneration: number;
 } | null;
 
 export interface WorkflowInstance<C = unknown> {
@@ -461,6 +463,8 @@ export interface WorkItem<
 > {
   id: WorkItemId;
   taskName: TN;
+  taskGeneration: number;
+  workflowId: WorkflowId;
   workflowName: WN;
   state: WorkItemState;
   payload: P;
@@ -489,6 +493,12 @@ interface WorkflowState {
   tasksToWorkflows: Record<TaskName, Record<number, WorkflowId[]>>;
 }
 export type Store = Record<WorkflowId, WorkflowState>;
+export interface StorePersistableState {
+  workflows: WorkflowInstance[];
+  tasks: TaskInstance[];
+  conditions: ConditionInstance[];
+  workItems: WorkItem[];
+}
 
 export const WorkflowContextSym = Symbol('WorkflowContext');
 export type WorkflowContextSym = typeof WorkflowContextSym;

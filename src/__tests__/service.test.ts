@@ -8,6 +8,7 @@ import { compositeTask } from '../builder.js';
 import {
   WorkflowBuilderMetadata,
   WorkflowBuilderTaskActivitiesOutputs,
+  WorkflowBuilderWorkflowAndWorkItemTypes,
 } from '../builder/WorkflowBuilder.js';
 import {
   IdGenerator,
@@ -51,7 +52,8 @@ function makeIdGenerator(): IdGenerator {
 const c = Builder.compositeTask<{ bar: string }>().withSubWorkflow(w1);*/
 
 it('can run net with composite tasks', () => {
-  const subWorkflow = Builder.workflow<{ bar: string }>('subWorkflow')
+  const subWorkflow = Builder.workflow<{ bar: string }>()
+    .withName('subWorkflow')
     .startCondition('subStart')
     .task('subT1', (t) =>
       t()
@@ -80,12 +82,30 @@ it('can run net with composite tasks', () => {
           })
         )
     )
+    .task('subT2', (t) =>
+      t().withWorkItem((w) =>
+        w<{ workItem2: string }>()
+          .onComplete((_, input?: { foo: string }) =>
+            Effect.succeed(input?.foo)
+          )
+          .onStart(({ startWorkItem }) =>
+            Effect.gen(function* ($) {
+              const { enqueueCompleteWorkItem } = yield* $(startWorkItem());
+              yield* $(enqueueCompleteWorkItem());
+            })
+          )
+      )
+    )
     .endCondition('subEnd')
     .connectCondition('subStart', (to) => to.task('subT1'))
     .connectTask('subT1', (to) => to.condition('subEnd'));
 
-  const workflowDefinition = Builder.workflow<{ foo: string }>('parent')
+  const workflowDefinition = Builder.workflow<{ foo: string }>()
+    .withName('parent')
     .startCondition('start')
+    .task('subT1', (t) =>
+      t().withWorkItem((w) => w<{ parentWorkItem: string }>())
+    )
     .compositeTask(
       't1',
       compositeTask()
@@ -117,7 +137,6 @@ it('can run net with composite tasks', () => {
       console.log('+++++++++++++++++++++++++++++++++++++++');
       for (const change of changes) {
         console.log(change.change);
-        console.log(change.getState());
       }
       console.log('---------------------------------------');
       return Effect.unit;

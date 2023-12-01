@@ -10,8 +10,11 @@ import {
 import {
   ConditionNode,
   NotExtends,
+  WorkItemInstance,
+  WorkflowAndWorkItemTypes,
   WorkflowBuilderDefinition,
   WorkflowContextSym,
+  WorkflowInstance,
   WorkflowOnEndPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
@@ -48,10 +51,12 @@ export type AnyWorkflowBuilder = WorkflowBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
 export type WorkflowBuilderC<T> = T extends WorkflowBuilder<
+  any,
   infer C,
   any,
   any,
@@ -69,6 +74,7 @@ export type WorkflowBuilderC<T> = T extends WorkflowBuilder<
 
 export type WorkflowBuilderR<T> = T extends WorkflowBuilder<
   any,
+  any,
   infer R,
   any,
   any,
@@ -84,6 +90,7 @@ export type WorkflowBuilderR<T> = T extends WorkflowBuilder<
   : never;
 
 export type WorkflowBuilderE<T> = T extends WorkflowBuilder<
+  any,
   any,
   any,
   infer E,
@@ -109,6 +116,7 @@ export type WorkflowBuilderTaskActivitiesOutputs<T> = T extends WorkflowBuilder<
   any,
   any,
   any,
+  any,
   infer AO
 >
   ? AO
@@ -124,14 +132,34 @@ export type WorkflowBuilderMetadata<T> = T extends WorkflowBuilder<
   any,
   any,
   any,
+  any,
   infer M,
   any
 >
   ? M
   : never;
 
+export type WorkflowBuilderWorkflowAndWorkItemTypes<T> =
+  T extends WorkflowBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer WAWIT
+  >
+    ? WAWIT
+    : never;
+
 // TODO: implement invariant checking
 export class WorkflowBuilder<
+  WName extends string,
   WBContext,
   R,
   E,
@@ -142,7 +170,10 @@ export class WorkflowBuilder<
   WBConnectedTasks = never,
   WBConnectedConditions = never,
   WBMetadata = { [WorkflowContextSym]: WBContext },
-  OnStartReturnType = unknown
+  WBWorkflowAndWorkItemTypes extends WorkflowAndWorkItemTypes = {
+    workflow: WorkflowInstance<WBContext, WName>;
+    workItem: never;
+  }
 > {
   readonly name: string;
   readonly definition: WorkflowBuilderDefinition;
@@ -154,7 +185,7 @@ export class WorkflowBuilder<
     payload: WorkflowOnEndPayload<WBContext>
   ) => Effect.Effect<unknown, unknown, unknown>;
 
-  constructor(name: string) {
+  constructor(name: WName) {
     this.name = name;
     this.definition = {
       conditions: {},
@@ -180,6 +211,7 @@ export class WorkflowBuilder<
   condition<CN extends string>(
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -190,7 +222,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   > {
     return this.addConditionUnsafe(conditionName);
   }
@@ -198,6 +230,7 @@ export class WorkflowBuilder<
   startCondition<CN extends string>(
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -208,7 +241,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   > {
     this.definition.startCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -217,6 +250,7 @@ export class WorkflowBuilder<
   endCondition<CN extends string>(
     conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -227,7 +261,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   > {
     this.definition.endCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -243,6 +277,7 @@ export class WorkflowBuilder<
     taskName: TN & NotExtends<WBTasks | WBConditions, TN>,
     task: T & TaskWithValidContext<WBContext, T>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | TB.TaskBuilderR<T>,
     E | TB.TaskBuilderE<T>,
@@ -257,7 +292,12 @@ export class WorkflowBuilder<
         [tn in TN]: TB.TaskBuilderMetadata<T>;
       }
     >,
-    OnStartReturnType
+    {
+      workflow: WBWorkflowAndWorkItemTypes['workflow'];
+      workItem:
+        | WBWorkflowAndWorkItemTypes['workItem']
+        | WorkItemInstance<TB.TaskBuilderWIP<T>, WName, TN>;
+    }
   >;
   task<
     TN extends string,
@@ -273,6 +313,7 @@ export class WorkflowBuilder<
     taskName: TN & NotExtends<WBTasks | WBConditions, TN>,
     task: T
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | TB.TaskBuilderR<ReturnType<T>>,
     E | TB.TaskBuilderE<ReturnType<T>>,
@@ -287,11 +328,17 @@ export class WorkflowBuilder<
         [tn in TN]: TB.TaskBuilderMetadata<ReturnType<T>>;
       }
     >,
-    OnStartReturnType
+    {
+      workflow: WBWorkflowAndWorkItemTypes['workflow'];
+      workItem:
+        | WBWorkflowAndWorkItemTypes['workItem']
+        | WorkItemInstance<TB.TaskBuilderWIP<ReturnType<T>>, WName, TN>;
+    }
   >;
   task<TN extends string>(
     taskName: string & NotExtends<WBTasks | WBConditions, TN>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -306,7 +353,12 @@ export class WorkflowBuilder<
         [tn in TN]: TB.TaskBuilderMetadata<TB.AnyTaskBuilder>;
       }
     >,
-    OnStartReturnType
+    {
+      workflow: WBWorkflowAndWorkItemTypes['workflow'];
+      workItem:
+        | WBWorkflowAndWorkItemTypes['workItem']
+        | WorkItemInstance<undefined, WName, TN>;
+    }
   >;
   task(
     taskName: string,
@@ -337,6 +389,7 @@ export class WorkflowBuilder<
     compositeTaskName: TN & NotExtends<WBTasks | WBConditions, TN>,
     compositeTask: T & CompositeTaskWithValidContext<WBContext, T>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | CTB.CompositeTaskBuilderR<T>,
     E | CTB.CompositeTaskBuilderE<T>,
@@ -349,7 +402,14 @@ export class WorkflowBuilder<
     WBMetadata & {
       [tn in TN]: CTB.CompositeTaskBuilderMetadata<T>;
     },
-    OnStartReturnType
+    {
+      workflow:
+        | WBWorkflowAndWorkItemTypes['workflow']
+        | CTB.CompositeTaskWorkflowAndWorkItemTypes<T>['workflow'];
+      workItem:
+        | WBWorkflowAndWorkItemTypes['workItem']
+        | CTB.CompositeTaskWorkflowAndWorkItemTypes<T>['workItem'];
+    }
   >;
   compositeTask<
     TN extends string,
@@ -365,6 +425,7 @@ export class WorkflowBuilder<
     compositeTaskName: TN & NotExtends<WBTasks | WBConditions, TN>,
     compositeTask: T
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | CTB.CompositeTaskBuilderR<ReturnType<T>>,
     E | CTB.CompositeTaskBuilderE<ReturnType<T>>,
@@ -377,7 +438,14 @@ export class WorkflowBuilder<
     WBMetadata & {
       [tn in TN]: CTB.CompositeTaskBuilderMetadata<ReturnType<T>>;
     },
-    OnStartReturnType
+    {
+      workflow:
+        | WBWorkflowAndWorkItemTypes['workflow']
+        | CTB.CompositeTaskWorkflowAndWorkItemTypes<ReturnType<T>>['workflow'];
+      workItem:
+        | WBWorkflowAndWorkItemTypes['workItem']
+        | CTB.CompositeTaskWorkflowAndWorkItemTypes<ReturnType<T>>['workItem'];
+    }
   >;
   compositeTask(
     compositeTaskName: string,
@@ -406,6 +474,7 @@ export class WorkflowBuilder<
     taskName: TN & NotExtends<WBCancellationRegions, TN> & string,
     toCancel: { tasks?: TNS & string[]; conditions?: CNS & string[] }
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -416,7 +485,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
     return this;
@@ -428,6 +497,7 @@ export class WorkflowBuilder<
       to: ConditionFlowBuilder<WBTasks>
     ) => ConditionFlowBuilder<WBTasks>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -438,7 +508,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions | CN,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   > {
     this.definition.flows.conditions[conditionName] = builder(
       new ConditionFlowBuilder(conditionName)
@@ -461,6 +531,7 @@ export class WorkflowBuilder<
       OrXorTaskFlowBuilder<WBConditions, WBTasks, R1, E1, D, WBContext>
     >
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | R1,
     E | E1,
@@ -471,7 +542,7 @@ export class WorkflowBuilder<
     WBConnectedTasks | TN,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   >;
 
   connectTask<TN extends WBTasks>(
@@ -480,6 +551,7 @@ export class WorkflowBuilder<
       to: TaskFlowBuilder<WBConditions, WBTasks>
     ) => TaskFlowBuilder<WBConditions, WBTasks>
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R,
     E,
@@ -490,7 +562,7 @@ export class WorkflowBuilder<
     WBConnectedTasks | TN,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   >;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -529,6 +601,7 @@ export class WorkflowBuilder<
   >(
     f: F
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>,
@@ -539,7 +612,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    Effect.Effect.Success<ReturnType<F>>
+    WBWorkflowAndWorkItemTypes
   > {
     this.onStartFn = f;
     return this;
@@ -551,6 +624,7 @@ export class WorkflowBuilder<
   >(
     f: F
   ): WorkflowBuilder<
+    WName,
     WBContext,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>,
@@ -561,7 +635,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    OnStartReturnType
+    WBWorkflowAndWorkItemTypes
   > {
     this.onEndFn = f;
     return this;
@@ -576,7 +650,7 @@ export class WorkflowBuilder<
         E,
         WBContext,
         WBMetadata,
-        OnStartReturnType
+        WBWorkflowAndWorkItemTypes
         // non-null assertion is ok here, because onStartFn and onEndFn are set
         // in the initialize method which is automatically called by the `workflow`
         // entrypoint
@@ -662,6 +736,10 @@ export class WorkflowBuilder<
   }
 }
 
-export function workflow<C extends object>(name: string) {
-  return new WorkflowBuilder<C, never, never>(name).initialize();
+export function workflow<C extends object>() {
+  return {
+    withName<N extends string>(name: N) {
+      return new WorkflowBuilder<N, C, never, never>(name).initialize();
+    },
+  };
 }

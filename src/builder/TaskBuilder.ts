@@ -128,6 +128,20 @@ type TaskBuilderWIM<T> = T extends TaskBuilder<
   ? WIM
   : never;
 
+export type TaskBuilderWIP<T> = T extends TaskBuilder<
+  any,
+  any,
+  any,
+  any,
+  infer WIP,
+  any,
+  any,
+  any,
+  any
+>
+  ? WIP
+  : never;
+
 export type TaskBuilderMetadata<T extends AnyTaskBuilder> = Simplify<
   TaskBuilderTM<T> & Record<string, TaskBuilderWIM<T>>
 >;

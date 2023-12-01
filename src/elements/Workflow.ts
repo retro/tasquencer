@@ -17,6 +17,7 @@ import {
   ConditionName,
   ExecutionContext,
   TaskName,
+  WorkflowAndWorkItemTypes,
   WorkflowId,
   WorkflowInstanceParent,
   WorkflowOnEndPayload,
@@ -51,7 +52,7 @@ export class Workflow<
   _E = never,
   Context = unknown,
   _WorkflowMetadata = object,
-  _OnStartReturnType = unknown
+  _WorkflowAndWorkItemInstances = WorkflowAndWorkItemTypes
 > {
   readonly tasks: Record<string, BaseTask> = {};
   readonly conditions: Record<string, Condition> = {};

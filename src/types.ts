@@ -156,7 +156,7 @@ export type TaskOnFirePayload<
       ) => Effect.Effect<
         never,
         TaskDoesNotExistInStore | InvalidTaskState,
-        WorkItem<P>
+        WorkItemInstance<P>
       >;
     }
   >;
@@ -250,7 +250,7 @@ export type WorkItemOnStartPayload<
   getWorkItem(): Effect.Effect<
     never,
     WorkItemDoesNotExist | TaskDoesNotExistInStore,
-    WorkItem<P>
+    WorkItemInstance<P>
   >;
   updateWorkItem: (
     workItemPayload: P
@@ -277,7 +277,7 @@ export type WorkItemOnCompletePayload<C, P> =
     getWorkItem(): Effect.Effect<
       never,
       WorkItemDoesNotExist | TaskDoesNotExistInStore,
-      WorkItem<P>
+      WorkItemInstance<P>
     >;
     updateWorkItem: (
       workItemPayload: P
@@ -294,7 +294,7 @@ export type WorkItemOnCancelPayload<C, P> =
     getWorkItem(): Effect.Effect<
       never,
       WorkItemDoesNotExist | TaskDoesNotExistInStore,
-      WorkItem<P>
+      WorkItemInstance<P>
     >;
     updateWorkItem: (
       workItemPayload: P
@@ -311,7 +311,7 @@ export type WorkItemOnFailPayload<C, P> =
     getWorkItem(): Effect.Effect<
       never,
       WorkItemDoesNotExist | TaskDoesNotExistInStore,
-      WorkItem<P>
+      WorkItemInstance<P>
     >;
     updateWorkItem: (
       workItemPayload: P
@@ -385,10 +385,10 @@ export type WorkflowInstanceParent = {
   taskGeneration: number;
 } | null;
 
-export interface WorkflowInstance<C = unknown> {
+export interface WorkflowInstance<C = unknown, N extends string = string> {
   parent: WorkflowInstanceParent;
   id: WorkflowId;
-  name: string;
+  name: N;
   state: WorkflowInstanceState;
   context: C;
 }
@@ -454,25 +454,25 @@ export interface ConditionInstance {
   marking: number;
 }
 
-export type WorkItemState = WorkflowInstanceState;
+export type WorkItemInstanceState = WorkflowInstanceState;
 
-export interface WorkItem<
+export interface WorkItemInstance<
   P = unknown,
   WN extends string = string,
-  TN extends TaskName = TaskName
+  TN extends string = string
 > {
   id: WorkItemId;
   taskName: TN;
   taskGeneration: number;
   workflowId: WorkflowId;
   workflowName: WN;
-  state: WorkItemState;
+  state: WorkItemInstanceState;
   payload: P;
 }
 
 export const validWorkItemStateTransitions: Record<
-  WorkItemState,
-  Set<WorkItemState>
+  WorkItemInstanceState,
+  Set<WorkItemInstanceState>
 > = {
   initialized: new Set(['started', 'canceled']), // TODO: remove completed from here
   started: new Set(['completed', 'canceled', 'failed']),
@@ -488,16 +488,19 @@ interface WorkflowState {
   workflow: WorkflowInstance;
   tasks: Record<TaskName, TaskInstance>;
   conditions: Record<ConditionName, ConditionInstance>;
-  workItems: Record<WorkItemId, WorkItem>;
+  workItems: Record<WorkItemId, WorkItemInstance>;
   tasksToWorkItems: Record<TaskName, Record<number, WorkItemId[]>>;
   tasksToWorkflows: Record<TaskName, Record<number, WorkflowId[]>>;
 }
 export type Store = Record<WorkflowId, WorkflowState>;
-export interface StorePersistableState {
-  workflows: WorkflowInstance[];
+export interface StorePersistableState<
+  W extends WorkflowInstance = WorkflowInstance,
+  WI extends WorkItemInstance = WorkItemInstance
+> {
+  workflows: W[];
   tasks: TaskInstance[];
   conditions: ConditionInstance[];
-  workItems: WorkItem[];
+  workItems: WI[];
 }
 
 export const WorkflowContextSym = Symbol('WorkflowContext');
@@ -556,7 +559,7 @@ export const ExecutionContext = Context.Tag<ExecutionContext>();
 
 export type ShouldTaskExitFn<C, WIP, R = unknown, E = unknown> = (payload: {
   getWorkflowContext: () => Effect.Effect<any, any, C>;
-  workItems: WorkItem<WIP>[];
+  workItems: WorkItemInstance<WIP>[];
 }) => Effect.Effect<R, E, boolean>;
 
 export type ShouldCompositeTaskExitFn<
@@ -569,15 +572,20 @@ export type ShouldCompositeTaskExitFn<
   workflows: WorkflowInstance<WC>[];
 }) => Effect.Effect<R, E, boolean>;
 
-export type StateChange =
-  | { type: 'WORKFLOW_INITIALIZED'; workflow: WorkflowInstance }
-  | { type: 'WORKFLOW_STATE_UPDATED'; workflow: WorkflowInstance }
-  | { type: 'WORKFLOW_CONTEXT_UPDATED'; workflow: WorkflowInstance }
-  | { type: 'CONDITION_MARKING_UPDATED'; condition: ConditionInstance }
+export type StateChange<
+  W extends WorkflowInstance = WorkflowInstance,
+  WI extends WorkItemInstance = WorkItemInstance
+> =
+  | { type: 'WORKFLOW_INITIALIZED'; workflow: W }
+  | { type: 'WORKFLOW_STATE_UPDATED'; workflow: W }
+  | { type: 'WORKFLOW_CONTEXT_UPDATED'; workflow: W }
+  | { type: 'TASK_INITIALIZED'; task: TaskInstance }
   | { type: 'TASK_STATE_UPDATED'; task: TaskInstance }
-  | { type: 'WORK_ITEM_INITIALIZED'; workItem: WorkItem }
-  | { type: 'WORK_ITEM_STATE_UPDATED'; workItem: WorkItem }
-  | { type: 'WORK_ITEM_PAYLOAD_UPDATED'; workItem: WorkItem };
+  | { type: 'CONDITION_MARKING_UPDATED'; condition: ConditionInstance }
+  | { type: 'CONDITION_INITIALIZED'; condition: ConditionInstance }
+  | { type: 'WORK_ITEM_INITIALIZED'; workItem: WI }
+  | { type: 'WORK_ITEM_STATE_UPDATED'; workItem: WI }
+  | { type: 'WORK_ITEM_PAYLOAD_UPDATED'; workItem: WI };
 
 export interface StateChangeItem {
   change: StateChange;
@@ -591,3 +599,8 @@ export interface StateChangeLogger {
 export type OnStateChangeFn = (
   changes: StateChangeItem[]
 ) => Effect.Effect<never, never, void>;
+
+export interface WorkflowAndWorkItemTypes {
+  workflow: WorkflowInstance;
+  workItem: WorkItemInstance;
+}

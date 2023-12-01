@@ -17,9 +17,9 @@ import {
   TaskInstance,
   TaskInstanceState,
   TaskName,
-  WorkItem,
   WorkItemId,
-  WorkItemState,
+  WorkItemInstance,
+  WorkItemInstanceState,
   WorkflowId,
   WorkflowInstance,
   WorkflowInstanceParent,
@@ -174,7 +174,7 @@ export interface State {
     workflowId: WorkflowId,
     taskName: TaskName,
     payload: unknown
-  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItem>;
+  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItemInstance>;
 
   updateWorkItemPayload(
     workflowId: WorkflowId,
@@ -187,13 +187,13 @@ export interface State {
     workflowId: WorkflowId,
     taskName: TaskName,
     workItemId: WorkItemId
-  ): Effect.Effect<never, WorkItemDoesNotExist, WorkItem>;
+  ): Effect.Effect<never, WorkItemDoesNotExist, WorkItemInstance>;
 
   updateWorkItemState(
     workflowId: WorkflowId,
     taskName: TaskName,
     workItemId: WorkItemId,
-    nextState: WorkItemState
+    nextState: WorkItemInstanceState
   ): Effect.Effect<
     never,
     InvalidWorkItemTransition | WorkItemDoesNotExist,
@@ -203,7 +203,7 @@ export interface State {
   getWorkItems(
     workflowId: WorkflowId,
     taskName: TaskName
-  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItem[]>;
+  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItemInstance[]>;
 
   getWorkflows(
     workflowId: WorkflowId,

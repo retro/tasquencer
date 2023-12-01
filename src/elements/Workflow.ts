@@ -8,6 +8,7 @@ import {
   EndConditionDoesNotExist,
   InvalidTaskStateTransition,
   InvalidWorkflowStateTransition,
+  ParentWorkflowDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
   TaskDoesNotExistInStore,
@@ -49,10 +50,10 @@ export class Workflow<
   private startCondition?: Condition;
   private endCondition?: Condition;
   readonly name: string;
-  readonly activities: WorkflowActivities<any>;
+  readonly activities: WorkflowActivities<any, any>;
   private parentTask?: CompositeTask;
 
-  constructor(name: string, activities: WorkflowActivities<any>) {
+  constructor(name: string, activities: WorkflowActivities<any, any>) {
     this.name = name;
     this.activities = activities;
   }
@@ -114,6 +115,9 @@ export class Workflow<
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       const executionContext = yield* $(ExecutionContext);
+      const defaultActivityPayload = yield* $(
+        self.getDefaultActivityPayload(id)
+      );
       const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
@@ -134,16 +138,7 @@ export class Workflow<
       const result = yield* $(
         self.activities.onStart(
           {
-            getWorkflowContext() {
-              return Effect.gen(function* ($) {
-                return (yield* $(
-                  stateManager.getWorkflowContext(id)
-                )) as Context;
-              });
-            },
-            updateWorkflowContext(context: unknown) {
-              return stateManager.updateWorkflowContext(id, context);
-            },
+            ...defaultActivityPayload,
             startWorkflow() {
               return perform;
             },
@@ -176,6 +171,9 @@ export class Workflow<
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
       const executionContext = yield* $(ExecutionContext);
+      const defaultActivityPayload = yield* $(
+        self.getDefaultActivityPayload(id)
+      );
       const workflow = yield* $(stateManager.getWorkflow(id));
       const perform = yield* $(
         Effect.once(
@@ -193,14 +191,7 @@ export class Workflow<
 
       yield* $(
         self.activities.onComplete({
-          getWorkflowContext() {
-            return Effect.gen(function* ($) {
-              return (yield* $(stateManager.getWorkflowContext(id))) as Context;
-            });
-          },
-          updateWorkflowContext(context: unknown) {
-            return stateManager.updateWorkflowContext(id, context);
-          },
+          ...defaultActivityPayload,
           completeWorkflow() {
             return perform;
           },
@@ -231,6 +222,10 @@ export class Workflow<
       const stateManager = yield* $(State);
       const executionContext = yield* $(ExecutionContext);
 
+      const defaultActivityPayload = yield* $(
+        self.getDefaultActivityPayload(id)
+      );
+
       const perform = pipe(
         Effect.all(
           [
@@ -258,14 +253,7 @@ export class Workflow<
 
       yield* $(
         self.activities.onCancel({
-          getWorkflowContext() {
-            return Effect.gen(function* ($) {
-              return (yield* $(stateManager.getWorkflowContext(id))) as Context;
-            });
-          },
-          updateWorkflowContext(context: unknown) {
-            return stateManager.updateWorkflowContext(id, context);
-          },
+          ...defaultActivityPayload,
           cancelWorkflow() {
             return perform;
           },
@@ -273,6 +261,58 @@ export class Workflow<
       );
 
       yield* $(perform);
+    });
+  }
+
+  getDefaultActivityPayload(id: WorkflowId) {
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const workflow = yield* $(stateManager.getWorkflow(id));
+
+      return {
+        getParentWorkflowContext() {
+          return Effect.gen(function* ($) {
+            const parent = workflow.parent;
+            if (!parent) {
+              return yield* $(
+                Effect.fail(
+                  new ParentWorkflowDoesNotExist({
+                    workflowId: id,
+                    workflowName: workflow.name,
+                  })
+                )
+              );
+            }
+            return yield* $(stateManager.getWorkflowContext(parent.workflowId));
+          });
+        },
+        updateParentWorkflowContext(context: unknown) {
+          return Effect.gen(function* ($) {
+            const parent = workflow.parent;
+            if (!parent) {
+              return yield* $(
+                Effect.fail(
+                  new ParentWorkflowDoesNotExist({
+                    workflowId: id,
+                    workflowName: workflow.name,
+                  })
+                )
+              );
+            }
+            return yield* $(
+              stateManager.updateWorkflowContext(parent.workflowId, context)
+            );
+          });
+        },
+        getWorkflowContext() {
+          return Effect.gen(function* ($) {
+            return (yield* $(stateManager.getWorkflowContext(id))) as Context;
+          });
+        },
+        updateWorkflowContext(context: unknown) {
+          return stateManager.updateWorkflowContext(id, context);
+        },
+      };
     });
   }
 

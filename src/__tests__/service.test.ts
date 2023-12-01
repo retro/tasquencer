@@ -84,7 +84,16 @@ it('can run net with composite tasks', () => {
     )
     .endCondition('subEnd')
     .connectCondition('subStart', (to) => to.task('subT1'))
-    .connectTask('subT1', (to) => to.condition('subEnd'));
+    .connectTask('subT1', (to) => to.condition('subEnd'))
+    .withParentContext<{ foo: string }>()
+    .onComplete(({ getWorkflowContext, getParentWorkflowContext }) =>
+      Effect.gen(function* ($) {
+        const workflowContext = yield* $(getWorkflowContext());
+        const parentWorkflowContext = yield* $(getParentWorkflowContext());
+      })
+    );
+
+  const ct = compositeTask<{ foo: string }>().withSubWorkflow(subWorkflow);
 
   const workflowDefinition = Builder.workflow<{ foo: string }>()
     .withName('parent')
@@ -101,9 +110,9 @@ it('can run net with composite tasks', () => {
           })
         )
     )
-    /*.compositeTask(
+    /* .compositeTask(
       't1',
-      compositeTask()
+      compositeTask<{ foo: string }>()
         .withSubWorkflow(subWorkflow)
         .onFire(({ fireTask }, input?: { foo: number }) =>
           Effect.gen(function* ($) {

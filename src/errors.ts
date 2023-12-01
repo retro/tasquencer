@@ -88,3 +88,11 @@ export class InvalidPath extends Data.TaggedClass('InvalidPath')<{
 }> {}
 
 export const InvalidResumableState = Data.TaggedError('InvalidResumableState');
+export type InvalidResumableState = typeof InvalidResumableState;
+
+export class ParentWorkflowDoesNotExist extends Data.TaggedClass(
+  'ParentWorkflowDoesNotExist'
+)<{
+  readonly workflowId: string;
+  readonly workflowName: string;
+}> {}

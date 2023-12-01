@@ -27,6 +27,8 @@ import {
 } from '../types.js';
 import {
   AnyWorkflowBuilder,
+  AnyWorkflowBuilderWithCorrectParentContext,
+  AnyWorkflowBuilderWithParentContext,
   WorkflowBuilderC,
   WorkflowBuilderE,
   WorkflowBuilderR,
@@ -371,14 +373,16 @@ export class CompositeTaskBuilder<
 }
 
 export interface InitialCompositeTaskFnReturnType<C> {
-  withSubWorkflow: (
-    w: AnyWorkflowBuilder
+  withSubWorkflow: <W extends AnyWorkflowBuilder>(
+    w: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
   ) => CompositeTaskBuilder<C, any, any, undefined, undefined>;
 }
 
 export function compositeTask<C>() {
   return {
-    withSubWorkflow<W extends AnyWorkflowBuilder>(workflow: W) {
+    withSubWorkflow<W extends AnyWorkflowBuilder>(
+      workflow: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
+    ) {
       return new CompositeTaskBuilder<
         C,
         WorkflowBuilderC<W>,

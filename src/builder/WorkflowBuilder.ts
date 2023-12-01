@@ -549,7 +549,7 @@ export class WorkflowBuilder<
   compositeTask<
     TN extends string,
     T extends (
-      t: () => CTB.InitializedCompositeTaskBuilder<WBContext>
+      t: () => CTB.InitialCompositeTaskFnReturnType<WBContext>
     ) => CTB.AnyCompositeTaskBuilder<WBContext>,
     X extends IsXorOrOrJoinSplit<
       CTB.CompositeTaskBuilderSplitType<ReturnType<T>>

@@ -82,20 +82,6 @@ it('can run net with composite tasks', () => {
           })
         )
     )
-    .task('subT2', (t) =>
-      t().withWorkItem((w) =>
-        w<{ workItem2: string }>()
-          .onComplete((_, input?: { foo: string }) =>
-            Effect.succeed(input?.foo)
-          )
-          .onStart(({ startWorkItem }) =>
-            Effect.gen(function* ($) {
-              const { enqueueCompleteWorkItem } = yield* $(startWorkItem());
-              yield* $(enqueueCompleteWorkItem());
-            })
-          )
-      )
-    )
     .endCondition('subEnd')
     .connectCondition('subStart', (to) => to.task('subT1'))
     .connectTask('subT1', (to) => to.condition('subEnd'));
@@ -103,10 +89,19 @@ it('can run net with composite tasks', () => {
   const workflowDefinition = Builder.workflow<{ foo: string }>()
     .withName('parent')
     .startCondition('start')
-    .task('subT1', (t) =>
-      t().withWorkItem((w) => w<{ parentWorkItem: string }>())
+    .compositeTask('t1', (ct) =>
+      ct()
+        .withSubWorkflow(subWorkflow)
+        .onFire(({ fireTask }, input?: { foo: number }) =>
+          Effect.gen(function* ($) {
+            //yield* $(Effect.fail(new Error('t1 canceled')));
+            //console.log('CALLING FIRE TASK WITH INPUT', input);
+            const { initializeWorkflow } = yield* $(fireTask());
+            return yield* $(initializeWorkflow({ bar: 'foo' }));
+          })
+        )
     )
-    .compositeTask(
+    /*.compositeTask(
       't1',
       compositeTask()
         .withSubWorkflow(subWorkflow)
@@ -118,7 +113,7 @@ it('can run net with composite tasks', () => {
             return yield* $(initializeWorkflow({ bar: 'foo' }));
           })
         )
-    )
+    )*/
     .endCondition('end')
     .connectCondition('start', (to) => to.task('t1'))
     .connectTask('t1', (to) => to.condition('end'));

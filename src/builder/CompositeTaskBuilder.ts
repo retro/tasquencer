@@ -34,7 +34,6 @@ import {
   WorkflowBuilderWorkflowAndWorkItemTypes,
 } from './WorkflowBuilder.js';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CompositeTaskBuilderContext<T> = T extends CompositeTaskBuilder<
   infer C,
   any,
@@ -44,28 +43,27 @@ export type CompositeTaskBuilderContext<T> = T extends CompositeTaskBuilder<
 >
   ? C
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CompositeTaskBuilderSplitType<T> = T extends CompositeTaskBuilder<
   any,
   any,
   any,
   any,
-  infer ST
+  infer ST,
+  any,
+  any,
+  any,
+  any,
+  any
 >
   ? ST
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CompositeTaskBuilderActivitiesReturnType<T> =
   T extends CompositeTaskBuilder<any, any, any, any, any, infer AO>
     ? AO
     : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CompositeTaskBuilderR<T> = T extends CompositeTaskBuilder<
   any,
   any,
@@ -79,9 +77,7 @@ export type CompositeTaskBuilderR<T> = T extends CompositeTaskBuilder<
 >
   ? R
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CompositeTaskBuilderE<T> = T extends CompositeTaskBuilder<
   any,
   any,
@@ -96,11 +92,9 @@ export type CompositeTaskBuilderE<T> = T extends CompositeTaskBuilder<
 >
   ? E
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type AnyCompositeTaskBuilder<C = unknown> = CompositeTaskBuilder<
   C,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   CompositeTaskActivities<C>,
   JoinType | undefined,
@@ -115,7 +109,6 @@ export type InitializedCompositeTaskBuilder<C> = CompositeTaskBuilder<
   undefined
 >;
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type CompositeTaskBuilderCTM<T> = T extends CompositeTaskBuilder<
   any,
   any,
@@ -127,9 +120,7 @@ type CompositeTaskBuilderCTM<T> = T extends CompositeTaskBuilder<
 >
   ? CTM
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type CompositeTaskBuilderWIM<T> = T extends CompositeTaskBuilder<
   any,
   any,
@@ -141,10 +132,8 @@ type CompositeTaskBuilderWIM<T> = T extends CompositeTaskBuilder<
 >
   ? WIM
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type CompositeTaskBuilderMetadata<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends AnyCompositeTaskBuilder<any>
 > = Simplify<
   CompositeTaskBuilderCTM<T> & Record<string, CompositeTaskBuilderWIM<T>>
@@ -173,7 +162,7 @@ export type CompositeTaskWorkflowAndWorkItemTypes<T> =
 
 export class CompositeTaskBuilder<
   C,
-  WC extends object,
+  WC,
   TA extends CompositeTaskActivities<C>,
   JT extends JoinType | undefined,
   ST extends SplitType | undefined,
@@ -224,7 +213,6 @@ export class CompositeTaskBuilder<
   }
 
   onDisable<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     F extends (payload: TaskOnDisablePayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -245,7 +233,6 @@ export class CompositeTaskBuilder<
   }
 
   onEnable<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     F extends (payload: TaskOnEnablePayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -270,7 +257,6 @@ export class CompositeTaskBuilder<
     F extends (
       payload: CompositeTaskOnFirePayload<C, WC, Get<WM, ['onStart', 'input']>>,
       input: I
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -298,10 +284,7 @@ export class CompositeTaskBuilder<
   }
 
   onExit<
-    F extends (
-      payload: TaskOnExitPayload<C>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) => Effect.Effect<any, any, any>
+    F extends (payload: TaskOnExitPayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
   ): CompositeTaskBuilder<
@@ -321,7 +304,6 @@ export class CompositeTaskBuilder<
   }
 
   onCancel<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     F extends (payload: TaskOnCancelPayload<C>) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -389,7 +371,9 @@ export class CompositeTaskBuilder<
 }
 
 export interface InitialCompositeTaskFnReturnType<C> {
-  withSubWorkflow: (w: AnyWorkflowBuilder) => AnyCompositeTaskBuilder<C>;
+  withSubWorkflow: (
+    w: AnyWorkflowBuilder
+  ) => CompositeTaskBuilder<C, any, any, undefined, undefined>;
 }
 
 export function compositeTask<C>() {

@@ -17,11 +17,10 @@ import {
   ConditionName,
   ExecutionContext,
   TaskName,
+  WorkflowActivities,
   WorkflowAndWorkItemTypes,
   WorkflowId,
   WorkflowInstanceParent,
-  WorkflowOnEndPayload,
-  WorkflowOnStartPayload,
   finalWorkflowInstanceStates,
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
@@ -38,15 +37,6 @@ export type WorkflowMetadata<T> = T extends Workflow<
 >
   ? U
   : never;
-
-type OnStart<C> = (
-  payload: WorkflowOnStartPayload<C>,
-  input?: unknown
-) => Effect.Effect<unknown, unknown, unknown>;
-
-type OnEnd<C> = (
-  payload: WorkflowOnEndPayload<C>
-) => Effect.Effect<unknown, unknown, unknown>;
 export class Workflow<
   _R = never,
   _E = never,
@@ -59,14 +49,12 @@ export class Workflow<
   private startCondition?: Condition;
   private endCondition?: Condition;
   readonly name: string;
-  readonly onStart: OnStart<Context>;
-  readonly onEnd: OnEnd<Context>;
+  readonly activities: WorkflowActivities<any>;
   private parentTask?: CompositeTask;
 
-  constructor(name: string, onStart: OnStart<Context>, onEnd: OnEnd<Context>) {
+  constructor(name: string, activities: WorkflowActivities<any>) {
     this.name = name;
-    this.onStart = onStart;
-    this.onEnd = onEnd;
+    this.activities = activities;
   }
 
   addTask(task: BaseTask) {
@@ -144,7 +132,7 @@ export class Workflow<
       );
 
       const result = yield* $(
-        self.onStart(
+        self.activities.onStart(
           {
             getWorkflowContext() {
               return Effect.gen(function* ($) {
@@ -204,7 +192,7 @@ export class Workflow<
       );
 
       yield* $(
-        self.onEnd({
+        self.activities.onComplete({
           getWorkflowContext() {
             return Effect.gen(function* ($) {
               return (yield* $(stateManager.getWorkflowContext(id))) as Context;
@@ -213,7 +201,7 @@ export class Workflow<
           updateWorkflowContext(context: unknown) {
             return stateManager.updateWorkflowContext(id, context);
           },
-          endWorkflow() {
+          completeWorkflow() {
             return perform;
           },
         }) as Effect.Effect<never, never, unknown>
@@ -238,29 +226,54 @@ export class Workflow<
   }
 
   cancel(id: WorkflowId) {
-    return pipe(
-      Effect.all(
-        [
-          Effect.all(
-            Object.values(this.tasks).map((task) => task.cancel(id)),
-            { batching: true }
-          ),
-          Effect.all(
-            Object.values(this.conditions).map((condition) =>
-              condition.cancel(id)
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
+
+      const perform = pipe(
+        Effect.all(
+          [
+            Effect.all(
+              Object.values(self.tasks).map((task) => task.cancel(id)),
+              { batching: true }
             ),
-            { batching: true }
-          ),
-        ],
-        { discard: true }
-      ),
-      Effect.tap(() =>
-        Effect.gen(function* ($) {
-          const stateManager = yield* $(State);
-          yield* $(stateManager.updateWorkflowState(id, 'canceled'));
-        })
-      )
-    );
+            Effect.all(
+              Object.values(self.conditions).map((condition) =>
+                condition.cancel(id)
+              ),
+              { batching: true }
+            ),
+          ],
+          { discard: true }
+        ),
+        Effect.tap(() =>
+          Effect.gen(function* ($) {
+            yield* $(stateManager.updateWorkflowState(id, 'canceled'));
+          })
+        ),
+        Effect.provideService(State, stateManager),
+        Effect.provideService(ExecutionContext, executionContext)
+      );
+
+      yield* $(
+        self.activities.onCancel({
+          getWorkflowContext() {
+            return Effect.gen(function* ($) {
+              return (yield* $(stateManager.getWorkflowContext(id))) as Context;
+            });
+          },
+          updateWorkflowContext(context: unknown) {
+            return stateManager.updateWorkflowContext(id, context);
+          },
+          cancelWorkflow() {
+            return perform;
+          },
+        }) as Effect.Effect<never, never, unknown>
+      );
+
+      yield* $(perform);
+    });
   }
 
   getStartCondition() {

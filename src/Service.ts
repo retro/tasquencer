@@ -162,6 +162,34 @@ export class Service<
     }).pipe(Effect.provideService(State, this.state));
   }
 
+  private unsafeUpdateWorkflowContext(
+    path: readonly string[],
+    context: unknown
+  ) {
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      const executionPlan = yield* $(self.workflowPathToExecutionPlan(path));
+
+      yield* $(
+        self.state.updateWorkflowContext(executionPlan.workflow.id, context)
+      );
+    }).pipe(Effect.provideService(State, this.state));
+  }
+
+  updateWorkflowContext<
+    T extends string | readonly string[],
+    M = Get<WorkflowMetadata, T>
+  >(
+    ...args: undefined extends GetSym<M, WorkflowContextSym>
+      ? [T] | [T, GetSym<M, WorkflowContextSym>]
+      : [T, GetSym<M, WorkflowContextSym>]
+  ) {
+    const [pathOrArray, input] = args;
+    const path = pathAsArray(pathOrArray);
+    return this.unsafeUpdateWorkflowContext(path, input);
+  }
+
   private unsafeFireTask(
     path: readonly string[],
     input: unknown,
@@ -464,6 +492,39 @@ export class Service<
       this.unsafeFailWorkItem(path, input, true),
       Effect.map((r) => r as Get<M, ['onFail', 'return']>)
     );
+  }
+
+  private unsafeUpdateWorkItemPayload(
+    path: readonly string[],
+    payload: unknown
+  ) {
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      const executionPlan = yield* $(self.workItemPathToExecutionPlan(path));
+
+      yield* $(
+        self.state.updateWorkItemPayload(
+          executionPlan.workflow.id,
+          executionPlan.task.name,
+          executionPlan.workItemId,
+          payload
+        )
+      );
+    }).pipe(Effect.provideService(State, this.state));
+  }
+
+  updateWorkItemPayload<
+    T extends string | readonly string[],
+    M = Get<WorkflowMetadata, T>
+  >(
+    ...args: undefined extends GetSym<M, WorkItemPayloadSym>
+      ? [T] | [T, GetSym<M, WorkItemPayloadSym>]
+      : [T, GetSym<M, WorkItemPayloadSym>]
+  ) {
+    const [pathOrArray, input] = args;
+    const path = pathAsArray(pathOrArray);
+    return this.unsafeUpdateWorkItemPayload(path, input);
   }
 
   getWorkItems(taskName: string) {

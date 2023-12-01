@@ -295,7 +295,7 @@ export class Task extends BaseTask {
             .getWorkItem(workflowId, workItemId)
             .pipe(Effect.provideService(State, stateManager));
         },
-        updateWorkItem(payload: unknown) {
+        updateWorkItemPayload(payload: unknown) {
           return self
             .updateWorkItem(workflowId, workItemId, payload)
             .pipe(Effect.provideService(State, stateManager));

@@ -11,11 +11,14 @@ import {
   ConditionNode,
   NotExtends,
   WorkItemInstance,
+  WorkflowActivities,
   WorkflowAndWorkItemTypes,
   WorkflowBuilderDefinition,
   WorkflowContextSym,
   WorkflowInstance,
-  WorkflowOnEndPayload,
+  WorkflowOnCancelPayload,
+  WorkflowOnCompletePayload,
+  WorkflowOnFailPayload,
   WorkflowOnStartPayload,
 } from '../types.js';
 import * as CTB from './CompositeTaskBuilder.js';
@@ -157,6 +160,11 @@ export type WorkflowBuilderWorkflowAndWorkItemTypes<T> =
     ? WAWIT
     : never;
 
+interface WorkflowActivityMetadata<I, R> {
+  input: I;
+  return: R;
+}
+
 // TODO: implement invariant checking
 export class WorkflowBuilder<
   WName extends string,
@@ -177,13 +185,8 @@ export class WorkflowBuilder<
 > {
   readonly name: string;
   readonly definition: WorkflowBuilderDefinition;
-  onStartFn?: (
-    payload: WorkflowOnStartPayload<WBContext>,
-    input: unknown
-  ) => Effect.Effect<unknown, unknown, unknown>;
-  onEndFn?: (
-    payload: WorkflowOnEndPayload<WBContext>
-  ) => Effect.Effect<unknown, unknown, unknown>;
+  readonly activities: WorkflowActivities<WBContext> =
+    {} as WorkflowActivities<WBContext>;
 
   constructor(name: WName) {
     this.name = name;
@@ -203,9 +206,141 @@ export class WorkflowBuilder<
   }
 
   initialize() {
-    return this.onStart((_, input) => Effect.succeed(input)).onEnd(
-      () => Effect.unit
-    );
+    return this.onStart((_, _input?: undefined) => Effect.succeed(_input))
+      .onComplete((_, _input?: undefined) => Effect.succeed(_input))
+      .onCancel((_, _input?: undefined) => Effect.succeed(_input))
+      .onFail((_, _input?: undefined) => Effect.succeed(_input));
+  }
+
+  onStart<
+    I,
+    F extends (
+      payload: WorkflowOnStartPayload<WBContext>,
+      input: I
+    ) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): WorkflowBuilder<
+    WName,
+    WBContext,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    Simplify<
+      Omit<WBMetadata, 'onStart'> & {
+        onStart: WorkflowActivityMetadata<
+          Parameters<F>[1],
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
+    WBWorkflowAndWorkItemTypes
+  > {
+    this.activities.onStart = f;
+    return this;
+  }
+  onComplete<
+    I,
+    F extends (
+      payload: WorkflowOnCompletePayload<WBContext>,
+      input: I
+    ) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): WorkflowBuilder<
+    WName,
+    WBContext,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    Simplify<
+      Omit<WBMetadata, 'onComplete'> & {
+        onComplete: WorkflowActivityMetadata<
+          Parameters<F>[1],
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
+    WBWorkflowAndWorkItemTypes
+  > {
+    this.activities.onComplete = f;
+    return this;
+  }
+
+  onFail<
+    I,
+    F extends (
+      payload: WorkflowOnFailPayload<WBContext>,
+      input: I
+    ) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): WorkflowBuilder<
+    WName,
+    WBContext,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    Simplify<
+      Omit<WBMetadata, 'onFail'> & {
+        onFail: WorkflowActivityMetadata<
+          Parameters<F>[1],
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
+    WBWorkflowAndWorkItemTypes
+  > {
+    this.activities.onFail = f;
+    return this;
+  }
+
+  onCancel<
+    I,
+    F extends (
+      payload: WorkflowOnCancelPayload<WBContext>,
+      input: I
+    ) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): WorkflowBuilder<
+    WName,
+    WBContext,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>,
+    WBTasks,
+    WBConditions,
+    WBCancellationRegions,
+    WBTasksWithOrXorSplit,
+    WBConnectedTasks,
+    WBConnectedConditions,
+    Simplify<
+      Omit<WBMetadata, 'onCancel'> & {
+        onCancel: WorkflowActivityMetadata<
+          Parameters<F>[1],
+          Effect.Effect.Success<ReturnType<F>>
+        >;
+      }
+    >,
+    WBWorkflowAndWorkItemTypes
+  > {
+    this.activities.onCancel = f;
+    return this;
   }
 
   condition<CN extends string>(
@@ -565,7 +700,6 @@ export class WorkflowBuilder<
     WBWorkflowAndWorkItemTypes
   >;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   connectTask(taskName: string, builder: (...any: any[]) => any) {
     if (
       this.definition.tasks[taskName]?.splitType === 'or' ||
@@ -593,56 +727,9 @@ export class WorkflowBuilder<
     }
     return this;
   }
-  onStart<
-    F extends (
-      payload: WorkflowOnStartPayload<WBContext>,
-      input: unknown
-    ) => Effect.Effect<unknown, unknown, unknown>
-  >(
-    f: F
-  ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
-    WBWorkflowAndWorkItemTypes
-  > {
-    this.onStartFn = f;
-    return this;
-  }
-  onEnd<
-    F extends (
-      payload: WorkflowOnEndPayload<WBContext>
-    ) => Effect.Effect<unknown, unknown, unknown>
-  >(
-    f: F
-  ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
-    WBWorkflowAndWorkItemTypes
-  > {
-    this.onEndFn = f;
-    return this;
-  }
 
   build() {
-    const { name, definition, onStartFn, onEndFn } = this;
+    const { name, definition, activities } = this;
 
     return Effect.gen(function* ($) {
       const workflow = new Workflow<
@@ -651,11 +738,7 @@ export class WorkflowBuilder<
         WBContext,
         WBMetadata,
         WBWorkflowAndWorkItemTypes
-        // non-null assertion is ok here, because onStartFn and onEndFn are set
-        // in the initialize method which is automatically called by the `workflow`
-        // entrypoint
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      >(name, onStartFn!, onEndFn!);
+      >(name, activities);
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow

@@ -215,30 +215,43 @@ export abstract class BaseTask {
   }
 
   protected produceOrSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
-    const flows = this.outgoingFlows;
-    const context = {}; // TODO: Load context from store
-    const updates = Array.from(flows).map((flow) => {
-      return Effect.gen(function* ($) {
-        if (flow.isDefault) {
-          yield* $(flow.nextElement.incrementMarking(workflowId));
-        } else if (
-          flow.predicate ? yield* $(flow.predicate({ context })) : false
-        ) {
-          yield* $(flow.nextElement.incrementMarking(workflowId));
-        }
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const context = yield* $(stateManager.getWorkflowContext(workflowId)); // TODO: Load context from store
+      const flows = self.outgoingFlows;
+
+      const updates = Array.from(flows).map((flow) => {
+        return Effect.gen(function* ($) {
+          if (flow.isDefault) {
+            yield* $(flow.nextElement.incrementMarking(workflowId));
+          } else if (
+            flow.predicate ? yield* $(flow.predicate({ context })) : false
+          ) {
+            yield* $(flow.nextElement.incrementMarking(workflowId));
+          }
+        });
       });
+
+      return yield* $(Effect.all(updates, { batching: true, discard: true }));
     });
-    return Effect.all(updates, { batching: true, discard: true });
   }
 
   protected produceXorSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
-    const context = {}; // TODO: Load context from store
-    const flows = this.outgoingFlows;
-    const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
-      return flowA.order > flowB.order ? 1 : flowA.order < flowB.order ? -1 : 0;
-    });
+    const self = this;
 
     return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const context = yield* $(stateManager.getWorkflowContext(workflowId)); // TODO: Load context from store
+      const flows = self.outgoingFlows;
+      const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
+        return flowA.order > flowB.order
+          ? 1
+          : flowA.order < flowB.order
+          ? -1
+          : 0;
+      });
       for (const flow of sortedFlows) {
         if (flow.isDefault) {
           return yield* $(flow.nextElement.incrementMarking(workflowId));

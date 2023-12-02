@@ -226,29 +226,33 @@ export class Workflow<
         self.getDefaultActivityPayload(id)
       );
 
-      const perform = pipe(
-        Effect.all(
-          [
-            Effect.all(
-              Object.values(self.tasks).map((task) => task.cancel(id)),
-              { batching: true }
-            ),
-            Effect.all(
-              Object.values(self.conditions).map((condition) =>
-                condition.cancel(id)
+      const perform = Effect.once(
+        pipe(
+          Effect.all(
+            [
+              Effect.all(
+                Object.values(self.tasks).map((task) =>
+                  task.maybeCancelOrDisable(id)
+                ),
+                { batching: true }
               ),
-              { batching: true }
-            ),
-          ],
-          { discard: true }
-        ),
-        Effect.tap(() =>
-          Effect.gen(function* ($) {
-            yield* $(stateManager.updateWorkflowState(id, 'canceled'));
-          })
-        ),
-        Effect.provideService(State, stateManager),
-        Effect.provideService(ExecutionContext, executionContext)
+              Effect.all(
+                Object.values(self.conditions).map((condition) =>
+                  condition.cancel(id)
+                ),
+                { batching: true }
+              ),
+            ],
+            { discard: true }
+          ),
+          Effect.tap(() =>
+            Effect.gen(function* ($) {
+              yield* $(stateManager.updateWorkflowState(id, 'canceled'));
+            })
+          ),
+          Effect.provideService(State, stateManager),
+          Effect.provideService(ExecutionContext, executionContext)
+        )
       );
 
       yield* $(

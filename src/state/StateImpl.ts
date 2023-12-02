@@ -472,7 +472,7 @@ export class StateImpl implements State {
     conditionName: ConditionName
   ) {
     return this.updateCondition(workflowId, conditionName, (condition) => {
-      return { ...condition, marking: Math.max(condition.marking - 1, 0) };
+      return { ...condition, marking: condition.marking - 1 };
     });
   }
 

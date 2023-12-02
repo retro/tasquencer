@@ -169,7 +169,7 @@ export class WorkItemBuilder<
     I,
     F extends (
       payload: WorkItemOnCancelPayload<C, P>,
-      input: I
+      input?: I
     ) => Effect.Effect<any, any, any>
   >(
     f: F

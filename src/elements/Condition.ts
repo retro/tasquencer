@@ -51,7 +51,12 @@ export class Condition {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
-      yield* $(stateManager.decrementConditionMarking(workflowId, self.name));
+      const marking = yield* $(
+        stateManager.getConditionMarking(workflowId, self.name)
+      );
+      if (marking > 0) {
+        yield* $(stateManager.decrementConditionMarking(workflowId, self.name));
+      }
       yield* $(self.disableTasks(workflowId));
     });
   }

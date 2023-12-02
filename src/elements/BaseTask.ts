@@ -5,10 +5,13 @@ import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
   EndConditionDoesNotExist,
+  InvalidTaskState,
   InvalidTaskStateTransition,
+  InvalidWorkItemTransition,
   InvalidWorkflowStateTransition,
   TaskDoesNotExist,
   TaskDoesNotExistInStore,
+  WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
 import {
@@ -167,7 +170,17 @@ export abstract class BaseTask {
     workflowId: WorkflowId
   ): Effect.Effect<
     ExecutionContext | State,
-    TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskState
+    | WorkflowDoesNotExist
+    | WorkItemDoesNotExist
+    | EndConditionDoesNotExist
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | InvalidWorkItemTransition,
     unknown
   >;
 
@@ -185,6 +198,21 @@ export abstract class BaseTask {
     | WorkflowDoesNotExist,
     void
   >;
+
+  maybeCancelOrDisable(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const taskState = yield* $(
+        stateManager.getTaskState(workflowId, self.name)
+      );
+      if (taskState === 'fired') {
+        return yield* $(self.cancel(workflowId));
+      } else if (taskState === 'enabled') {
+        return yield* $(self.disable(workflowId));
+      }
+    });
+  }
 
   cancelCancellationRegion(workflowId: WorkflowId) {
     const taskUpdates = Object.values(this.cancellationRegion.tasks).map((t) =>

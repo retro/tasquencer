@@ -72,7 +72,7 @@ export class Service<
     }
   }
 
-  private unsafeStartWorkflow(
+  unsafeStartWorkflow(
     pathOrArray: readonly string[] | string,
     input?: unknown,
     executePostActions = true
@@ -126,7 +126,7 @@ export class Service<
     );
   }
 
-  private unsafeCancelWorkflow(
+  unsafeCancelWorkflow(
     pathOrArray: readonly string[] | string,
     input?: unknown,
     executePostActions = true
@@ -217,10 +217,7 @@ export class Service<
     }).pipe(Effect.provideService(State, this.state));
   }
 
-  private unsafeUpdateWorkflowContext(
-    path: readonly string[],
-    context: unknown
-  ) {
+  unsafeUpdateWorkflowContext(path: readonly string[], context: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {
@@ -245,7 +242,7 @@ export class Service<
     return this.unsafeUpdateWorkflowContext(path, input);
   }
 
-  private unsafeFireTask(
+  unsafeFireTask(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -292,7 +289,7 @@ export class Service<
     );
   }
 
-  private unsafeInitializeWorkItem(
+  unsafeInitializeWorkItem(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -332,7 +329,7 @@ export class Service<
     T extends string | readonly string[],
     M = Get<Get<WorkflowMetadata, T>, string>
   >(
-    ...args: undefined extends M
+    ...args: undefined extends GetSym<M, WorkItemPayloadSym>
       ? [T] | [T, GetSym<M, WorkItemPayloadSym>]
       : [T, GetSym<M, WorkItemPayloadSym>]
   ) {
@@ -345,7 +342,7 @@ export class Service<
     );
   }
 
-  private unsafeCompleteWorkItem(
+  unsafeCompleteWorkItem(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -396,7 +393,7 @@ export class Service<
     );
   }
 
-  private unsafeCancelWorkItem(
+  unsafeCancelWorkItem(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -447,7 +444,7 @@ export class Service<
     );
   }
 
-  private unsafeStartWorkItem(
+  unsafeStartWorkItem(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -498,7 +495,7 @@ export class Service<
     );
   }
 
-  private unsafeFailWorkItem(
+  unsafeFailWorkItem(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -549,10 +546,7 @@ export class Service<
     );
   }
 
-  private unsafeUpdateWorkItemPayload(
-    path: readonly string[],
-    payload: unknown
-  ) {
+  unsafeUpdateWorkItemPayload(path: readonly string[], payload: unknown) {
     const self = this;
 
     return Effect.gen(function* ($) {

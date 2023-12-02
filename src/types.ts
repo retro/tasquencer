@@ -165,11 +165,17 @@ export type TaskOnExitPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
 export type TaskOnCancelPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
   cancelTask: () => Effect.Effect<
     never,
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
     | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
-    | InvalidTaskStateTransition,
+    | EndConditionDoesNotExist
+    | InvalidTaskState
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | InvalidWorkItemTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | WorkflowDoesNotExist
+    | WorkItemDoesNotExist,
     void
   >;
 };
@@ -633,12 +639,17 @@ export type WorkflowOnCancelPayload<C, PC> = DefaultWorkflowActivityPayload<
 > & {
   cancelWorkflow: () => Effect.Effect<
     never,
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | EndConditionDoesNotExist
+    | InvalidTaskState
+    | InvalidTaskStateTransition
+    | InvalidWorkflowStateTransition
+    | InvalidWorkItemTransition
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
-    | InvalidTaskStateTransition
-    | ConditionDoesNotExistInStore
     | WorkflowDoesNotExist
-    | InvalidWorkflowStateTransition,
+    | WorkItemDoesNotExist,
     void
   >;
 };

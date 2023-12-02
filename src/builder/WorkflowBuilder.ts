@@ -331,7 +331,7 @@ export class WorkflowBuilder<
     I,
     F extends (
       payload: WorkflowOnFailPayload<WBContext, WBParentContext>,
-      input: I
+      input?: I
     ) => Effect.Effect<any, any, any>
   >(
     f: F
@@ -365,7 +365,7 @@ export class WorkflowBuilder<
     I,
     F extends (
       payload: WorkflowOnCancelPayload<WBContext, WBParentContext>,
-      input: I
+      input?: I
     ) => Effect.Effect<any, any, any>
   >(
     f: F

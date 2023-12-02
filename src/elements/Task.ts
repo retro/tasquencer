@@ -281,7 +281,25 @@ export class Task extends BaseTask {
         const executionContext = yield* $(ExecutionContext);
 
         const perform = yield* $(
-          Effect.once(stateManager.cancelTask(workflowId, self.name))
+          Effect.once(
+            Effect.gen(function* ($) {
+              const workItems = (yield* $(
+                stateManager.getWorkItems(workflowId, self.name)
+              )).filter((workItem) => workItem.state === 'started');
+              yield* $(
+                Effect.all(
+                  workItems.map(({ id }) =>
+                    self.cancelWorkItem(workflowId, id, undefined, false)
+                  ),
+                  { batching: true }
+                )
+              );
+              yield* $(stateManager.cancelTask(workflowId, self.name));
+            }).pipe(
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            )
+          )
         );
 
         const result = yield* $(
@@ -497,7 +515,8 @@ export class Task extends BaseTask {
   cancelWorkItem(
     workflowId: WorkflowId,
     workItemId: WorkItemId,
-    input?: unknown
+    input?: unknown,
+    autoExit = true
   ) {
     const self = this;
     return Effect.gen(function* ($) {
@@ -536,7 +555,9 @@ export class Task extends BaseTask {
       );
 
       yield* $(perform);
-      yield* $(self.maybeExit(workflowId));
+      if (autoExit) {
+        yield* $(self.maybeExit(workflowId));
+      }
 
       return result;
     });

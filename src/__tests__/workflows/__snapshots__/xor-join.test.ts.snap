@@ -1,0 +1,361 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runs a net with "xor" join 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "choice",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "initial_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "xor-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" join 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "choice",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "initial_task",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "xor-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" join 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 1,
+      "name": "choice",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "xor-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" join 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "choice",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 1,
+      "name": "task_b",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "xor-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;

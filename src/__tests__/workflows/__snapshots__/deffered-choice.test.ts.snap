@@ -1,0 +1,285 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`supports the deferred choice pattern 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_1->task_1a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_2->task_2a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "task_1",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_1a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "deferred-choice",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`supports the deferred choice pattern 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_1->task_1a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_2->task_2a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "task_1",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_1a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "deferred-choice",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the deferred choice pattern 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_1->task_1a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_2->task_2a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "task_1",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_1a",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "deferred-choice",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the deferred choice pattern 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_1->task_1a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_2->task_2a",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "task_1",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 1,
+      "name": "task_1a",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+    {
+      "generation": 0,
+      "name": "task_2a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "deferred-choice",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "deferred-choice",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

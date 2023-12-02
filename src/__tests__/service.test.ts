@@ -145,14 +145,14 @@ it('can run net with composite tasks', () => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    service.onStateChange((changes) => {
+    /* service.onStateChange((changes) => {
       console.log('+++++++++++++++++++++++++++++++++++++++');
       for (const change of changes) {
         console.log(change.change);
       }
       console.log('---------------------------------------');
       return Effect.unit;
-    });
+    });*/
 
     const started = yield* $(service.start({ startWorkflow: true }));
 
@@ -181,7 +181,7 @@ it('can run net with composite tasks', () => {
     yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.workItem-2`));
     yield* $(service.startWorkItem(`t1.${subWorkflow.id}.subT1.${wi.id}`));
 
-    console.log(JSON.stringify(yield* $(service.getState()), null, 2));
+    //console.log(JSON.stringify(yield* $(service.getState()), null, 2));
     expect(1).toBe(1);
   });
 

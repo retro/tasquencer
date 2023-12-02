@@ -380,3 +380,7 @@ export class TaskBuilder<
 export function task<C>() {
   return new TaskBuilder<C, TaskActivities<C>, never, never>().initialize();
 }
+
+export function emptyTask<C>() {
+  return task<C>().withShouldExit(() => Effect.succeed(true));
+}

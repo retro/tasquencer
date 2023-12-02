@@ -1,6 +1,7 @@
 import { Effect, pipe } from 'effect';
 
 import { State } from '../State.js';
+import { InvalidTaskStateTransition } from '../errors.js';
 import {
   CompositeTaskActivities,
   ExecutionContext,
@@ -74,6 +75,17 @@ export class CompositeTask extends BaseTask {
 
           return result;
         }
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              taskName: self.name,
+              workflowId,
+              from: state,
+              to: 'enabled',
+            })
+          )
+        );
       }
     });
   }
@@ -103,6 +115,17 @@ export class CompositeTask extends BaseTask {
         yield* $(perform);
 
         return result;
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              taskName: self.name,
+              workflowId,
+              from: state,
+              to: 'disabled',
+            })
+          )
+        );
       }
     });
   }
@@ -179,6 +202,17 @@ export class CompositeTask extends BaseTask {
         yield* $(self.maybeExit(workflowId));
 
         return result;
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              taskName: self.name,
+              workflowId,
+              from: state,
+              to: 'fired',
+            })
+          )
+        );
       }
     });
   }
@@ -219,6 +253,17 @@ export class CompositeTask extends BaseTask {
         yield* $(perform);
 
         return result;
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              taskName: self.name,
+              workflowId,
+              from: state,
+              to: 'exited',
+            })
+          )
+        );
       }
     });
   }
@@ -248,6 +293,17 @@ export class CompositeTask extends BaseTask {
         yield* $(perform);
 
         return result;
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              taskName: self.name,
+              workflowId,
+              from: state,
+              to: 'canceled',
+            })
+          )
+        );
       }
     });
   }

@@ -196,7 +196,7 @@ export abstract class BaseTask {
 
     return Effect.all(
       [
-        Effect.all(taskUpdates, { batching: true, discard: true }),
+        Effect.allSuccesses(taskUpdates, { batching: true }),
         Effect.all(conditionUpdates, { batching: true, discard: true }),
       ],
       { discard: true }
@@ -320,11 +320,10 @@ export abstract class BaseTask {
   }
 
   protected enablePostTasks(workflowId: WorkflowId) {
-    return Effect.all(
+    return Effect.allSuccesses(
       Array.from(this.outgoingFlows).map((flow) =>
         flow.nextElement.enableTasks(workflowId)
-      ),
-      { discard: true }
+      )
     );
   }
 }

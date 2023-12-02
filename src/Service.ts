@@ -641,9 +641,8 @@ export class Service<
           Match.when({ type: 'fireTask' }, ({ path, input }) =>
             self.unsafeFireTask(path, input, false)
           ),
-          Match.when(
-            { type: 'startWorkflow' },
-            ({ path, input }) => self.startWorkflow(path, input, false) // TODO: make unsafe version
+          Match.when({ type: 'startWorkflow' }, ({ path, input }) =>
+            self.unsafeStartWorkflow(path, input, false)
           ),
           Match.when({ type: 'startWorkItem' }, ({ path, input }) =>
             self.unsafeStartWorkItem(path, input, false)
@@ -1071,12 +1070,19 @@ type WorkflowWorkflowAndWorkItemTypes<T> = T extends Workflow<
   ? WWAIT
   : never;
 
+type IsOptional<T> = T extends never
+  ? true
+  : undefined extends T
+  ? true
+  : false;
+
 export function initialize<
   W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
   E extends WorkflowE<W> = WorkflowE<W>,
   C extends WorkflowContext<W> = WorkflowContext<W>
->(workflow: W, context: C) {
+>(...args: IsOptional<C> extends true ? [W] | [W, C?] : [W, C]) {
+  const [workflow, context] = args;
   return Effect.gen(function* ($) {
     const queue = yield* $(Queue.unbounded<ExecutionContextQueueItem>());
     const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));

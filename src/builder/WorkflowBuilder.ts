@@ -881,7 +881,7 @@ export class WorkflowBuilder<
   }
 }
 
-export function workflow<C extends object>() {
+export function workflow<C>() {
   return {
     withName<N extends string>(name: N) {
       return new WorkflowBuilder<N, C, never, never>(name).initialize();

@@ -58,25 +58,47 @@ export class Condition {
 
   enableTasks(workflowId: WorkflowId) {
     const tasks = Object.values(this.postSet);
-    return Effect.all(
-      tasks.map((task) => task.enable(workflowId)),
-      { discard: true, batching: true }
-    );
+    return Effect.gen(function* ($) {
+      // Here we are not checking the marking because in case of an "or" join
+      // a task might be enabled by positive marking in some other condition
+      yield* $(
+        // Some will potentially fail because they are in the wrong state, but this
+        // is fine because we are just trying to disable all that are enabled.
+        Effect.allSuccesses(
+          tasks.map((task) => task.enable(workflowId)),
+          { batching: true }
+        )
+      );
+    });
   }
 
   disableTasks(workflowId: WorkflowId) {
+    const self = this;
     const tasks = Object.values(this.postSet);
-    return Effect.all(
-      tasks.map((task) => task.disable(workflowId)),
-      { discard: true, batching: true }
-    );
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const marking = yield* $(
+        stateManager.getConditionMarking(workflowId, self.name)
+      );
+
+      if (marking === 0) {
+        yield* $(
+          // Some will potentially fail because they are in the wrong state, but this
+          // is fine because we are just trying to disable all that are enabled.
+          Effect.allSuccesses(
+            tasks.map((task) => task.disable(workflowId)),
+            { batching: true }
+          )
+        );
+      }
+    });
   }
 
   cancelTasks(workflowId: WorkflowId) {
     const tasks = Object.values(this.postSet);
-    return Effect.all(
+    return Effect.allSuccesses(
       tasks.map((task) => task.cancel(workflowId)),
-      { discard: true, batching: true }
+      { batching: true }
     );
   }
 

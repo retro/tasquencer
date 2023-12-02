@@ -1,0 +1,949 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runs a net with "xor" split and "xor" join 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "B",
+      },
+      "id": "workflow-1",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "B",
+      },
+      "id": "workflow-1",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "B",
+      },
+      "id": "workflow-1",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "exited",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "B",
+      },
+      "id": "workflow-1",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "C",
+      },
+      "id": "workflow-2",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "C",
+      },
+      "id": "workflow-2",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 7`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "exited",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "C",
+      },
+      "id": "workflow-2",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 8`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "exited",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "exited",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "C",
+      },
+      "id": "workflow-2",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 9`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "not a match",
+      },
+      "id": "workflow-3",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 10`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "enabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "not a match",
+      },
+      "id": "workflow-3",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 11`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "exited",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "enabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "not a match",
+      },
+      "id": "workflow-3",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "xor" split and "xor" join 12`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->D",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "exited",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "D",
+      "state": "exited",
+      "workflowId": "workflow-3",
+      "workflowName": "xor-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "foo": "not a match",
+      },
+      "id": "workflow-3",
+      "name": "xor-split-join",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

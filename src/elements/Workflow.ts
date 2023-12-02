@@ -216,7 +216,7 @@ export class Workflow<
     });
   }
 
-  cancel(id: WorkflowId) {
+  cancel(id: WorkflowId, input?: unknown) {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
@@ -252,12 +252,15 @@ export class Workflow<
       );
 
       yield* $(
-        self.activities.onCancel({
-          ...defaultActivityPayload,
-          cancelWorkflow() {
-            return perform;
+        self.activities.onCancel(
+          {
+            ...defaultActivityPayload,
+            cancelWorkflow() {
+              return perform;
+            },
           },
-        }) as Effect.Effect<never, never, unknown>
+          input
+        ) as Effect.Effect<never, never, unknown>
       );
 
       yield* $(perform);

@@ -59,22 +59,6 @@ export type AnyWorkflowBuilder = WorkflowBuilder<
   any
 >;
 
-export type AnyWorkflowBuilderWithParentContext<PC> = WorkflowBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  PC
->;
-
 export type AnyWorkflowBuilderWithCorrectParentContext<W, PC> =
   W extends WorkflowBuilder<
     any,
@@ -662,15 +646,13 @@ export class WorkflowBuilder<
     compositeTaskName: string,
     input:
       | CTB.AnyCompositeTaskBuilder
-      | ((
-          t: () => CTB.InitialCompositeTaskFnReturnType<WBContext>
-        ) => CTB.AnyCompositeTaskBuilder<any>)
+      | ((t: (...args: any[]) => any) => CTB.AnyCompositeTaskBuilder<any>)
   ) {
     if (input instanceof CTB.CompositeTaskBuilder) {
       this.definition.tasks[compositeTaskName] = input;
     } else {
       this.definition.tasks[compositeTaskName] = input(() =>
-        CTB.compositeTask<WBContext>()
+        CTB.compositeTask()
       );
     }
 

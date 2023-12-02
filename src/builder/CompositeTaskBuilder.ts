@@ -28,11 +28,10 @@ import {
 import {
   AnyWorkflowBuilder,
   AnyWorkflowBuilderWithCorrectParentContext,
-  AnyWorkflowBuilderWithParentContext,
   WorkflowBuilderC,
   WorkflowBuilderE,
+  WorkflowBuilderMetadata,
   WorkflowBuilderR,
-  WorkflowBuilderTaskActivitiesOutputs,
   WorkflowBuilderWorkflowAndWorkItemTypes,
 } from './WorkflowBuilder.js';
 
@@ -136,7 +135,18 @@ type CompositeTaskBuilderWIM<T> = T extends CompositeTaskBuilder<
   : never;
 
 export type CompositeTaskBuilderMetadata<
-  T extends AnyCompositeTaskBuilder<any>
+  T extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >
 > = Simplify<
   CompositeTaskBuilderCTM<T> & Record<string, CompositeTaskBuilderWIM<T>>
 >;
@@ -374,8 +384,19 @@ export class CompositeTaskBuilder<
 
 export interface InitialCompositeTaskFnReturnType<C> {
   withSubWorkflow: <W extends AnyWorkflowBuilder>(
-    w: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
-  ) => CompositeTaskBuilder<C, any, any, undefined, undefined>;
+    workflow: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
+  ) => CompositeTaskBuilder<
+    C,
+    any,
+    any,
+    undefined,
+    undefined,
+    object,
+    WorkflowBuilderMetadata<W>,
+    WorkflowBuilderWorkflowAndWorkItemTypes<W>,
+    WorkflowBuilderR<W>,
+    WorkflowBuilderE<W>
+  >;
 }
 
 export function compositeTask<C>() {
@@ -390,7 +411,7 @@ export function compositeTask<C>() {
         undefined,
         undefined,
         object,
-        WorkflowBuilderTaskActivitiesOutputs<W>,
+        WorkflowBuilderMetadata<W>,
         WorkflowBuilderWorkflowAndWorkItemTypes<W>,
         WorkflowBuilderR<W>,
         WorkflowBuilderE<W>

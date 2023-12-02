@@ -59,13 +59,13 @@ it('can run net with composite tasks', () => {
       t()
         .withWorkItem((w) =>
           w<{ workItem: string }>()
-            .onComplete((_, input?: { foo: string }) =>
+            .onComplete((_, input: { foo: string }) =>
               Effect.succeed(input?.foo)
             )
             .onStart(({ startWorkItem }) =>
               Effect.gen(function* ($) {
                 const { enqueueCompleteWorkItem } = yield* $(startWorkItem());
-                yield* $(enqueueCompleteWorkItem());
+                yield* $(enqueueCompleteWorkItem({ foo: 'bar' }));
               })
             )
         )
@@ -125,7 +125,15 @@ it('can run net with composite tasks', () => {
     )*/
     .endCondition('end')
     .connectCondition('start', (to) => to.task('t1'))
-    .connectTask('t1', (to) => to.condition('end'));
+    .connectTask('t1', (to) => to.condition('end'))
+    .onStart(({ startWorkflow }, input: { startWorkflow: boolean }) =>
+      Effect.gen(function* ($) {
+        yield* $(startWorkflow());
+        return input;
+      })
+    );
+
+  type A = WorkflowBuilderMetadata<typeof workflowDefinition>;
 
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -146,7 +154,7 @@ it('can run net with composite tasks', () => {
       return Effect.unit;
     });
 
-    yield* $(service.start());
+    const started = yield* $(service.start({ startWorkflow: true }));
 
     const subWorkflow = yield* $(service.fireTask('t1', { foo: 1 }));
     //const subWorkflow3 = yield* $(service.fireTask('t1'));
@@ -159,7 +167,7 @@ it('can run net with composite tasks', () => {
       service.initializeWorkflow('t1', { bar: 'aaa' })
     );*/
 
-    yield* $(service.startWorkflow(['t1', subWorkflow.id]));
+    yield* $(service.startWorkflow(['t1', subWorkflow.id] as const));
     const a = yield* $(service.fireTask(`t1.${subWorkflow.id}.subT1`));
 
     const wi = yield* $(

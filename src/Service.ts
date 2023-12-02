@@ -72,17 +72,9 @@ export class Service<
     }
   }
 
-  start(input?: unknown) {
-    return this.startWorkflow([], input);
-  }
-
-  cancel() {
-    return this.cancelWorkflow([]);
-  }
-
-  startWorkflow<I>(
+  private unsafeStartWorkflow(
     pathOrArray: readonly string[] | string,
-    input?: I,
+    input?: unknown,
     executePostActions = true
   ) {
     const path = pathAsArray(pathOrArray);
@@ -110,6 +102,85 @@ export class Service<
 
       return result;
     }).pipe(Effect.provideService(State, this.state));
+  }
+
+  startWorkflow<
+    T extends string | readonly string[],
+    M = Get<WorkflowMetadata, T>
+  >(
+    ...args: undefined extends Get<M, ['onStart', 'input']>
+      ? [T] | [T, Get<M, ['onStart', 'input']>]
+      : [T, Get<M, ['onStart', 'input']>]
+  ) {
+    const [pathOrArray, input] = args;
+    return this.unsafeStartWorkflow(pathOrArray, input).pipe(
+      Effect.map((r) => r as Get<M, ['onStart', 'return']>)
+    );
+  }
+
+  start<I extends Get<WorkflowMetadata, ['onStart', 'input']>>(
+    ...input: undefined extends I ? [I?] : [I]
+  ) {
+    return this.unsafeStartWorkflow([], input).pipe(
+      Effect.map((r) => r as Get<WorkflowMetadata, ['onStart', 'return']>)
+    );
+  }
+
+  private unsafeCancelWorkflow(
+    pathOrArray: readonly string[] | string,
+    input?: unknown,
+    executePostActions = true
+  ) {
+    const path = pathAsArray(pathOrArray);
+    const self = this;
+
+    return Effect.gen(function* ($) {
+      const executionPlan = yield* $(
+        self.workflowPathToExecutionPlan(pathAsArray(path))
+      );
+
+      const result = yield* $(
+        executionPlan.workflow.workflow.cancel(
+          executionPlan.workflow.id,
+          input
+        ),
+        Effect.provideService(
+          ExecutionContext,
+          self.makeExecutionContext({
+            path,
+            workflowId: executionPlan.workflow.id,
+          })
+        )
+      );
+
+      if (executePostActions) {
+        yield* $(self.executePostActions());
+      }
+
+      return result;
+    }).pipe(Effect.provideService(State, this.state));
+  }
+
+  cancelWorkflow<
+    T extends string | readonly string[],
+    M = Get<WorkflowMetadata, T>
+  >(
+    ...args: undefined extends Get<M, ['onCancel', 'input']>
+      ? [T] | [T, Get<M, ['onCancel', 'input']>]
+      : [T, Get<M, ['onCancel', 'input']>]
+  ) {
+    const [pathOrArray, input] = args;
+    return this.unsafeCancelWorkflow(pathOrArray, input).pipe(
+      Effect.map((r) => r as Get<M, ['onCancel', 'return']>)
+    );
+  }
+
+  cancel<I extends Get<WorkflowMetadata, ['onCancel', 'input']>>(
+    ...input: undefined extends I ? [I?] : [I]
+  ) {
+    return this.unsafeCancelWorkflow([], input).pipe(
+      Effect.map((r) => r as Get<WorkflowMetadata, ['onCancel', 'return']>)
+    );
   }
 
   initializeWorkflow<
@@ -143,22 +214,6 @@ export class Service<
         >;
       }
       return yield* $(Effect.fail(new InvalidPath({ path, pathType: 'task' })));
-    }).pipe(Effect.provideService(State, this.state));
-  }
-
-  cancelWorkflow(path: string[] | string) {
-    const self = this;
-
-    return Effect.gen(function* ($) {
-      const executionPlan = yield* $(
-        self.workflowPathToExecutionPlan(pathAsArray(path))
-      );
-
-      const result = yield* $(
-        executionPlan.workflow.workflow.cancel(executionPlan.workflow.id)
-      );
-
-      return result;
     }).pipe(Effect.provideService(State, this.state));
   }
 
@@ -1052,8 +1107,12 @@ export function initialize<
 export function resume<
   W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
-  E extends WorkflowE<W> = WorkflowE<W>
->(workflow: W, resumableState: StorePersistableState) {
+  E extends WorkflowE<W> = WorkflowE<W>,
+  WWAIT extends WorkflowWorkflowAndWorkItemTypes<W> = WorkflowWorkflowAndWorkItemTypes<W>
+>(
+  workflow: W,
+  resumableState: StorePersistableState<WWAIT['workflow'], WWAIT['workItem']>
+) {
   return Effect.gen(function* ($) {
     const queue = yield* $(Queue.unbounded<ExecutionContextQueueItem>());
     const maybeIdGenerator = yield* $(Effect.serviceOption(IdGenerator));
@@ -1069,18 +1128,20 @@ export function resume<
       stateChangeLogger,
       resumableState
     );
-    const rootWorkflow = resumableState.workflows.filter((w) => !w.parent)[0];
+    const rootWorkflows = resumableState.workflows.filter((w) => !w.parent);
+    const rootWorkflow = rootWorkflows[0];
 
-    if (!rootWorkflow) {
+    if (!rootWorkflow || rootWorkflows.length > 1) {
       return yield* $(Effect.fail(new InvalidResumableState({})));
     }
 
-    const interpreter = new Service<
-      WorkflowMetadata<W>,
-      WorkflowWorkflowAndWorkItemTypes<W>,
-      R,
-      E
-    >(rootWorkflow.id, workflow, state, queue, stateChangeLogger);
+    const interpreter = new Service<WorkflowMetadata<W>, WWAIT, R, E>(
+      rootWorkflow.id,
+      workflow,
+      state,
+      queue,
+      stateChangeLogger
+    );
 
     return interpreter;
   });

@@ -33,7 +33,7 @@ import {
   StateChangeLogger,
   StorePersistableState,
   TaskName,
-  TaskOnFireSym,
+  TaskOnStartSym,
   WorkItemId,
   WorkItemInstance,
   WorkItemPayloadSym,
@@ -242,7 +242,7 @@ export class Service<
     return this.unsafeUpdateWorkflowContext(path, input);
   }
 
-  unsafeFireTask(
+  unsafeStartTask(
     path: readonly string[],
     input: unknown,
     executePostActions: boolean
@@ -252,7 +252,7 @@ export class Service<
       const executionPlan = yield* $(self.taskPathToExecutionPlan(path));
 
       const result = yield* $(
-        executionPlan.task.fire(executionPlan.workflow.id, input),
+        executionPlan.task.start(executionPlan.workflow.id, input),
         self.decorateReturnType,
         Effect.provideService(State, self.state),
         Effect.provideService(
@@ -272,9 +272,9 @@ export class Service<
     });
   }
 
-  fireTask<
+  startTask<
     T extends string | readonly string[],
-    M = GetSym<Get<WorkflowMetadata, T>, TaskOnFireSym>
+    M = GetSym<Get<WorkflowMetadata, T>, TaskOnStartSym>
   >(
     ...args: undefined extends Get<M, 'input'>
       ? [T] | [T, Get<M, 'input'>]
@@ -284,7 +284,7 @@ export class Service<
     const path = pathAsArray(pathOrArray);
 
     return pipe(
-      this.unsafeFireTask(path, input, true),
+      this.unsafeStartTask(path, input, true),
       Effect.map((r) => r as Get<M, 'return'>)
     );
   }
@@ -632,8 +632,8 @@ export class Service<
 
         const match = pipe(
           Match.type<ExecutionContextQueueItem>(),
-          Match.when({ type: 'fireTask' }, ({ path, input }) =>
-            self.unsafeFireTask(path, input, false)
+          Match.when({ type: 'startTask' }, ({ path, input }) =>
+            self.unsafeStartTask(path, input, false)
           ),
           Match.when({ type: 'startWorkflow' }, ({ path, input }) =>
             self.unsafeStartWorkflow(path, input, false)
@@ -1011,7 +1011,7 @@ export class Service<
         })
       );
 
-      // Last processed item should be a BaseTask, because when in case where we encounter a BaseTask, and there is only one item left in the path, we assume that the last item is the workItemId and exit the loop
+      // Last processed item should be a BaseTask, because when in case where we encounter a BaseTask, and there is only one item left in the path, we assume that the last item is the workItemId and complete the loop
       if (!(result.current instanceof Task)) {
         return yield* $(
           Effect.fail(new InvalidPath({ path, pathType: 'workItem' }))

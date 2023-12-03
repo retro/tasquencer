@@ -11,15 +11,15 @@ import {
 } from '../errors.js';
 import {
   CompositeTaskActivities,
-  CompositeTaskOnFirePayload,
+  CompositeTaskOnStartPayload,
   JoinType,
-  ShouldCompositeTaskExitFn,
+  ShouldCompositeTaskCompleteFn,
   SplitType,
   TaskOnCancelPayload,
+  TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
-  TaskOnExitPayload,
-  TaskOnFireSym,
+  TaskOnStartSym,
   WorkItemInstance,
   WorkflowAndWorkItemTypes,
   WorkflowInstance,
@@ -191,7 +191,9 @@ export class CompositeTaskBuilder<
   splitType: SplitType | undefined;
   private activities: TA = {} as TA;
   private workflowBuilder: AnyWorkflowBuilder;
-  private shouldExit: ShouldCompositeTaskExitFn<any, any> = ({ workflows }) => {
+  private shouldComplete: ShouldCompositeTaskCompleteFn<any, any> = ({
+    workflows,
+  }) => {
     const hasActiveWorkflows = workflows.some((w) =>
       activeWorkflowInstanceStates.has(w.state)
     );
@@ -219,8 +221,8 @@ export class CompositeTaskBuilder<
   initialize() {
     return this.onDisable(() => Effect.unit)
       .onEnable(() => Effect.unit)
-      .onFire((_, input) => Effect.succeed(input))
-      .onExit(() => Effect.unit)
+      .onStart((_, input) => Effect.succeed(input))
+      .onComplete(() => Effect.unit)
       .onCancel(() => Effect.unit);
   }
 
@@ -264,10 +266,14 @@ export class CompositeTaskBuilder<
     return this;
   }
 
-  onFire<
+  onStart<
     I,
     F extends (
-      payload: CompositeTaskOnFirePayload<C, WC, Get<WM, ['onStart', 'input']>>,
+      payload: CompositeTaskOnStartPayload<
+        C,
+        WC,
+        Get<WM, ['onStart', 'input']>
+      >,
       input: I
     ) => Effect.Effect<any, any, any>
   >(
@@ -279,8 +285,8 @@ export class CompositeTaskBuilder<
     JT,
     ST,
     Simplify<
-      Omit<CTM, TaskOnFireSym> & {
-        [TaskOnFireSym]: CompositeTaskActivityMetadata<
+      Omit<CTM, TaskOnStartSym> & {
+        [TaskOnStartSym]: CompositeTaskActivityMetadata<
           Parameters<F>[1],
           Effect.Effect.Success<ReturnType<F>>
         >;
@@ -291,12 +297,14 @@ export class CompositeTaskBuilder<
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.activities.onFire = f;
+    this.activities.onStart = f;
     return this;
   }
 
-  onExit<
-    F extends (payload: TaskOnExitPayload<C>) => Effect.Effect<any, any, any>
+  onComplete<
+    F extends (
+      payload: TaskOnCompletePayload<C>
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): CompositeTaskBuilder<
@@ -311,7 +319,7 @@ export class CompositeTaskBuilder<
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.activities.onExit = f;
+    this.activities.onComplete = f;
     return this;
   }
 
@@ -335,7 +343,7 @@ export class CompositeTaskBuilder<
     return this;
   }
 
-  withShouldExit<F extends ShouldCompositeTaskExitFn<C, WC>>(
+  withShouldComplete<F extends ShouldCompositeTaskCompleteFn<C, WC>>(
     f: F
   ): CompositeTaskBuilder<
     C,
@@ -349,7 +357,7 @@ export class CompositeTaskBuilder<
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.shouldExit = f;
+    this.shouldComplete = f;
     return this;
   }
 
@@ -364,7 +372,7 @@ export class CompositeTaskBuilder<
     | TaskDoesNotExist,
     void
   > {
-    const { splitType, joinType, activities, workflowBuilder, shouldExit } =
+    const { splitType, joinType, activities, workflowBuilder, shouldComplete } =
       this;
     return Effect.gen(function* ($) {
       const subWorkflow = yield* $(workflowBuilder.build());
@@ -373,7 +381,7 @@ export class CompositeTaskBuilder<
         workflow,
         subWorkflow,
         activities as unknown as CompositeTaskActivities<C>,
-        shouldExit as ShouldCompositeTaskExitFn<any, any, never, never>,
+        shouldComplete as ShouldCompositeTaskCompleteFn<any, any, never, never>,
         { joinType, splitType }
       );
       subWorkflow.setParentTask(compositeTask);

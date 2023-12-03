@@ -113,7 +113,7 @@ export interface State {
     void
   >;
 
-  fireTask(
+  startTask(
     workflowId: WorkflowId,
     taskName: TaskName
   ): Effect.Effect<
@@ -122,7 +122,7 @@ export interface State {
     void
   >;
 
-  exitTask(
+  completeTask(
     workflowId: WorkflowId,
     taskName: TaskName
   ): Effect.Effect<

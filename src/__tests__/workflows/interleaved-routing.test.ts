@@ -58,32 +58,32 @@ it('supports the interleaved routing pattern', () => {
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['initial_task']));
 
-    yield* $(service.fireTask('initial_task'));
+    yield* $(service.startTask('initial_task'));
     const state2 = yield* $(service.getState());
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['task_a', 'task_c']));
 
-    yield* $(service.fireTask('task_a'));
+    yield* $(service.startTask('task_a'));
     const state3 = yield* $(service.getState());
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['task_c', 'task_b']));
 
-    yield* $(service.fireTask('task_b'));
+    yield* $(service.startTask('task_b'));
     const state4 = yield* $(service.getState());
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set(['task_c']));
 
-    yield* $(service.fireTask('task_c'));
+    yield* $(service.startTask('task_c'));
     const state5 = yield* $(service.getState());
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state5)).toEqual(new Set(['task_d']));
 
-    yield* $(service.fireTask('task_d'));
+    yield* $(service.startTask('task_d'));
     const state6 = yield* $(service.getState());
     expect(state6).toMatchSnapshot();
     expect(getEnabledTaskNames(state6)).toEqual(new Set(['finish_task']));
 
-    yield* $(service.fireTask('finish_task'));
+    yield* $(service.startTask('finish_task'));
     const state7 = yield* $(service.getState());
     expect(state7).toMatchSnapshot();
     expect(state7.workflows[0]?.state).toBe('completed');

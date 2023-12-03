@@ -26,7 +26,7 @@ import { Condition } from './Condition.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
-// TODO: handle case where task is exited and prev condition(s)
+// TODO: handle case where task is completed and prev condition(s)
 // have positive marking, so it should transition to enabled again
 
 export abstract class BaseTask {
@@ -103,8 +103,8 @@ export abstract class BaseTask {
     return this.isStateEqualTo(workflowId, 'enabled');
   }
 
-  isFired(workflowId: WorkflowId) {
-    return this.isStateEqualTo(workflowId, 'fired');
+  isStarted(workflowId: WorkflowId) {
+    return this.isStateEqualTo(workflowId, 'started');
   }
 
   isStateEqualTo(workflowId: WorkflowId, state: TaskState) {
@@ -134,7 +134,7 @@ export abstract class BaseTask {
     unknown
   >;
 
-  abstract fire(
+  abstract start(
     workflowId: WorkflowId,
     input?: unknown
   ): Effect.Effect<
@@ -150,7 +150,7 @@ export abstract class BaseTask {
     unknown
   >;
 
-  abstract exit(
+  abstract complete(
     workflowId: WorkflowId,
     input?: unknown
   ): Effect.Effect<
@@ -184,7 +184,7 @@ export abstract class BaseTask {
     unknown
   >;
 
-  abstract maybeExit(
+  abstract maybeComplete(
     workflowId: WorkflowId
   ): Effect.Effect<
     State | ExecutionContext,
@@ -206,7 +206,7 @@ export abstract class BaseTask {
       const taskState = yield* $(
         stateManager.getTaskState(workflowId, self.name)
       );
-      if (taskState === 'fired') {
+      if (taskState === 'started') {
         return yield* $(self.cancel(workflowId));
       } else if (taskState === 'enabled') {
         return yield* $(self.disable(workflowId));

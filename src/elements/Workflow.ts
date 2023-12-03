@@ -180,7 +180,9 @@ export class Workflow<
           Effect.gen(function* ($) {
             yield* $(stateManager.updateWorkflowState(id, 'completed'));
             if (self.parentTask && workflow.parent?.workflowId) {
-              yield* $(self.parentTask.maybeExit(workflow.parent.workflowId));
+              yield* $(
+                self.parentTask.maybeComplete(workflow.parent.workflowId)
+              );
             }
           }).pipe(
             Effect.provideService(State, stateManager),
@@ -383,7 +385,7 @@ export class Workflow<
       const stateManager = yield* $(State);
       const workflowTasks = yield* $(stateManager.getTasks(id));
       const activeTasks = workflowTasks.reduce<BaseTask[]>((acc, taskData) => {
-        if (taskData.state === 'fired') {
+        if (taskData.state === 'started') {
           const task = self.tasks[taskData.name];
           task && acc.push(task);
         }

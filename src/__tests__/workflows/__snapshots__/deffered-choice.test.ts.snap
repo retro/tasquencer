@@ -174,7 +174,7 @@ exports[`supports the deferred choice pattern 3`] = `
     {
       "generation": 1,
       "name": "task_1",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "deferred-choice",
     },
@@ -245,14 +245,14 @@ exports[`supports the deferred choice pattern 4`] = `
     {
       "generation": 1,
       "name": "task_1",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "deferred-choice",
     },
     {
       "generation": 1,
       "name": "task_1a",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "deferred-choice",
     },

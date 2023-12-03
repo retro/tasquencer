@@ -90,17 +90,17 @@ export type TaskOnEnablePayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
     | ConditionDoesNotExistInStore
     | InvalidTaskStateTransition,
     {
-      enqueueFireTask: (input?: unknown) => Effect.Effect<never, never, void>;
+      enqueueStartTask: (input?: unknown) => Effect.Effect<never, never, void>;
     }
   >;
 };
 
-export type TaskOnFirePayload<
+export type TaskOnStartPayload<
   C,
   P = unknown,
   SWI = unknown
 > = DefaultTaskOrWorkItemActivityPayload<C> & {
-  fireTask: () => Effect.Effect<
+  startTask: () => Effect.Effect<
     never,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
@@ -123,12 +123,12 @@ export type TaskOnFirePayload<
   >;
 };
 
-export type CompositeTaskOnFirePayload<
+export type CompositeTaskOnStartPayload<
   C,
   P = unknown,
   SWI = unknown
 > = DefaultTaskOrWorkItemActivityPayload<C> & {
-  fireTask: () => Effect.Effect<
+  startTask: () => Effect.Effect<
     never,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
@@ -147,20 +147,21 @@ export type CompositeTaskOnFirePayload<
   >;
 };
 
-export type TaskOnExitPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
-  exitTask: () => Effect.Effect<
-    never,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist,
-    void
-  >;
-};
+export type TaskOnCompletePayload<C> =
+  DefaultTaskOrWorkItemActivityPayload<C> & {
+    completeTask: () => Effect.Effect<
+      never,
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | EndConditionDoesNotExist
+      | InvalidTaskStateTransition
+      | InvalidWorkflowStateTransition
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | WorkflowDoesNotExist,
+      void
+    >;
+  };
 
 export type TaskOnCancelPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
   cancelTask: () => Effect.Effect<
@@ -187,20 +188,20 @@ export interface TaskActivities<C> {
   onEnable: (
     payload: TaskOnEnablePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
-  onFire: (
-    payload: TaskOnFirePayload<C, any>,
+  onStart: (
+    payload: TaskOnStartPayload<C, any>,
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
-  onExit: (
-    payload: TaskOnExitPayload<C>
+  onComplete: (
+    payload: TaskOnCompletePayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
   onCancel: (
     payload: TaskOnCancelPayload<C>
   ) => Effect.Effect<unknown, unknown, unknown>;
 }
-export type CompositeTaskActivities<C> = Omit<TaskActivities<C>, 'onFire'> & {
-  onFire: (
-    payload: CompositeTaskOnFirePayload<C, any>,
+export type CompositeTaskActivities<C> = Omit<TaskActivities<C>, 'onStart'> & {
+  onStart: (
+    payload: CompositeTaskOnStartPayload<C, any>,
     input?: any
   ) => Effect.Effect<unknown, unknown, unknown>;
 };
@@ -380,8 +381,8 @@ export const activeWorkflowInstanceStates = new Set(['initialized', 'started']);
 export type TaskInstanceState =
   | 'enabled'
   | 'disabled'
-  | 'fired'
-  | 'exited'
+  | 'started'
+  | 'completed'
   | 'canceled'
   | 'failed';
 
@@ -397,10 +398,10 @@ export const validTaskInstanceTransitions: Record<
   TaskInstanceState,
   Set<TaskInstanceState>
 > = {
-  enabled: new Set(['disabled', 'fired']),
+  enabled: new Set(['disabled', 'started']),
   disabled: new Set(['enabled']),
-  fired: new Set(['exited', 'canceled', 'failed']),
-  exited: new Set(['enabled']),
+  started: new Set(['completed', 'canceled', 'failed']),
+  completed: new Set(['enabled']),
   canceled: new Set(['enabled']),
   failed: new Set(['enabled']),
 };
@@ -474,8 +475,8 @@ export const WorkflowOnStartSym = Symbol('WorkflowOnStart');
 export type WorkflowOnStartSym = typeof WorkflowOnStartSym;
 export const WorkflowOnCancelSym = Symbol('WorkflowOnCancel');
 export type WorkflowOnCancelSym = typeof WorkflowOnCancelSym;
-export const TaskOnFireSym = Symbol('TaskOnFire');
-export type TaskOnFireSym = typeof TaskOnFireSym;
+export const TaskOnStartSym = Symbol('TaskOnStart');
+export type TaskOnStartSym = typeof TaskOnStartSym;
 export const WorkItemPayloadSym = Symbol('WorkItemPayload');
 export type WorkItemPayloadSym = typeof WorkItemPayloadSym;
 
@@ -487,7 +488,7 @@ export type GetSym<T, U extends symbol> = [T] extends [
 
 export type ExecutionContextQueueItem =
   | {
-      type: 'fireTask';
+      type: 'startTask';
       path: readonly string[];
       input: unknown;
     }
@@ -522,12 +523,12 @@ export interface ExecutionContext {
 
 export const ExecutionContext = Context.Tag<ExecutionContext>();
 
-export type ShouldTaskExitFn<C, WIP, R = unknown, E = unknown> = (payload: {
+export type ShouldTaskCompleteFn<C, WIP, R = unknown, E = unknown> = (payload: {
   getWorkflowContext: () => Effect.Effect<any, any, C>;
   workItems: WorkItemInstance<WIP>[];
 }) => Effect.Effect<R, E, boolean>;
 
-export type ShouldCompositeTaskExitFn<
+export type ShouldCompositeTaskCompleteFn<
   C,
   WC,
   R = unknown,

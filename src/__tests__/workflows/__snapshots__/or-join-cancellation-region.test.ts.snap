@@ -324,7 +324,7 @@ exports[`runs a net with an "or" join and a cancellation region 3`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -452,7 +452,7 @@ exports[`runs a net with an "or" join and a cancellation region 4`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -466,7 +466,7 @@ exports[`runs a net with an "or" join and a cancellation region 4`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -580,7 +580,7 @@ exports[`runs a net with an "or" join and a cancellation region 5`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -594,7 +594,7 @@ exports[`runs a net with an "or" join and a cancellation region 5`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -708,7 +708,7 @@ exports[`runs a net with an "or" join and a cancellation region 6`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -722,7 +722,7 @@ exports[`runs a net with an "or" join and a cancellation region 6`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -736,7 +736,7 @@ exports[`runs a net with an "or" join and a cancellation region 6`] = `
     {
       "generation": 1,
       "name": "E",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -836,7 +836,7 @@ exports[`runs a net with an "or" join and a cancellation region 7`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -850,7 +850,7 @@ exports[`runs a net with an "or" join and a cancellation region 7`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -964,7 +964,7 @@ exports[`runs a net with an "or" join and a cancellation region 8`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -978,14 +978,14 @@ exports[`runs a net with an "or" join and a cancellation region 8`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
     {
       "generation": 1,
       "name": "D",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -1092,7 +1092,7 @@ exports[`runs a net with an "or" join and a cancellation region 9`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -1106,14 +1106,14 @@ exports[`runs a net with an "or" join and a cancellation region 9`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
     {
       "generation": 1,
       "name": "D",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -1127,7 +1127,7 @@ exports[`runs a net with an "or" join and a cancellation region 9`] = `
     {
       "generation": 1,
       "name": "F",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -1220,7 +1220,7 @@ exports[`runs a net with an "or" join and a cancellation region 10`] = `
     {
       "generation": 1,
       "name": "A",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -1234,14 +1234,14 @@ exports[`runs a net with an "or" join and a cancellation region 10`] = `
     {
       "generation": 1,
       "name": "C",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
     {
       "generation": 1,
       "name": "D",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
@@ -1255,14 +1255,14 @@ exports[`runs a net with an "or" join and a cancellation region 10`] = `
     {
       "generation": 1,
       "name": "F",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },
     {
       "generation": 1,
       "name": "G",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "or-join-cancellation-region",
     },

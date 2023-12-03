@@ -97,8 +97,8 @@ it('can correctly infer predicate types', () => {
       >
     >(start);
 
-    //const fire = interpreter.fireTask('A');
-    //const exit = interpreter.exitTask('A');
+    //const start = interpreter.startTask('A');
+    //const complete = interpreter.completeTask('A');
   });
 
   Effect.runSync(program);

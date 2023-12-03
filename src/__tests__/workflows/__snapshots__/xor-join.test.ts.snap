@@ -224,7 +224,7 @@ exports[`runs a net with "xor" join 3`] = `
     {
       "generation": 1,
       "name": "initial_task",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "xor-join",
     },
@@ -314,7 +314,7 @@ exports[`runs a net with "xor" join 4`] = `
     {
       "generation": 1,
       "name": "initial_task",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "xor-join",
     },
@@ -328,7 +328,7 @@ exports[`runs a net with "xor" join 4`] = `
     {
       "generation": 1,
       "name": "task_b",
-      "state": "exited",
+      "state": "completed",
       "workflowId": "workflow-1",
       "workflowName": "xor-join",
     },

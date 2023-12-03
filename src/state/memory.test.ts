@@ -1,4 +1,4 @@
-// import { Effect, Exit } from 'effect';
+// import { Effect, Complete } from 'effect';
 import { expect, it } from 'vitest';
 
 /*import { make } from '../StateManager.js';
@@ -112,7 +112,7 @@ it('can initialize read workflow state', () => {
   Effect.runSync(program);
 });
 
-it('can update workflow state to exited', () => {
+it('can update workflow state to completed', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -129,14 +129,14 @@ it('can update workflow state to exited', () => {
       state: 'running',
     });
 
-    yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
+    yield* $(stateManager.updateWorkflowState(workflow.id, 'completed'));
 
     const workflowState2 = yield* $(stateManager.getWorkflow(workflow.id));
 
     expect(workflowState2).toEqual({
       id: 'workflow1',
       name: 'workflow',
-      state: 'exited',
+      state: 'completed',
     });
   });
   Effect.runSync(program);
@@ -234,7 +234,7 @@ it('can enable a task', () => {
   Effect.runSync(program);
 });
 
-it('can fire a task', () => {
+it('can start a task', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -245,7 +245,7 @@ it('can fire a task', () => {
 
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
 
     const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
@@ -253,13 +253,13 @@ it('can fire a task', () => {
       name: 'task1',
       workflowId: 'workflow1',
       generation: 1,
-      state: 'fired',
+      state: 'started',
     });
   });
   Effect.runSync(program);
 });
 
-it('should increment generation every time a task is fired', () => {
+it('should increment generation every time a task is started', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -270,13 +270,13 @@ it('should increment generation every time a task is fired', () => {
 
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitTask(workflow.id, taskName1));
+    yield* $(stateManager.completeTask(workflow.id, taskName1));
 
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
 
     const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
@@ -284,13 +284,13 @@ it('should increment generation every time a task is fired', () => {
       name: 'task1',
       workflowId: 'workflow1',
       generation: 2,
-      state: 'fired',
+      state: 'started',
     });
   });
   Effect.runSync(program);
 });
 
-it('can exit a task', () => {
+it('can complete a task', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -301,9 +301,9 @@ it('can exit a task', () => {
 
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitTask(workflow.id, taskName1));
+    yield* $(stateManager.completeTask(workflow.id, taskName1));
 
     const task1 = yield* $(stateManager.getTask(workflow.id, taskName1));
 
@@ -311,7 +311,7 @@ it('can exit a task', () => {
       name: 'task1',
       workflowId: 'workflow1',
       generation: 1,
-      state: 'exited',
+      state: 'completed',
     });
   });
   Effect.runSync(program);
@@ -328,7 +328,7 @@ it('can cancel a task', () => {
 
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
 
     yield* $(stateManager.cancelTask(workflow.id, taskName1));
 
@@ -355,7 +355,7 @@ it('can fail a task', () => {
 
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
 
     yield* $(stateManager.failTask(workflow.id, taskName1));
 
@@ -518,17 +518,17 @@ it('can not update workflow state if it is not initialized', () => {
       Effect.provideService(IdGenerator, makeIdGenerator())
     );
 
-    yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
+    yield* $(stateManager.updateWorkflowState(workflow.id, 'completed'));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('WorkflowDoesNotExist');
 });
 
-it("can not update workflow state if it's already exited", () => {
+it("can not update workflow state if it's already completed", () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -537,13 +537,13 @@ it("can not update workflow state if it's already exited", () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
+    yield* $(stateManager.updateWorkflowState(workflow.id, 'completed'));
 
-    yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
+    yield* $(stateManager.updateWorkflowState(workflow.id, 'completed'));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidWorkflowStateTransition');
@@ -560,11 +560,11 @@ it("can not update workflow state if it's already canceled", () => {
 
     yield* $(stateManager.updateWorkflowState(workflow.id, 'canceled'));
 
-    yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
+    yield* $(stateManager.updateWorkflowState(workflow.id, 'completed'));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidWorkflowStateTransition');
@@ -581,17 +581,17 @@ it("can not update workflow state if it's already failed", () => {
 
     yield* $(stateManager.updateWorkflowState(workflow.id, 'failed'));
 
-    yield* $(stateManager.updateWorkflowState(workflow.id, 'exited'));
+    yield* $(stateManager.updateWorkflowState(workflow.id, 'completed'));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidWorkflowStateTransition');
 });
 
-it('can not transition task from disabled to fired', () => {
+it('can not transition task from disabled to started', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -600,17 +600,17 @@ it('can not transition task from disabled to fired', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.fireTask(workflow.id, taskName1));
+    yield* $(stateManager.startTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
 });
 
-it('can not transition task from disabled to exited', () => {
+it('can not transition task from disabled to completed', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -619,11 +619,11 @@ it('can not transition task from disabled to exited', () => {
 
     yield* $(stateManager.initializeWorkflow(workflow));
 
-    yield* $(stateManager.exitTask(workflow.id, taskName1));
+    yield* $(stateManager.completeTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
@@ -640,15 +640,15 @@ it('can not transition task from disabled to canceled', () => {
 
     yield* $(stateManager.cancelTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
 });
 
-it('can not transition task from enabled to exited', () => {
+it('can not transition task from enabled to completed', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -658,11 +658,11 @@ it('can not transition task from enabled to exited', () => {
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitTask(workflow.id, taskName1));
+    yield* $(stateManager.completeTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
@@ -680,9 +680,9 @@ it('can not transition task from disabled to canceled', () => {
 
     yield* $(stateManager.cancelTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
@@ -700,15 +700,15 @@ it('can not transition task from disabled to failed', () => {
 
     yield* $(stateManager.failTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it's a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
 });
 
-it('can not transition task from enabled to exited', () => {
+it('can not transition task from enabled to completed', () => {
   const program = Effect.gen(function* ($) {
     const stateManager = yield* $(
       make(),
@@ -718,11 +718,11 @@ it('can not transition task from enabled to exited', () => {
     yield* $(stateManager.initializeWorkflow(workflow));
     yield* $(stateManager.enableTask(workflow.id, taskName1));
 
-    yield* $(stateManager.exitTask(workflow.id, taskName1));
+    yield* $(stateManager.completeTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it"s a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
@@ -740,9 +740,9 @@ it('can not transition task from enabled to canceled', () => {
 
     yield* $(stateManager.cancelTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it"s a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');
@@ -760,9 +760,9 @@ it('can not transition task from enabled to failed', () => {
 
     yield* $(stateManager.failTask(workflow.id, taskName1));
   });
-  const result = Effect.runSyncExit(program);
+  const result = Effect.runSyncComplete(program);
 
-  expect(Exit.isFailure(result)).toBe(true);
+  expect(Complete.isFailure(result)).toBe(true);
 
   // @ts-expect-error - we know it"s a failure
   expect(result.cause.error._tag).toBe('InvalidTaskStateTransition');

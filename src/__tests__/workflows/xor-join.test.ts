@@ -40,14 +40,14 @@ it('runs a net with "xor" join', () => {
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['initial_task']));
 
-    yield* $(service.fireTask('initial_task'));
+    yield* $(service.startTask('initial_task'));
     const state2 = yield* $(service.getState());
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(
       new Set(['task_a', 'task_b', 'task_c'])
     );
 
-    yield* $(service.fireTask('task_b'));
+    yield* $(service.startTask('task_b'));
     const state3 = yield* $(service.getState());
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['finish_task']));

@@ -50,9 +50,9 @@ function makeWorkflowDefinitionAndLog() {
             log.push('T1 ON DISABLE');
           })
         )
-        .onFire(({ fireTask }) =>
+        .onStart(({ startTask }) =>
           Effect.gen(function* ($) {
-            yield* $(fireTask());
+            yield* $(startTask());
             log.push('T1 ON FIRE');
           })
         )
@@ -62,10 +62,10 @@ function makeWorkflowDefinitionAndLog() {
             yield* $(cancelTask());
           })
         )
-        .onExit(({ exitTask }) =>
+        .onComplete(({ completeTask }) =>
           Effect.gen(function* ($) {
             log.push('T1 ON EXIT');
-            yield* $(exitTask());
+            yield* $(completeTask());
           })
         )
     )
@@ -84,9 +84,9 @@ function makeWorkflowDefinitionAndLog() {
             log.push('T2 ON DISABLE');
           })
         )
-        .onFire(({ fireTask }) =>
+        .onStart(({ startTask }) =>
           Effect.gen(function* ($) {
-            yield* $(fireTask());
+            yield* $(startTask());
             log.push('T2 ON FIRE');
           })
         )
@@ -96,10 +96,10 @@ function makeWorkflowDefinitionAndLog() {
             yield* $(cancelTask());
           })
         )
-        .onExit(({ exitTask }) =>
+        .onComplete(({ completeTask }) =>
           Effect.gen(function* ($) {
             log.push('T2 ON EXIT');
-            yield* $(exitTask());
+            yield* $(completeTask());
           })
         )
     )
@@ -148,7 +148,7 @@ it('runs activities (1)', () => {
 
     yield* $(service.start());
 
-    yield* $(service.fireTask('t1'));
+    yield* $(service.startTask('t1'));
 
     const { id } = yield* $(service.initializeWorkItem('t1'));
 
@@ -184,7 +184,7 @@ it('runs activities (2)', () => {
 
     yield* $(service.start());
 
-    yield* $(service.fireTask('t1'));
+    yield* $(service.startTask('t1'));
 
     const { id: id1 } = yield* $(service.initializeWorkItem('t1'));
     const { id: id2 } = yield* $(service.initializeWorkItem('t1'));
@@ -225,7 +225,7 @@ it('runs activities (3)', () => {
 
     yield* $(service.start());
 
-    yield* $(service.fireTask('t1'));
+    yield* $(service.startTask('t1'));
 
     const { id: id1 } = yield* $(service.initializeWorkItem('t1'));
     const { id: id2 } = yield* $(service.initializeWorkItem('t1'));

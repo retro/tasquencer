@@ -44,27 +44,27 @@ it('runs a net with an "or" join, a loop and a cancellation region', () => {
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['A']));
 
-    yield* $(service.fireTask('A'));
+    yield* $(service.startTask('A'));
     const state2 = yield* $(service.getState());
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['B']));
 
-    yield* $(service.fireTask('B'));
+    yield* $(service.startTask('B'));
     const state3 = yield* $(service.getState());
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['C', 'E']));
 
-    yield* $(service.fireTask('C'));
+    yield* $(service.startTask('C'));
     const state4 = yield* $(service.getState());
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set(['D']));
 
-    yield* $(service.fireTask('D'));
+    yield* $(service.startTask('D'));
     const state5 = yield* $(service.getState());
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state5)).toEqual(new Set(['B', 'C', 'E']));
 
-    yield* $(service.fireTask('E'));
+    yield* $(service.startTask('E'));
     const state6 = yield* $(service.getState());
     expect(state6).toMatchSnapshot();
     expect(getEnabledTaskNames(state6)).toEqual(new Set(['B']));

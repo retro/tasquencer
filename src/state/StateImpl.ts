@@ -395,7 +395,7 @@ export class StateImpl implements State {
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.tasks[taskName]!.state = nextTaskState;
-        if (nextTaskState === 'fired') {
+        if (nextTaskState === 'started') {
           draft[workflowId]!.tasks[taskName]!.generation += 1;
         }
       });
@@ -418,12 +418,12 @@ export class StateImpl implements State {
     return this.updateTaskState(workflowId, taskName, 'disabled');
   }
 
-  fireTask(workflowId: WorkflowId, taskName: TaskName) {
-    return this.updateTaskState(workflowId, taskName, 'fired');
+  startTask(workflowId: WorkflowId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'started');
   }
 
-  exitTask(workflowId: WorkflowId, taskName: TaskName) {
-    return this.updateTaskState(workflowId, taskName, 'exited');
+  completeTask(workflowId: WorkflowId, taskName: TaskName) {
+    return this.updateTaskState(workflowId, taskName, 'completed');
   }
 
   cancelTask(workflowId: WorkflowId, taskName: TaskName) {

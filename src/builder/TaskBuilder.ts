@@ -5,15 +5,15 @@ import { Task } from '../elements/Task.js';
 import { Workflow } from '../elements/Workflow.js';
 import {
   JoinType,
-  ShouldTaskExitFn,
+  ShouldTaskCompleteFn,
   SplitType,
   TaskActivities,
   TaskOnCancelPayload,
+  TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
-  TaskOnExitPayload,
-  TaskOnFirePayload,
-  TaskOnFireSym,
+  TaskOnStartPayload,
+  TaskOnStartSym,
   activeWorkItemInstanceStates,
 } from '../types.js';
 import {
@@ -161,7 +161,7 @@ export class TaskBuilder<
   splitType: SplitType | undefined;
   private activities: TA = {} as TA;
   private workItem: AnyWorkItemBuilder = workItem<C, undefined>();
-  private shouldExit: ShouldTaskExitFn<any, any> = ({ workItems }) => {
+  private shouldComplete: ShouldTaskCompleteFn<any, any> = ({ workItems }) => {
     const hasActiveWorkItems = workItems.some((w) =>
       activeWorkItemInstanceStates.has(w.state)
     );
@@ -185,8 +185,8 @@ export class TaskBuilder<
   initialize() {
     return this.onDisable(() => Effect.unit)
       .onEnable(() => Effect.unit)
-      .onFire((_, input) => Effect.succeed(input))
-      .onExit(() => Effect.unit)
+      .onStart((_, input) => Effect.succeed(input))
+      .onComplete(() => Effect.unit)
       .onCancel(() => Effect.unit);
   }
 
@@ -228,10 +228,10 @@ export class TaskBuilder<
     return this;
   }
 
-  onFire<
+  onStart<
     I,
     F extends (
-      payload: TaskOnFirePayload<C, WIP, Get<WIM, ['onStart', 'input']>>,
+      payload: TaskOnStartPayload<C, WIP, Get<WIM, ['onStart', 'input']>>,
       input: I
     ) => Effect.Effect<any, any, any>
   >(
@@ -243,8 +243,8 @@ export class TaskBuilder<
     ST,
     WIP,
     Simplify<
-      Omit<TM, TaskOnFireSym> & {
-        [TaskOnFireSym]: TaskActivityMetadata<
+      Omit<TM, TaskOnStartSym> & {
+        [TaskOnStartSym]: TaskActivityMetadata<
           Parameters<F>[1],
           Effect.Effect.Success<ReturnType<F>>
         >;
@@ -254,12 +254,14 @@ export class TaskBuilder<
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.activities.onFire = f;
+    this.activities.onStart = f;
     return this;
   }
 
-  onExit<
-    F extends (payload: TaskOnExitPayload<C>) => Effect.Effect<any, any, any>
+  onComplete<
+    F extends (
+      payload: TaskOnCompletePayload<C>
+    ) => Effect.Effect<any, any, any>
   >(
     f: F
   ): TaskBuilder<
@@ -273,7 +275,7 @@ export class TaskBuilder<
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.activities.onExit = f;
+    this.activities.onComplete = f;
     return this;
   }
 
@@ -339,7 +341,7 @@ export class TaskBuilder<
     return this;
   }
 
-  withShouldExit<F extends ShouldTaskExitFn<C, WIP>>(
+  withShouldComplete<F extends ShouldTaskCompleteFn<C, WIP>>(
     f: F
   ): TaskBuilder<
     C,
@@ -352,12 +354,12 @@ export class TaskBuilder<
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
-    this.shouldExit = f;
+    this.shouldComplete = f;
     return this;
   }
 
   build(workflow: Workflow, name: string) {
-    const { splitType, joinType, activities, shouldExit } = this;
+    const { splitType, joinType, activities, shouldComplete } = this;
 
     const task = new Task(
       name,
@@ -365,7 +367,7 @@ export class TaskBuilder<
 
       activities as unknown as TaskActivities<any>,
       this.workItem.build() as AnyWorkItemActivities,
-      shouldExit as ShouldTaskExitFn<any, any, never, never>,
+      shouldComplete as ShouldTaskCompleteFn<any, any, never, never>,
       {
         splitType,
         joinType,
@@ -382,5 +384,5 @@ export function task<C>() {
 }
 
 export function emptyTask<C>() {
-  return task<C>().withShouldExit(() => Effect.succeed(true));
+  return task<C>().withShouldComplete(() => Effect.succeed(true));
 }

@@ -276,8 +276,18 @@ export class Task extends BaseTask {
               );
               yield* $(stateManager.completeTask(workflowId, self.name));
               yield* $(self.cancelCancellationRegion(workflowId));
+
+              const isJoinSatisfied = yield* $(
+                self.isJoinSatisfied(workflowId)
+              );
+
+              if (isJoinSatisfied) {
+                yield* $(self.enable(workflowId));
+              }
+
               yield* $(self.produceTokensInOutgoingFlows(workflowId));
               yield* $(self.enablePostTasks(workflowId));
+
               yield* $(self.workflow.maybeComplete(workflowId));
             }).pipe(
               Effect.provideService(State, stateManager),

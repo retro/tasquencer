@@ -157,14 +157,17 @@ export class Workflow<
     id: WorkflowId
   ): Effect.Effect<
     State | ExecutionContext,
-    | ConditionDoesNotExist
-    | WorkflowDoesNotExist
-    | InvalidWorkflowStateTransition
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
-    | InvalidTaskStateTransition
+    | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist,
+    | InvalidTaskStateTransition
+    | WorkflowDoesNotExist
+    | InvalidTaskState
+    | EndConditionDoesNotExist
+    | InvalidWorkflowStateTransition
+    | WorkItemDoesNotExist
+    | InvalidWorkItemTransition,
     void
   > {
     const self = this;
@@ -463,6 +466,22 @@ export class Workflow<
   isOrJoinSatisfied(id: WorkflowId, task: BaseTask) {
     const self = this;
     return Effect.gen(function* ($) {
+      const priorConditions = Array.from(task.incomingFlows).flatMap(
+        (f) => f.priorElement
+      );
+      const priorConditionsMarkings = yield* $(
+        Effect.all(priorConditions.map((c) => c.getMarking(id)))
+      );
+
+      // This is handling the case where isOrJoinSatisfied is called as a result of
+      // task completion. Previously, Task.isJoinSatisfied was only called as a result
+      // of a condition increment, which ensured that at least one condition had a positive marking.
+      // This is not the case when a task is completed, so we need to check that at least one
+      // condition has a positive marking, otherwise we might get false positives
+      if (!priorConditionsMarkings.some((m) => m > 0)) {
+        return false;
+      }
+
       const stateManager = yield* $(State);
       const workflowTasks = yield* $(stateManager.getTasks(id));
       const activeTasks = workflowTasks.reduce<BaseTask[]>((acc, taskData) => {

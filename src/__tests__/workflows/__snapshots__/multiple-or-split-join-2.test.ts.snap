@@ -546,49 +546,49 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 6`] = `
 }
 `;
 
-exports[`runs a net with multiple "or" splits and "or" joins (1) 7`] = `
+exports[`runs a net with multiple "or" splits and "or" joins (2) 1`] = `
 {
   "conditions": [
     {
       "marking": 0,
       "name": "start",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "end",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->B",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:C->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -597,28 +597,28 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 7`] = `
       "generation": 0,
       "name": "A",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "B",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "C",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "D",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -628,7 +628,7 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 7`] = `
       "context": {
         "isBToCEnabled": false,
       },
-      "id": "workflow-2",
+      "id": "workflow-1",
       "name": "multiple-or-join-2",
       "parent": null,
       "state": "initialized",
@@ -637,49 +637,49 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 7`] = `
 }
 `;
 
-exports[`runs a net with multiple "or" splits and "or" joins (1) 8`] = `
+exports[`runs a net with multiple "or" splits and "or" joins (2) 2`] = `
 {
   "conditions": [
     {
       "marking": 1,
       "name": "start",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "end",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->B",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:C->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -688,28 +688,28 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 8`] = `
       "generation": 0,
       "name": "A",
       "state": "enabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "B",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "C",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "D",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -719,7 +719,7 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 8`] = `
       "context": {
         "isBToCEnabled": false,
       },
-      "id": "workflow-2",
+      "id": "workflow-1",
       "name": "multiple-or-join-2",
       "parent": null,
       "state": "started",
@@ -728,49 +728,49 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 8`] = `
 }
 `;
 
-exports[`runs a net with multiple "or" splits and "or" joins (1) 9`] = `
+exports[`runs a net with multiple "or" splits and "or" joins (2) 3`] = `
 {
   "conditions": [
     {
       "marking": 0,
       "name": "start",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "end",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "implicit:A->B",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "implicit:A->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:C->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -779,28 +779,28 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 9`] = `
       "generation": 1,
       "name": "A",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "B",
       "state": "enabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "C",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "D",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -810,7 +810,7 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 9`] = `
       "context": {
         "isBToCEnabled": false,
       },
-      "id": "workflow-2",
+      "id": "workflow-1",
       "name": "multiple-or-join-2",
       "parent": null,
       "state": "started",
@@ -819,49 +819,49 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 9`] = `
 }
 `;
 
-exports[`runs a net with multiple "or" splits and "or" joins (1) 10`] = `
+exports[`runs a net with multiple "or" splits and "or" joins (2) 4`] = `
 {
   "conditions": [
     {
       "marking": 0,
       "name": "start",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "end",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->B",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "implicit:A->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "implicit:B->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:C->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -870,28 +870,28 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 10`] = `
       "generation": 1,
       "name": "A",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 1,
       "name": "B",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "C",
       "state": "enabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "D",
       "state": "disabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -901,7 +901,7 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 10`] = `
       "context": {
         "isBToCEnabled": false,
       },
-      "id": "workflow-2",
+      "id": "workflow-1",
       "name": "multiple-or-join-2",
       "parent": null,
       "state": "started",
@@ -910,49 +910,49 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 10`] = `
 }
 `;
 
-exports[`runs a net with multiple "or" splits and "or" joins (1) 11`] = `
+exports[`runs a net with multiple "or" splits and "or" joins (2) 5`] = `
 {
   "conditions": [
     {
       "marking": 0,
       "name": "start",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "end",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->B",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "implicit:B->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "implicit:C->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -961,28 +961,28 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 11`] = `
       "generation": 1,
       "name": "A",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 1,
       "name": "B",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 1,
       "name": "C",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 0,
       "name": "D",
       "state": "enabled",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -992,7 +992,7 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 11`] = `
       "context": {
         "isBToCEnabled": false,
       },
-      "id": "workflow-2",
+      "id": "workflow-1",
       "name": "multiple-or-join-2",
       "parent": null,
       "state": "started",
@@ -1001,49 +1001,49 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 11`] = `
 }
 `;
 
-exports[`runs a net with multiple "or" splits and "or" joins (1) 12`] = `
+exports[`runs a net with multiple "or" splits and "or" joins (2) 6`] = `
 {
   "conditions": [
     {
       "marking": 0,
       "name": "start",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 1,
       "name": "end",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->B",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:A->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->C",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:B->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "marking": 0,
       "name": "implicit:C->D",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -1052,28 +1052,28 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 12`] = `
       "generation": 1,
       "name": "A",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 1,
       "name": "B",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 1,
       "name": "C",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
     {
       "generation": 1,
       "name": "D",
       "state": "completed",
-      "workflowId": "workflow-2",
+      "workflowId": "workflow-1",
       "workflowName": "multiple-or-join-2",
     },
   ],
@@ -1083,7 +1083,7 @@ exports[`runs a net with multiple "or" splits and "or" joins (1) 12`] = `
       "context": {
         "isBToCEnabled": false,
       },
-      "id": "workflow-2",
+      "id": "workflow-1",
       "name": "multiple-or-join-2",
       "parent": null,
       "state": "completed",

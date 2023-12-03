@@ -667,7 +667,10 @@ export type WorkflowOnCompletePayload<C, PC> = DefaultWorkflowActivityPayload<
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | InvalidTaskStateTransition
-    | EndConditionDoesNotExist,
+    | InvalidTaskState
+    | EndConditionDoesNotExist
+    | WorkItemDoesNotExist
+    | InvalidWorkItemTransition,
     void
   >;
 };

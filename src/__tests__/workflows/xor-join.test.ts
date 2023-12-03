@@ -1,10 +1,10 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from '../shared.js';
 
-it('runs a net with "xor" join', () => {
+it('runs a net with "xor" join', ({ expect }) => {
   const workflowDefinition = Builder.workflow()
     .withName('xor-join')
     .startCondition('start')

@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service, StateChangeItem } from '../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
@@ -27,7 +27,7 @@ const workflowDefinition = Builder.workflow()
   .connectTask('t3', (to) => to.task('t4'))
   .connectTask('t4', (to) => to.condition('end'));
 
-it('sends updates on state change', () => {
+it('sends updates on state change', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const log: StateChangeItem[] = [];
     const idGenerator = makeIdGenerator();

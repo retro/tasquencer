@@ -1,10 +1,10 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from '../shared.js';
 
-it('supports the interleaved routing pattern', () => {
+it('supports the interleaved routing pattern', ({ expect }) => {
   const workflowDefinition = Builder.workflow()
     .withName('interleaved-parallel')
     .startCondition('start')

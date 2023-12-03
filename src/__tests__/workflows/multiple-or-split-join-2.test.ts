@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from '../shared.js';
@@ -22,7 +22,7 @@ const workflowDefinition = Builder.workflow<{ isBToCEnabled: boolean }>()
   .connectTask('C', (to) => to.task('D'))
   .connectTask('D', (to) => to.condition('end'));
 
-it('runs a net with multiple "or" splits and "or" joins (1)', () => {
+it('runs a net with multiple "or" splits and "or" joins (1)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 
@@ -67,7 +67,7 @@ it('runs a net with multiple "or" splits and "or" joins (1)', () => {
   Effect.runSync(program);
 });
 
-it('runs a net with multiple "or" splits and "or" joins (2)', () => {
+it('runs a net with multiple "or" splits and "or" joins (2)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 

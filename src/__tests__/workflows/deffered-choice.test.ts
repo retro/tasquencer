@@ -1,10 +1,10 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from '../shared.js';
 
-it('supports the deferred choice pattern', () => {
+it('supports the deferred choice pattern', ({ expect }) => {
   const workflowDefinition = Builder.workflow()
     .withName('deferred-choice')
     .startCondition('start')

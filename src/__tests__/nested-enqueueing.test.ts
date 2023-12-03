@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
@@ -79,7 +79,7 @@ const workflowDefinition = Builder.workflow<WorkflowContext>()
   .connectCondition('start', (to) => to.task('t1'))
   .connectTask('t1', (to) => to.condition('end'));
 
-it('handles nested enqueueing (1)', () => {
+it('handles nested enqueueing (1)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 
@@ -99,7 +99,7 @@ it('handles nested enqueueing (1)', () => {
   Effect.runSync(program);
 });
 
-it('handles nested enqueueing (2)', () => {
+it('handles nested enqueueing (2)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 
@@ -119,7 +119,7 @@ it('handles nested enqueueing (2)', () => {
   Effect.runSync(program);
 });
 
-it('handles nested enqueueing (3)', () => {
+it('handles nested enqueueing (3)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 

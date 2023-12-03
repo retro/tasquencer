@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
@@ -48,7 +48,7 @@ const workflowDefinition = Builder.workflow<'complete' | 'fail' | 'cancel'>()
   .connectCondition('start', (to) => to.task('t1'))
   .connectTask('t1', (to) => to.condition('end'));
 
-it('handles simple enqueueing (1)', () => {
+it('handles simple enqueueing (1)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 
@@ -68,7 +68,7 @@ it('handles simple enqueueing (1)', () => {
   Effect.runSync(program);
 });
 
-it('handles simple enqueueing (2)', () => {
+it('handles simple enqueueing (2)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 
@@ -88,7 +88,7 @@ it('handles simple enqueueing (2)', () => {
   Effect.runSync(program);
 });
 
-it('handles simple enqueueing (3)', () => {
+it('handles simple enqueueing (3)', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 

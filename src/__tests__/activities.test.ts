@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../index.js';
 import { makeIdGenerator } from './shared.js';
@@ -141,7 +141,7 @@ function makeWorkflowDefinitionAndLog() {
   return { workflowDefinition, log };
 }
 
-it('runs activities (1)', () => {
+it('runs activities (1)', ({ expect }) => {
   const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -177,7 +177,7 @@ it('runs activities (1)', () => {
   Effect.runSync(program);
 });
 
-it('runs activities (2)', () => {
+it('runs activities (2)', ({ expect }) => {
   const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -218,7 +218,7 @@ it('runs activities (2)', () => {
   Effect.runSync(program);
 });
 
-it('runs activities (3)', () => {
+it('runs activities (3)', ({ expect }) => {
   const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -259,7 +259,7 @@ it('runs activities (3)', () => {
   Effect.runSync(program);
 });
 
-it('runs activities (2)', () => {
+it('runs activities (4)', ({ expect }) => {
   const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
@@ -300,7 +300,7 @@ it('runs activities (2)', () => {
   Effect.runSync(program);
 });
 
-it('runs activities (4)', () => {
+it('runs activities (5)', ({ expect }) => {
   const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();

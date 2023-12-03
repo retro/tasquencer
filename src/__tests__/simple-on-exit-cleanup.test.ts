@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
@@ -21,7 +21,7 @@ const workflowDefinition = Builder.workflow()
   .connectTask('t2', (to) => to.task('t3'))
   .connectTask('t3', (to) => to.condition('end'));
 
-it('cleans up work items on exit', () => {
+it('cleans up work items on exit', ({ expect }) => {
   const program = Effect.gen(function* ($) {
     const idGenerator = makeIdGenerator();
 

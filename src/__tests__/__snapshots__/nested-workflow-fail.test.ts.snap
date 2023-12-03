@@ -465,7 +465,7 @@ exports[`handles workflow failure in nested workflows (1) 5`] = `
 }
 `;
 
-exports[`handles workflow failure in nested workflows (1) 6`] = `
+exports[`handles workflow failure in nested workflows (2) 1`] = `
 {
   "conditions": [
     {
@@ -548,7 +548,7 @@ exports[`handles workflow failure in nested workflows (1) 6`] = `
 }
 `;
 
-exports[`handles workflow failure in nested workflows (1) 7`] = `
+exports[`handles workflow failure in nested workflows (2) 2`] = `
 {
   "conditions": [
     {
@@ -565,89 +565,6 @@ exports[`handles workflow failure in nested workflows (1) 7`] = `
     },
     {
       "marking": 1,
-      "name": "implicit:t1->t2",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "marking": 1,
-      "name": "implicit:t1->t3",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "marking": 0,
-      "name": "implicit:t2->t4",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "marking": 0,
-      "name": "implicit:t3->t4",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-  ],
-  "tasks": [
-    {
-      "generation": 1,
-      "name": "t1",
-      "state": "completed",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "generation": 0,
-      "name": "t2",
-      "state": "enabled",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "generation": 0,
-      "name": "t3",
-      "state": "enabled",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "generation": 0,
-      "name": "t4",
-      "state": "disabled",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-  ],
-  "workItems": [],
-  "workflows": [
-    {
-      "context": undefined,
-      "id": "workflow-1",
-      "name": "activities",
-      "parent": null,
-      "state": "started",
-    },
-  ],
-}
-`;
-
-exports[`handles workflow failure in nested workflows (1) 8`] = `
-{
-  "conditions": [
-    {
-      "marking": 0,
-      "name": "start",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "marking": 0,
-      "name": "end",
-      "workflowId": "workflow-1",
-      "workflowName": "activities",
-    },
-    {
-      "marking": 0,
       "name": "implicit:t1->t2",
       "workflowId": "workflow-1",
       "workflowName": "activities",
@@ -680,9 +597,9 @@ exports[`handles workflow failure in nested workflows (1) 8`] = `
       "workflowName": "activities",
     },
     {
-      "generation": 1,
+      "generation": 0,
       "name": "t2",
-      "state": "started",
+      "state": "enabled",
       "workflowId": "workflow-1",
       "workflowName": "activities",
     },
@@ -714,7 +631,7 @@ exports[`handles workflow failure in nested workflows (1) 8`] = `
 }
 `;
 
-exports[`handles workflow failure in nested workflows (1) 9`] = `
+exports[`handles workflow failure in nested workflows (2) 3`] = `
 {
   "conditions": [
     {
@@ -736,7 +653,7 @@ exports[`handles workflow failure in nested workflows (1) 9`] = `
       "workflowName": "activities",
     },
     {
-      "marking": 0,
+      "marking": 1,
       "name": "implicit:t1->t3",
       "workflowId": "workflow-1",
       "workflowName": "activities",
@@ -770,6 +687,89 @@ exports[`handles workflow failure in nested workflows (1) 9`] = `
       "workflowName": "activities",
     },
     {
+      "generation": 0,
+      "name": "t3",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles workflow failure in nested workflows (2) 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
       "generation": 1,
       "name": "t3",
       "state": "started",
@@ -797,7 +797,7 @@ exports[`handles workflow failure in nested workflows (1) 9`] = `
 }
 `;
 
-exports[`handles workflow failure in nested workflows (1) 10`] = `
+exports[`handles workflow failure in nested workflows (2) 5`] = `
 {
   "conditions": [
     {

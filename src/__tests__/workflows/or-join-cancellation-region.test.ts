@@ -1,10 +1,10 @@
 import { Effect } from 'effect';
-import { expect, it } from 'vitest';
+import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from '../shared.js';
 
-it('runs a net with an "or" join and a cancellation region', () => {
+it('runs a net with an "or" join and a cancellation region', ({ expect }) => {
   const workflowDefinition = Builder.workflow()
     .withName('or-join-cancellation-region')
     .startCondition('start')

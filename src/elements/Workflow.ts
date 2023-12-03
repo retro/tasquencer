@@ -181,6 +181,14 @@ export class Workflow<
       const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
+            yield* $(
+              Effect.all(
+                Object.values(self.tasks).map((task) =>
+                  task.maybeCancelOrDisable(id)
+                ),
+                { batching: true }
+              )
+            );
             yield* $(stateManager.updateWorkflowState(id, 'completed'));
             if (self.parentTask && workflow.parent?.workflowId) {
               yield* $(

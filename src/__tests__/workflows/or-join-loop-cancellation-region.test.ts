@@ -67,7 +67,7 @@ it('runs a net with an "or" join, a loop and a cancellation region', () => {
     yield* $(service.startTask('E'));
     const state6 = yield* $(service.getState());
     expect(state6).toMatchSnapshot();
-    expect(getEnabledTaskNames(state6)).toEqual(new Set(['B']));
+    expect(getEnabledTaskNames(state6)).toEqual(new Set());
     expect(state6.workflows[0]?.state).toBe('completed');
   });
 

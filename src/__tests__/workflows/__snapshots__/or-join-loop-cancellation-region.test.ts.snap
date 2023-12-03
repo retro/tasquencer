@@ -1,0 +1,589 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "D",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with an "or" join, a loop and a cancellation region 7`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "c1",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c2",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 0,
+      "name": "c3",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "D",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+    {
+      "generation": 1,
+      "name": "E",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-join-cancellation-region",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "or-join-cancellation-region",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

@@ -1,0 +1,1756 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "D",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 7`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "D",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "E",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 8`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "D",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "E",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "F",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": true,
+      },
+      "id": "workflow-1",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 9`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 10`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "A",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 11`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "B",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 12`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "C",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 13`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "E",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 14`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "E",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "F",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with multiple "or" splits and "or" joins (1) 15`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->B",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:A->C",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:B->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->D",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:C->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:D->E",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:E->F",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "A",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "B",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "C",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 0,
+      "name": "D",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "E",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+    {
+      "generation": 1,
+      "name": "F",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "multiple-or-join-1",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "isTaskDEnabled": false,
+      },
+      "id": "workflow-2",
+      "name": "multiple-or-join-1",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

@@ -1,28 +1,22 @@
 import { Effect } from 'effect';
 
-import { ConditionNode } from '../types.js';
+import { State } from '../State.js';
+import { ConditionName, ConditionNode, WorkflowId } from '../types.js';
+import { BaseTask } from './BaseTask.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
-import { Task } from './Task.js';
 import { Workflow } from './Workflow.js';
 
 export class Condition {
   readonly incomingFlows = new Set<TaskToConditionFlow>();
   readonly outgoingFlows = new Set<ConditionToTaskFlow>();
-  readonly preSet: Record<string, Task> = {};
-  readonly postSet: Record<string, Task> = {};
-  readonly id: string;
-  readonly name: string;
+  readonly preSet: Record<string, BaseTask> = {};
+  readonly postSet: Record<string, BaseTask> = {};
+  readonly name: ConditionName;
   readonly isImplicit: boolean = false;
   readonly workflow: Workflow;
 
-  constructor(
-    id: string,
-    name: string,
-    conditionNode: ConditionNode,
-    workflow: Workflow
-  ) {
-    this.id = id;
-    this.name = name;
+  constructor(name: string, conditionNode: ConditionNode, workflow: Workflow) {
+    this.name = ConditionName(name);
     this.isImplicit = conditionNode.isImplicit ?? false;
     this.workflow = workflow;
   }
@@ -45,57 +39,83 @@ export class Condition {
     return new Set(Object.values(this.postSet));
   }
 
-  incrementMarking() {
-    const self = this;
+  incrementMarking(workflowId: WorkflowId) {
+    const { name } = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.stateManager.incrementConditionMarking(self));
+      const stateManager = yield* $(State);
+      yield* $(stateManager.incrementConditionMarking(workflowId, name));
     });
   }
 
-  decrementMarking(context: object) {
+  decrementMarking(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.stateManager.decrementConditionMarking(self));
-      yield* $(self.disableTasks(context));
+      const stateManager = yield* $(State);
+      const marking = yield* $(
+        stateManager.getConditionMarking(workflowId, self.name)
+      );
+      if (marking > 0) {
+        yield* $(stateManager.decrementConditionMarking(workflowId, self.name));
+      }
+      yield* $(self.disableTasks(workflowId));
     });
   }
 
-  enableTasks(context: object) {
+  enableTasks(workflowId: WorkflowId) {
     const tasks = Object.values(this.postSet);
-    return Effect.all(
-      tasks.map((task) => task.enable(context)),
-      { discard: true, batching: true }
-    );
-  }
-
-  disableTasks(context: object) {
-    const tasks = Object.values(this.postSet);
-    return Effect.all(
-      tasks.map((task) => task.disable(context)),
-      { discard: true, batching: true }
-    );
-  }
-
-  cancelTasks(context: object) {
-    const tasks = Object.values(this.postSet);
-    return Effect.all(
-      tasks.map((task) => task.cancel(context)),
-      { discard: true, batching: true }
-    );
-  }
-
-  cancel(context: object) {
-    const self = this;
     return Effect.gen(function* ($) {
-      yield* $(self.workflow.stateManager.emptyConditionMarking(self));
-      yield* $(self.disableTasks(context));
+      // Here we are not checking the marking because in case of an "or" join
+      // a task might be enabled by positive marking in some other condition
+      yield* $(
+        // Some will potentially fail because they are in the wrong state, but this
+        // is fine because we are just trying to disable all that are enabled.
+        Effect.allSuccesses(
+          tasks.map((task) => task.enable(workflowId)),
+          { batching: true }
+        )
+      );
     });
   }
 
-  getMarking() {
+  disableTasks(workflowId: WorkflowId) {
+    const self = this;
+    const tasks = Object.values(this.postSet);
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const marking = yield* $(
+        stateManager.getConditionMarking(workflowId, self.name)
+      );
+
+      if (marking === 0) {
+        yield* $(
+          // Some will potentially fail because they are in the wrong state, but this
+          // is fine because we are just trying to disable all that are enabled.
+          Effect.allSuccesses(
+            tasks.map((task) => task.disable(workflowId)),
+            { batching: true }
+          )
+        );
+      }
+    });
+  }
+
+  cancel(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {
-      return yield* $(self.workflow.stateManager.getConditionMarking(self));
+      const stateManager = yield* $(State);
+      yield* $(stateManager.emptyConditionMarking(workflowId, self.name));
+      yield* $(self.disableTasks(workflowId));
+    });
+  }
+
+  getMarking(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const condition = yield* $(
+        stateManager.getCondition(workflowId, self.name)
+      );
+      return condition.marking;
     });
   }
 }

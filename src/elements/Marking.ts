@@ -1,9 +1,9 @@
+import { BaseTask } from './BaseTask.js';
 import { Condition } from './Condition.js';
-import { Task } from './Task.js';
 
 export class Marking {
-  private readonly locations: (Task | Condition)[] = [];
-  constructor(tasks: Task[], conditions: Condition[]) {
+  private readonly locations: (BaseTask | Condition)[] = [];
+  constructor(tasks: BaseTask[], conditions: Condition[]) {
     this.locations = [...tasks, ...conditions];
   }
   getLocations() {

@@ -1,0 +1,921 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`supports the interleaved routing pattern 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "initial_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_d",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "initial_task",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_d",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_a",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_d",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_a",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_b",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_d",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_a",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_b",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_c",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_d",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_a",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_b",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_c",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "task_d",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 7`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_a",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_b",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_c",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_d",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 0,
+      "name": "finish_task",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`supports the interleaved routing pattern 8`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "mutex",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_a",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:initial_task->task_c",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_a->task_b",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_b->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_c->task_d",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:task_d->finish_task",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "initial_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_a",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_b",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_c",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "task_d",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+    {
+      "generation": 1,
+      "name": "finish_task",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "interleaved-parallel",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "interleaved-parallel",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

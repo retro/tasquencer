@@ -1,0 +1,309 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cancels or disables started or enabled tasks on workflow end 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "t1",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t2",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`cancels or disables started or enabled tasks on workflow end 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t2",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`cancels or disables started or enabled tasks on workflow end 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`cancels or disables started or enabled tasks on workflow end 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "canceled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t4",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

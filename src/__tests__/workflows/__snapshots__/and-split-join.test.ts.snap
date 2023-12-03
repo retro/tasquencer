@@ -1,0 +1,673 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runs a net with "and" split and "and" join 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "scan_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pack_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "issue_receipt",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "check_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "and" split and "and" join 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "scan_goods",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pack_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "issue_receipt",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "check_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "and" split and "and" join 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "scan_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pack_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "issue_receipt",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "check_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "and" split and "and" join 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "scan_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "pack_goods",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "issue_receipt",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "check_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "and" split and "and" join 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "scan_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pack_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "issue_receipt",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "check_goods",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "and" split and "and" join 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "scan_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pack_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "issue_receipt",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 0,
+      "name": "check_goods",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "and" split and "and" join 7`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:scan_goods->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->pack_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pay->issue_receipt",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:pack_goods->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:issue_receipt->check_goods",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "scan_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "pack_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "issue_receipt",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+    {
+      "generation": 1,
+      "name": "check_goods",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "checkout",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "checkout",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

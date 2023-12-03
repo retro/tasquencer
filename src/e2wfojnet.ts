@@ -1,3 +1,5 @@
+import { BaseTask } from './elements/BaseTask.js';
+
 /* This code was ported from the original YAWL codebase
    (https://github.com/yawlfoundation/yawl/blob/master/src/org/yawlfoundation/yawl/elements/e2wfoj/E2WFOJNet.java)
 
@@ -6,9 +8,8 @@
 */
 import { Condition } from './elements/Condition.js';
 import { Marking } from './elements/Marking.js';
-import { Task } from './elements/Task.js';
 
-type NetElement = Condition | Task;
+type NetElement = Condition | BaseTask;
 
 class RElement {
   private name: string;
@@ -358,13 +359,13 @@ export class E2WFOJNet {
   private transitions: Record<string, RTransition> = {};
   private places: Record<string, RPlace> = {};
   private orJoins: Record<string, RTransition> = {};
-  private yOrJoins: Record<string, Task> = {};
-  private yTasks: Task[];
+  private yOrJoins: Record<string, BaseTask> = {};
+  private yTasks: BaseTask[];
   private yConditions: Condition[];
   private alreadyConsideredMarkings = new Set<RMarking>();
   private conditions = new Set();
 
-  constructor(yTasks: Task[], yConditions: Condition[], orJoin: Task) {
+  constructor(yTasks: BaseTask[], yConditions: Condition[], orJoin: BaseTask) {
     this.yTasks = yTasks;
     this.yConditions = yConditions;
     this.convertToResetNet();
@@ -548,7 +549,7 @@ export class E2WFOJNet {
     rt.setRemoveSet(removeSetR);
   }
 
-  private orJoinRemove(j: Task): void {
+  private orJoinRemove(j: BaseTask): void {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete this.yOrJoins[j.name];
 
@@ -789,7 +790,7 @@ export class E2WFOJNet {
     return Z_min;
   }
 
-  orJoinEnabled(M: Marking, orJoin: Task): boolean {
+  orJoinEnabled(M: Marking, orJoin: BaseTask): boolean {
     const markedTasks = new Set<NetElement>();
     const RMap = new Map<string, number>();
     const YLocations: NetElement[] = M.getLocations();
@@ -809,7 +810,7 @@ export class E2WFOJNet {
           RMap.set(placename, tokenCount);
         }
       }
-      if (nextElement instanceof Task) {
+      if (nextElement instanceof BaseTask) {
         markedTasks.add(nextElement);
       }
     }
@@ -863,8 +864,8 @@ export class E2WFOJNet {
     return true;
   }
 
-  restrictNet(value: Task | Marking): void {
-    if (value instanceof Task) {
+  restrictNet(value: BaseTask | Marking): void {
+    if (value instanceof BaseTask) {
       const j = value;
 
       const restrictedTrans = new Set<RTransition>();
@@ -910,7 +911,7 @@ export class E2WFOJNet {
         }
 
         // Need to consider active tasks in a marking
-        if (nextElement instanceof Task) {
+        if (nextElement instanceof BaseTask) {
           const internalPlace = 'p_' + nextElement.name;
           const place = this.places[internalPlace];
           if (place !== undefined) {

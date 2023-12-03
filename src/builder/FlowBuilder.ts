@@ -7,14 +7,11 @@ import {
   TaskToConditionFlowProps,
 } from '../elements/Flow.js';
 import { Workflow } from '../elements/Workflow.js';
-import { IdProvider } from './IdProvider.js';
 
 type AnyFlowPredicate = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...args: any[]
 ) => Effect.Effect<unknown, unknown, boolean>;
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
   any,
   any,
@@ -27,7 +24,6 @@ export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
     ? F
     : never
   : never;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export class ConditionFlowBuilder<BNTasks> {
   private readonly from: string;
@@ -69,7 +65,7 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
     this.toConditions[conditionName] = {};
     return this;
   }
-  build(workflow: Workflow, idProvider: IdProvider) {
+  build(workflow: Workflow) {
     const { from, toConditions, toTasks } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(from));
@@ -85,7 +81,6 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
         const toTask = yield* $(workflow.getTask(toTaskName));
         const conditionName = `implicit:${from}->${toTask.name}`;
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           { isImplicit: true },
           workflow
@@ -110,7 +105,7 @@ export class OrXorTaskFlowBuilder<
   R = never,
   E = never,
   HasDefault = never,
-  Context extends object = object
+  Context = unknown
 > {
   private order = 0;
   readonly from: string;
@@ -168,7 +163,7 @@ export class OrXorTaskFlowBuilder<
     this.toDefault = { type: 'condition', name: conditionName };
     return this;
   }
-  build(workflow: Workflow, idProvider: IdProvider) {
+  build(workflow: Workflow) {
     const { from, toConditions, toTasks, toDefault } = this;
     return Effect.gen(function* ($) {
       const task = yield* $(workflow.getTask(from));
@@ -178,7 +173,7 @@ export class OrXorTaskFlowBuilder<
         // Cast props as TaskToConditionFlowProps because we capture the
         // real type signature elsewhere, which will be used by the
         // Interpreter to generate the real return type from the entry points
-        // (activateTask and completeTask)
+        // (startTask and completeTask)
         const flow = new TaskToConditionFlow(
           task,
           condition,
@@ -192,7 +187,6 @@ export class OrXorTaskFlowBuilder<
         const toTask = yield* $(workflow.getTask(toTaskName));
         const conditionName = `implicit:${from}->${toTask.name}`;
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           { isImplicit: true },
           workflow
@@ -203,7 +197,7 @@ export class OrXorTaskFlowBuilder<
         // Cast props as TaskToConditionFlowProps because we capture the
         // real type signature elsewhere, which will be used by the
         // Interpreter to generate the real return type from the entry points
-        // (activateTask and completeTask)
+        // (startTask and completeTask)
         const leftFlow = new TaskToConditionFlow(
           task,
           condition,
@@ -221,7 +215,6 @@ export class OrXorTaskFlowBuilder<
         const toTask = yield* $(workflow.getTask(defaultFlow.name));
         const conditionName = `implicit:${from}->${toTask.name}`;
         const condition = new Condition(
-          yield* $(idProvider.getConditionId(conditionName)),
           conditionName,
           { isImplicit: true },
           workflow

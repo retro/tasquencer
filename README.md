@@ -8,16 +8,17 @@ A BPM library for Node based on the concepts from https://yawlfoundation.github.
 Example:
 
 ```typescript
-Builder.workflow<{
+const workflowDefinition = Builder.workflow<{
   shouldBookFlight: boolean;
   shouldBookCar: boolean;
-}>('or-split-and-or-join')
+}>()
+  .withName('or-split-join')
   .startCondition('start')
-  .task('register', (t) => t.withSplitType('or'))
-  .task('book_flight')
-  .task('book_hotel')
-  .task('book_car')
-  .task('pay', (t) => t.withJoinType('or'))
+  .task('register', Builder.emptyTask().withSplitType('or'))
+  .task('book_flight', Builder.emptyTask())
+  .task('book_hotel', Builder.emptyTask())
+  .task('book_car', Builder.emptyTask())
+  .task('pay', Builder.emptyTask().withJoinType('or'))
   .endCondition('end')
   .connectCondition('start', (to) => to.task('register'))
   .connectTask('register', (to) =>

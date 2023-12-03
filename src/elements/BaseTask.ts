@@ -139,14 +139,17 @@ export abstract class BaseTask {
     input?: unknown
   ): Effect.Effect<
     ExecutionContext | State,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist,
+    | InvalidTaskStateTransition
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskState
+    | WorkflowDoesNotExist
+    | WorkItemDoesNotExist
+    | EndConditionDoesNotExist
+    | InvalidWorkflowStateTransition
+    | InvalidWorkItemTransition,
     unknown
   >;
 
@@ -155,14 +158,17 @@ export abstract class BaseTask {
     input?: unknown
   ): Effect.Effect<
     ExecutionContext | State,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist,
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | InvalidTaskState
+    | WorkflowDoesNotExist
+    | EndConditionDoesNotExist
+    | InvalidWorkflowStateTransition
+    | WorkItemDoesNotExist
+    | InvalidWorkItemTransition,
     unknown
   >;
 
@@ -205,15 +211,18 @@ export abstract class BaseTask {
   abstract maybeComplete(
     workflowId: WorkflowId
   ): Effect.Effect<
-    State | ExecutionContext,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
+    ExecutionContext | State,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist,
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | InvalidTaskState
+    | WorkflowDoesNotExist
+    | EndConditionDoesNotExist
+    | InvalidWorkflowStateTransition
+    | WorkItemDoesNotExist
+    | InvalidWorkItemTransition,
     void
   >;
 

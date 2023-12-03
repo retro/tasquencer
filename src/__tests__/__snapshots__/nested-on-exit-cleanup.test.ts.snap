@@ -1,0 +1,723 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`handles workflow completion in nested workflows 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "t1",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t2",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles workflow completion in nested workflows 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t2",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles workflow completion in nested workflows 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles workflow completion in nested workflows 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t3",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles workflow completion in nested workflows 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-4",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-4",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t3",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t4",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "generation": 0,
+      "name": "subT1",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "sub",
+    },
+    {
+      "generation": 0,
+      "name": "subT1",
+      "state": "disabled",
+      "workflowId": "workflow-4",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "id": "workItem-2",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+    {
+      "context": undefined,
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t3",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "completed",
+    },
+    {
+      "context": undefined,
+      "id": "workflow-3",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t3",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "canceled",
+    },
+    {
+      "context": undefined,
+      "id": "workflow-4",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t3",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "canceled",
+    },
+  ],
+}
+`;
+
+exports[`handles workflow completion in nested workflows 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t3->t4",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-4",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-4",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t3",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t4",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "generation": 0,
+      "name": "subT1",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "sub",
+    },
+    {
+      "generation": 0,
+      "name": "subT1",
+      "state": "disabled",
+      "workflowId": "workflow-4",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "id": "workItem-2",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "completed",
+    },
+    {
+      "context": undefined,
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t3",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "completed",
+    },
+    {
+      "context": undefined,
+      "id": "workflow-3",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t3",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "canceled",
+    },
+    {
+      "context": undefined,
+      "id": "workflow-4",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t3",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "canceled",
+    },
+  ],
+}
+`;

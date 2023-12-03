@@ -151,14 +151,17 @@ export type TaskOnCompletePayload<C> =
   DefaultTaskOrWorkItemActivityPayload<C> & {
     completeTask: () => Effect.Effect<
       never,
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
       | ConditionDoesNotExist
       | ConditionDoesNotExistInStore
+      | InvalidTaskState
+      | WorkflowDoesNotExist
+      | WorkItemDoesNotExist
       | EndConditionDoesNotExist
       | InvalidTaskStateTransition
       | InvalidWorkflowStateTransition
-      | TaskDoesNotExist
-      | TaskDoesNotExistInStore
-      | WorkflowDoesNotExist,
+      | InvalidWorkItemTransition,
       void
     >;
   };

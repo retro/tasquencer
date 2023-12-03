@@ -1,0 +1,285 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cleans up work items on exit 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "t1",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t2",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`cleans up work items on exit 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t2",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`cleans up work items on exit 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 0,
+      "name": "t3",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`cleans up work items on exit 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t1->t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:t2->t3",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t2",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "t3",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "id": "workItem-2",
+      "payload": null,
+      "state": "canceled",
+      "taskGeneration": 1,
+      "taskName": "t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "id": "workItem-3",
+      "payload": null,
+      "state": "canceled",
+      "taskGeneration": 1,
+      "taskName": "t2",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

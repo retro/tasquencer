@@ -2,7 +2,19 @@ import { Effect, pipe } from 'effect';
 
 import { State } from '../State.js';
 import { AnyWorkItemActivities } from '../builder/WorkItemBuilder.js';
-import { InvalidTaskState, InvalidTaskStateTransition } from '../errors.js';
+import {
+  ConditionDoesNotExist,
+  ConditionDoesNotExistInStore,
+  EndConditionDoesNotExist,
+  InvalidTaskState,
+  InvalidTaskStateTransition,
+  InvalidWorkItemTransition,
+  InvalidWorkflowStateTransition,
+  TaskDoesNotExist,
+  TaskDoesNotExistInStore,
+  WorkItemDoesNotExist,
+  WorkflowDoesNotExist,
+} from '../errors.js';
 import {
   ExecutionContext,
   JoinType,
@@ -17,9 +29,6 @@ import {
 } from '../types.js';
 import { BaseTask } from './BaseTask.js';
 import { Workflow } from './Workflow.js';
-
-// TODO: handle case where task is completed and prev condition(s)
-// have positive marking, so it should transition to enabled again
 
 export class Task extends BaseTask {
   readonly activities: TaskActivities<any>;
@@ -225,7 +234,23 @@ export class Task extends BaseTask {
     });
   }
 
-  complete(workflowId: WorkflowId) {
+  complete(
+    workflowId: WorkflowId
+  ): Effect.Effect<
+    ExecutionContext | State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | InvalidTaskState
+    | WorkflowDoesNotExist
+    | EndConditionDoesNotExist
+    | InvalidWorkflowStateTransition
+    | WorkItemDoesNotExist
+    | InvalidWorkItemTransition,
+    unknown
+  > {
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getTaskState(workflowId));
@@ -236,6 +261,19 @@ export class Task extends BaseTask {
         const perform = yield* $(
           Effect.once(
             Effect.gen(function* ($) {
+              const workItems = (yield* $(
+                stateManager.getWorkItems(workflowId, self.name)
+              )).filter(
+                (w) => w.state === 'started' || w.state === 'initialized'
+              );
+              yield* $(
+                Effect.all(
+                  workItems.map(({ id }) =>
+                    self.cancelWorkItem(workflowId, id, undefined, false)
+                  ),
+                  { batching: true }
+                )
+              );
               yield* $(stateManager.completeTask(workflowId, self.name));
               yield* $(self.cancelCancellationRegion(workflowId));
               yield* $(self.produceTokensInOutgoingFlows(workflowId));

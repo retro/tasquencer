@@ -99,14 +99,6 @@ export class Condition {
     });
   }
 
-  cancelTasks(workflowId: WorkflowId) {
-    const tasks = Object.values(this.postSet);
-    return Effect.allSuccesses(
-      tasks.map((task) => task.cancel(workflowId)),
-      { batching: true }
-    );
-  }
-
   cancel(workflowId: WorkflowId) {
     const self = this;
     return Effect.gen(function* ($) {

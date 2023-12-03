@@ -7,6 +7,7 @@ import {
   ExecutionContext,
   JoinType,
   ShouldCompositeTaskCompleteFn,
+  ShouldCompositeTaskFailFn,
   SplitType,
   WorkflowId,
   isValidTaskInstanceTransition,
@@ -26,6 +27,7 @@ export class CompositeTask extends BaseTask {
     never,
     never
   >;
+  readonly shouldFail: ShouldCompositeTaskFailFn<any, any, never, never>;
 
   constructor(
     name: string,
@@ -33,12 +35,14 @@ export class CompositeTask extends BaseTask {
     subWorkflow: Workflow,
     activities: CompositeTaskActivities<any>,
     shouldComplete: ShouldCompositeTaskCompleteFn<any, any, never, never>,
+    shouldFail: ShouldCompositeTaskFailFn<any, any, never, never>,
     props?: { splitType?: SplitType; joinType?: JoinType }
   ) {
     super(name, workflow, props);
     this.subWorkflow = subWorkflow;
     this.activities = activities;
     this.shouldComplete = shouldComplete;
+    this.shouldFail = shouldFail;
   }
 
   enable(workflowId: WorkflowId) {
@@ -54,7 +58,7 @@ export class CompositeTask extends BaseTask {
           const executionContext = yield* $(ExecutionContext);
           const enqueueStartTask = (input?: unknown) => {
             return executionContext.queue.offer({
-              path: executionContext.path,
+              path: [...executionContext.path, self.name],
               type: 'startTask',
               input,
             });
@@ -274,7 +278,6 @@ export class CompositeTask extends BaseTask {
   }
 
   cancel(workflowId: WorkflowId) {
-    // TODO: sub workflows / sub work items should be canceled
     const self = this;
     return Effect.gen(function* ($) {
       const state = yield* $(self.getTaskState(workflowId));
@@ -283,13 +286,96 @@ export class CompositeTask extends BaseTask {
         const executionContext = yield* $(ExecutionContext);
 
         const perform = yield* $(
-          Effect.once(stateManager.cancelTask(workflowId, self.name))
+          Effect.once(
+            Effect.gen(function* ($) {
+              const workflows = (yield* $(
+                stateManager.getWorkflows(workflowId, self.name)
+              )).filter(
+                (workflow) =>
+                  workflow.state === 'started' ||
+                  workflow.state === 'initialized'
+              );
+              yield* $(
+                Effect.all(
+                  workflows.map(({ id }) =>
+                    self.subWorkflow.cancel(id, undefined, false)
+                  ),
+                  { batching: true }
+                )
+              );
+              yield* $(stateManager.cancelTask(workflowId, self.name));
+            }).pipe(
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            )
+          )
         );
 
         const result = yield* $(
           self.activities.onCancel({
             ...executionContext.defaultActivityPayload,
             cancelTask() {
+              return perform;
+            },
+          }) as Effect.Effect<never, never, unknown>
+        );
+
+        yield* $(perform);
+
+        return result;
+      } else {
+        yield* $(
+          Effect.fail(
+            new InvalidTaskStateTransition({
+              taskName: self.name,
+              workflowId,
+              from: state,
+              to: 'canceled',
+            })
+          )
+        );
+      }
+    });
+  }
+
+  fail(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const state = yield* $(self.getTaskState(workflowId));
+      const stateManager = yield* $(State);
+
+      if (isValidTaskInstanceTransition(state, 'canceled')) {
+        const executionContext = yield* $(ExecutionContext);
+
+        const perform = yield* $(
+          Effect.once(
+            Effect.gen(function* ($) {
+              const workflows = (yield* $(
+                stateManager.getWorkflows(workflowId, self.name)
+              )).filter(
+                (workflow) =>
+                  workflow.state === 'started' ||
+                  workflow.state === 'initialized'
+              );
+              yield* $(
+                Effect.all(
+                  workflows.map(({ id }) => self.subWorkflow.cancel(id)),
+                  { batching: true }
+                )
+              );
+              yield* $(stateManager.failTask(workflowId, self.name));
+              yield* $(self.workflow.fail(workflowId));
+            }).pipe(
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            )
+          )
+        );
+
+        const result = yield* $(
+          self.activities.onFail({
+            ...executionContext.defaultActivityPayload,
+            failTask() {
               return perform;
             },
           }) as Effect.Effect<never, never, unknown>
@@ -332,6 +418,29 @@ export class CompositeTask extends BaseTask {
 
       if (result) {
         yield* $(self.complete(workflowId));
+      }
+    });
+  }
+
+  maybeFail(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const workflows = yield* $(
+        stateManager.getWorkflows(workflowId, self.name)
+      );
+
+      const result = yield* $(
+        self.shouldFail({
+          workflows,
+          getWorkflowContext() {
+            return stateManager.getWorkflowContext(workflowId);
+          },
+        })
+      );
+
+      if (result) {
+        yield* $(self.fail(workflowId));
       }
     });
   }

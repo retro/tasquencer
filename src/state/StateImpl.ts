@@ -30,7 +30,7 @@ import {
   WorkflowInstanceParent,
   WorkflowInstanceState,
   isValidTaskInstanceTransition,
-  validWorkItemStateTransitions,
+  validWorkItemInstanceStateTransitions,
   validWorkflowInstanceTransitions,
 } from '../types.js';
 
@@ -581,7 +581,9 @@ export class StateImpl implements State {
         self.getWorkItem(workflowId, taskName, workItemId)
       );
 
-      if (!validWorkItemStateTransitions[workItem.state].has(nextState)) {
+      if (
+        !validWorkItemInstanceStateTransitions[workItem.state].has(nextState)
+      ) {
         return yield* $(
           Effect.fail(
             new InvalidWorkItemTransition({

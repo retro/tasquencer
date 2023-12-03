@@ -6,12 +6,14 @@ import { Workflow } from '../elements/Workflow.js';
 import {
   JoinType,
   ShouldTaskCompleteFn,
+  ShouldTaskFailFn,
   SplitType,
   TaskActivities,
   TaskOnCancelPayload,
   TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
+  TaskOnFailPayload,
   TaskOnStartPayload,
   TaskOnStartSym,
   activeWorkItemInstanceStates,
@@ -165,7 +167,16 @@ export class TaskBuilder<
     const hasActiveWorkItems = workItems.some((w) =>
       activeWorkItemInstanceStates.has(w.state)
     );
-    return Effect.succeed(workItems.length > 0 && !hasActiveWorkItems);
+    const hasCompletedWorkItems = workItems.some(
+      (w) => w.state === 'completed'
+    );
+    return Effect.succeed(
+      workItems.length > 0 && !hasActiveWorkItems && hasCompletedWorkItems
+    );
+  };
+  private shouldFail: ShouldTaskCompleteFn<any, any> = ({ workItems }) => {
+    const hasFailedItems = workItems.some((w) => w.state === 'failed');
+    return Effect.succeed(hasFailedItems);
   };
 
   withJoinType<T extends JoinType | undefined>(
@@ -187,7 +198,8 @@ export class TaskBuilder<
       .onEnable(() => Effect.unit)
       .onStart((_, input) => Effect.succeed(input))
       .onComplete(() => Effect.unit)
-      .onCancel(() => Effect.unit);
+      .onCancel(() => Effect.unit)
+      .onFail(() => Effect.unit);
   }
 
   onDisable<
@@ -298,6 +310,25 @@ export class TaskBuilder<
     return this;
   }
 
+  onFail<
+    F extends (payload: TaskOnFailPayload<C>) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    WIP,
+    TM,
+    WIM,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.activities.onFail = f;
+    return this;
+  }
+
   withWorkItem<P, W extends WorkItemBuilder<C, P, any>>(
     workItem: W
   ): TaskBuilder<
@@ -358,8 +389,26 @@ export class TaskBuilder<
     return this;
   }
 
+  withShouldFail<F extends ShouldTaskFailFn<C, WIP>>(
+    f: F
+  ): TaskBuilder<
+    C,
+    TA,
+    JT,
+    ST,
+    WIP,
+    TM,
+    WIM,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.shouldFail = f;
+    return this;
+  }
+
   build(workflow: Workflow, name: string) {
-    const { splitType, joinType, activities, shouldComplete } = this;
+    const { splitType, joinType, activities, shouldComplete, shouldFail } =
+      this;
 
     const task = new Task(
       name,
@@ -368,6 +417,7 @@ export class TaskBuilder<
       activities as unknown as TaskActivities<any>,
       this.workItem.build() as AnyWorkItemActivities,
       shouldComplete as ShouldTaskCompleteFn<any, any, never, never>,
+      shouldFail as ShouldTaskFailFn<any, any, never, never>,
       {
         splitType,
         joinType,

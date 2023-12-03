@@ -1,4 +1,4 @@
-import { Effect, pipe } from 'effect';
+import { Effect } from 'effect';
 
 import { State } from '../State.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
@@ -6,12 +6,15 @@ import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
   EndConditionDoesNotExist,
+  InvalidTaskState,
   InvalidTaskStateTransition,
+  InvalidWorkItemTransition,
   InvalidWorkflowStateTransition,
   ParentWorkflowDoesNotExist,
   StartConditionDoesNotExist,
   TaskDoesNotExist,
   TaskDoesNotExistInStore,
+  WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
 import {
@@ -123,11 +126,8 @@ export class Workflow<
           Effect.gen(function* ($) {
             const startCondition = yield* $(self.getStartCondition());
             yield* $(stateManager.updateWorkflowState(id, 'started'));
-            yield* $(
-              Effect.succeed(startCondition),
-              Effect.tap((s) => s.incrementMarking(id)),
-              Effect.tap((s) => s.enableTasks(id))
-            );
+            yield* $(startCondition.incrementMarking(id));
+            yield* $(startCondition.enableTasks(id));
           }).pipe(
             Effect.provideService(State, stateManager),
             Effect.provideService(ExecutionContext, executionContext)
@@ -218,7 +218,7 @@ export class Workflow<
     });
   }
 
-  cancel(id: WorkflowId, input?: unknown) {
+  cancel(id: WorkflowId, input?: unknown, autoCompleteParentTask = true) {
     const self = this;
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
@@ -227,33 +227,40 @@ export class Workflow<
       const defaultActivityPayload = yield* $(
         self.getDefaultActivityPayload(id)
       );
-
-      const perform = Effect.once(
-        pipe(
-          Effect.all(
-            [
+      const workflow = yield* $(stateManager.getWorkflow(id));
+      const perform = yield* $(
+        Effect.once(
+          Effect.gen(function* ($) {
+            yield* $(
               Effect.all(
                 Object.values(self.tasks).map((task) =>
                   task.maybeCancelOrDisable(id)
                 ),
                 { batching: true }
-              ),
+              )
+            );
+            yield* $(
               Effect.all(
                 Object.values(self.conditions).map((condition) =>
                   condition.cancel(id)
                 ),
                 { batching: true }
-              ),
-            ],
-            { discard: true }
-          ),
-          Effect.tap(() =>
-            Effect.gen(function* ($) {
-              yield* $(stateManager.updateWorkflowState(id, 'canceled'));
-            })
-          ),
-          Effect.provideService(State, stateManager),
-          Effect.provideService(ExecutionContext, executionContext)
+              )
+            );
+            yield* $(stateManager.updateWorkflowState(id, 'canceled'));
+            if (
+              self.parentTask &&
+              workflow.parent?.workflowId &&
+              autoCompleteParentTask
+            ) {
+              yield* $(
+                self.parentTask.maybeComplete(workflow.parent.workflowId)
+              );
+            }
+          }).pipe(
+            Effect.provideService(State, stateManager),
+            Effect.provideService(ExecutionContext, executionContext)
+          )
         )
       );
 
@@ -262,6 +269,80 @@ export class Workflow<
           {
             ...defaultActivityPayload,
             cancelWorkflow() {
+              return perform;
+            },
+          },
+          input
+        ) as Effect.Effect<never, never, unknown>
+      );
+
+      yield* $(perform);
+    });
+  }
+
+  fail(
+    id: WorkflowId,
+    input?: unknown
+  ): Effect.Effect<
+    State | ExecutionContext,
+    | ConditionDoesNotExist
+    | WorkflowDoesNotExist
+    | InvalidWorkflowStateTransition
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | ConditionDoesNotExistInStore
+    | EndConditionDoesNotExist
+    | InvalidTaskState
+    | WorkItemDoesNotExist
+    | InvalidWorkItemTransition,
+    void
+  > {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
+
+      const defaultActivityPayload = yield* $(
+        self.getDefaultActivityPayload(id)
+      );
+      const workflow = yield* $(stateManager.getWorkflow(id));
+
+      const perform = yield* $(
+        Effect.once(
+          Effect.gen(function* ($) {
+            yield* $(
+              Effect.all(
+                Object.values(self.tasks).map((task) =>
+                  task.maybeCancelOrDisable(id)
+                ),
+                { batching: true }
+              )
+            );
+            yield* $(
+              Effect.all(
+                Object.values(self.conditions).map((condition) =>
+                  condition.cancel(id)
+                ),
+                { batching: true }
+              )
+            );
+            yield* $(stateManager.updateWorkflowState(id, 'failed'));
+            if (self.parentTask && workflow.parent?.workflowId) {
+              yield* $(self.parentTask.maybeFail(workflow.parent.workflowId));
+            }
+          }).pipe(
+            Effect.provideService(State, stateManager),
+            Effect.provideService(ExecutionContext, executionContext)
+          )
+        )
+      );
+
+      yield* $(
+        self.activities.onFail(
+          {
+            ...defaultActivityPayload,
+            failWorkflow() {
               return perform;
             },
           },

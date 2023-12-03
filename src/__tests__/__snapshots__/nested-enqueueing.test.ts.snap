@@ -1,0 +1,475 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`handles nested enqueueing (1) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": "complete",
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "completed",
+    },
+    {
+      "context": "complete",
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t1",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`handles nested enqueueing (2) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "started",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "canceled",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": "cancel",
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+    {
+      "context": "cancel",
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t1",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles nested enqueueing (3) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "failed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "failed",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "failed",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": "fail",
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "failed",
+    },
+    {
+      "context": "fail",
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t1",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "failed",
+    },
+  ],
+}
+`;
+
+exports[`handles simple enqueueing (1) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": "complete",
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "completed",
+    },
+    {
+      "context": "complete",
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t1",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`handles simple enqueueing (2) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "started",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "started",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "canceled",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": "cancel",
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "started",
+    },
+    {
+      "context": "cancel",
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t1",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`handles simple enqueueing (3) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "failed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "generation": 1,
+      "name": "subT1",
+      "state": "failed",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": null,
+      "state": "failed",
+      "taskGeneration": 1,
+      "taskName": "subT1",
+      "workflowId": "workflow-2",
+      "workflowName": "sub",
+    },
+  ],
+  "workflows": [
+    {
+      "context": "fail",
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "failed",
+    },
+    {
+      "context": "fail",
+      "id": "workflow-2",
+      "name": "sub",
+      "parent": {
+        "taskGeneration": 1,
+        "taskName": "t1",
+        "workflowId": "workflow-1",
+        "workflowName": "activities",
+      },
+      "state": "failed",
+    },
+  ],
+}
+`;

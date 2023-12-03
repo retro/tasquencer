@@ -68,6 +68,12 @@ function makeWorkflowDefinitionAndLog() {
             yield* $(completeTask());
           })
         )
+        .onFail(({ failTask }) =>
+          Effect.gen(function* ($) {
+            log.push('T1 ON FAIL');
+            yield* $(failTask());
+          })
+        )
     )
     .task(
       't2',
@@ -243,7 +249,92 @@ it('runs activities (3)', () => {
       'T1 ON FIRE',
       'T1 WORK ITEM ON START',
       'T1 WORK ITEM ON START',
+      'T1 ON CANCEL',
+      'T1 WORK ITEM ON CANCEL',
+      'T1 WORK ITEM ON CANCEL',
       'WORKFLOW ON CANCEL',
+    ]);
+  });
+
+  Effect.runSync(program);
+});
+
+it('runs activities (2)', () => {
+  const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+
+    const service = yield* $(
+      workflowDefinition.build(),
+      Effect.flatMap((workflow) => Service.initialize(workflow)),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    yield* $(service.start());
+
+    yield* $(service.startTask('t1'));
+
+    const { id: id1 } = yield* $(service.initializeWorkItem('t1'));
+    const { id: id2 } = yield* $(service.initializeWorkItem('t1'));
+
+    yield* $(service.startWorkItem(`t1.${id1}`));
+    yield* $(service.startWorkItem(`t1.${id2}`));
+    yield* $(service.cancelWorkItem(`t1.${id1}`));
+    yield* $(service.completeWorkItem(`t1.${id2}`));
+
+    expect(log).toEqual([
+      'WORKFLOW ON START',
+      'T1 ON ENABLE',
+      'T2 ON ENABLE',
+      'T2 ON DISABLE',
+      'T1 ON FIRE',
+      'T1 WORK ITEM ON START',
+      'T1 WORK ITEM ON START',
+      'T1 WORK ITEM ON CANCEL',
+      'T1 WORK ITEM ON COMPLETE',
+      'T1 ON EXIT',
+      'WORKFLOW ON COMPLETE',
+    ]);
+  });
+
+  Effect.runSync(program);
+});
+
+it('runs activities (4)', () => {
+  const { workflowDefinition, log } = makeWorkflowDefinitionAndLog();
+  const program = Effect.gen(function* ($) {
+    const idGenerator = makeIdGenerator();
+
+    const service = yield* $(
+      workflowDefinition.build(),
+      Effect.flatMap((workflow) => Service.initialize(workflow)),
+      Effect.provideService(IdGenerator, idGenerator)
+    );
+
+    yield* $(service.start());
+
+    yield* $(service.startTask('t1'));
+
+    const { id: id1 } = yield* $(service.initializeWorkItem('t1'));
+    const { id: id2 } = yield* $(service.initializeWorkItem('t1'));
+
+    yield* $(service.startWorkItem(`t1.${id1}`));
+    yield* $(service.startWorkItem(`t1.${id2}`));
+
+    yield* $(service.failWorkItem(`t1.${id1}`));
+
+    expect(log).toEqual([
+      'WORKFLOW ON START',
+      'T1 ON ENABLE',
+      'T2 ON ENABLE',
+      'T2 ON DISABLE',
+      'T1 ON FIRE',
+      'T1 WORK ITEM ON START',
+      'T1 WORK ITEM ON START',
+      'T1 WORK ITEM ON FAIL',
+      'T1 ON FAIL',
+      'T1 WORK ITEM ON CANCEL',
+      'WORKFLOW ON FAIL',
     ]);
   });
 

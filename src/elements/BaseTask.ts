@@ -184,6 +184,24 @@ export abstract class BaseTask {
     unknown
   >;
 
+  abstract fail(
+    workflowId: WorkflowId
+  ): Effect.Effect<
+    ExecutionContext | State,
+    | TaskDoesNotExist
+    | TaskDoesNotExistInStore
+    | InvalidTaskStateTransition
+    | ConditionDoesNotExist
+    | ConditionDoesNotExistInStore
+    | InvalidTaskState
+    | EndConditionDoesNotExist
+    | InvalidWorkflowStateTransition
+    | WorkflowDoesNotExist
+    | InvalidWorkItemTransition
+    | WorkItemDoesNotExist,
+    unknown
+  >;
+
   abstract maybeComplete(
     workflowId: WorkflowId
   ): Effect.Effect<

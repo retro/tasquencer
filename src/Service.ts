@@ -106,7 +106,7 @@ export class Service<
 
   startWorkflow<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends Get<M, ['onStart', 'input']>
       ? [T] | [T, Get<M, ['onStart', 'input']>]
@@ -163,7 +163,7 @@ export class Service<
 
   cancelWorkflow<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends Get<M, ['onCancel', 'input']>
       ? [T] | [T, Get<M, ['onCancel', 'input']>]
@@ -185,11 +185,11 @@ export class Service<
 
   initializeWorkflow<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<Get<WorkflowMetadata, T>, string>>
   >(
-    ...args: undefined extends GetSym<Get<M, string>, WorkflowContextSym>
-      ? [T] | [T, GetSym<Get<M, string>, WorkflowContextSym>]
-      : [T, GetSym<Get<M, string>, WorkflowContextSym>]
+    ...args: undefined extends GetSym<M, WorkflowContextSym>
+      ? [T] | [T, GetSym<M, WorkflowContextSym>]
+      : [T, GetSym<M, WorkflowContextSym>]
   ) {
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
@@ -209,9 +209,7 @@ export class Service<
 
         yield* $(self.executePostActions());
 
-        return result as WorkflowInstance<
-          GetSym<Get<M, string>, WorkflowContextSym>
-        >;
+        return result as WorkflowInstance<GetSym<M, WorkflowContextSym>>;
       }
       return yield* $(Effect.fail(new InvalidPath({ path, pathType: 'task' })));
     }).pipe(Effect.provideService(State, this.state));
@@ -231,7 +229,7 @@ export class Service<
 
   updateWorkflowContext<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends GetSym<M, WorkflowContextSym>
       ? [T] | [T, GetSym<M, WorkflowContextSym>]
@@ -274,7 +272,7 @@ export class Service<
 
   startTask<
     T extends string | readonly string[],
-    M = GetSym<Get<WorkflowMetadata, T>, TaskOnStartSym>
+    M = GetSym<NonNullable<Get<WorkflowMetadata, T>>, TaskOnStartSym>
   >(
     ...args: undefined extends Get<M, 'input'>
       ? [T] | [T, Get<M, 'input'>]
@@ -327,7 +325,7 @@ export class Service<
 
   initializeWorkItem<
     T extends string | readonly string[],
-    M = Get<Get<WorkflowMetadata, T>, string>
+    M = NonNullable<Get<Get<WorkflowMetadata, T>, string>>
   >(
     ...args: undefined extends GetSym<M, WorkItemPayloadSym>
       ? [T] | [T, GetSym<M, WorkItemPayloadSym>]
@@ -378,7 +376,7 @@ export class Service<
 
   completeWorkItem<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends Get<M, ['onComplete', 'input']>
       ? [T] | [T, Get<M, ['onComplete', 'input']>]
@@ -429,7 +427,7 @@ export class Service<
 
   cancelWorkItem<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends Get<M, ['onCancel', 'input']>
       ? [T] | [T, Get<M, ['onCancel', 'input']>]
@@ -480,7 +478,7 @@ export class Service<
 
   startWorkItem<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends Get<M, ['onStart', 'input']>
       ? [T] | [T, Get<M, ['onStart', 'input']>]
@@ -531,7 +529,7 @@ export class Service<
 
   failWorkItem<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends Get<M, ['onFail', 'input']>
       ? [T] | [T, Get<M, ['onFail', 'input']>]
@@ -565,7 +563,7 @@ export class Service<
 
   updateWorkItemPayload<
     T extends string | readonly string[],
-    M = Get<WorkflowMetadata, T>
+    M = NonNullable<Get<WorkflowMetadata, T>>
   >(
     ...args: undefined extends GetSym<M, WorkItemPayloadSym>
       ? [T] | [T, GetSym<M, WorkItemPayloadSym>]
@@ -574,10 +572,6 @@ export class Service<
     const [pathOrArray, input] = args;
     const path = pathAsArray(pathOrArray);
     return this.unsafeUpdateWorkItemPayload(path, input);
-  }
-
-  getWorkItems(taskName: string) {
-    return this.state.getWorkItems(this.workflowId, TaskName(taskName));
   }
 
   getState() {

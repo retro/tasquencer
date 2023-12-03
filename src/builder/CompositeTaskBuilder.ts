@@ -14,11 +14,13 @@ import {
   CompositeTaskOnStartPayload,
   JoinType,
   ShouldCompositeTaskCompleteFn,
+  ShouldCompositeTaskFailFn,
   SplitType,
   TaskOnCancelPayload,
   TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
+  TaskOnFailPayload,
   TaskOnStartSym,
   WorkItemInstance,
   WorkflowAndWorkItemTypes,
@@ -197,7 +199,16 @@ export class CompositeTaskBuilder<
     const hasActiveWorkflows = workflows.some((w) =>
       activeWorkflowInstanceStates.has(w.state)
     );
-    return Effect.succeed(workflows.length > 0 && !hasActiveWorkflows);
+    const hasCompletedWorkflows = workflows.some(
+      (w) => w.state === 'completed'
+    );
+    return Effect.succeed(
+      workflows.length > 0 && !hasActiveWorkflows && hasCompletedWorkflows
+    );
+  };
+  private shouldFail: ShouldCompositeTaskFailFn<any, any> = ({ workflows }) => {
+    const hasFailedItems = workflows.some((w) => w.state === 'failed');
+    return Effect.succeed(hasFailedItems);
   };
 
   constructor(workflowBuilder: AnyWorkflowBuilder) {
@@ -223,7 +234,8 @@ export class CompositeTaskBuilder<
       .onEnable(() => Effect.unit)
       .onStart((_, input) => Effect.succeed(input))
       .onComplete(() => Effect.unit)
-      .onCancel(() => Effect.unit);
+      .onCancel(() => Effect.unit)
+      .onFail(() => Effect.unit);
   }
 
   onDisable<
@@ -343,6 +355,26 @@ export class CompositeTaskBuilder<
     return this;
   }
 
+  onFail<
+    F extends (payload: TaskOnFailPayload<C>) => Effect.Effect<any, any, any>
+  >(
+    f: F
+  ): CompositeTaskBuilder<
+    C,
+    WC,
+    TA,
+    JT,
+    ST,
+    CTM,
+    WM,
+    WWAIT,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.activities.onFail = f;
+    return this;
+  }
+
   withShouldComplete<F extends ShouldCompositeTaskCompleteFn<C, WC>>(
     f: F
   ): CompositeTaskBuilder<
@@ -361,6 +393,24 @@ export class CompositeTaskBuilder<
     return this;
   }
 
+  withShouldFail<F extends ShouldCompositeTaskFailFn<C, WC>>(
+    f: F
+  ): CompositeTaskBuilder<
+    C,
+    WC,
+    TA,
+    JT,
+    ST,
+    CTM,
+    WM,
+    WWAIT,
+    R | Effect.Effect.Context<ReturnType<F>>,
+    E | Effect.Effect.Error<ReturnType<F>>
+  > {
+    this.shouldFail = f;
+    return this;
+  }
+
   build(
     workflow: Workflow,
     name: string
@@ -372,8 +422,14 @@ export class CompositeTaskBuilder<
     | TaskDoesNotExist,
     void
   > {
-    const { splitType, joinType, activities, workflowBuilder, shouldComplete } =
-      this;
+    const {
+      splitType,
+      joinType,
+      activities,
+      workflowBuilder,
+      shouldComplete,
+      shouldFail,
+    } = this;
     return Effect.gen(function* ($) {
       const subWorkflow = yield* $(workflowBuilder.build());
       const compositeTask = new CompositeTask(
@@ -382,6 +438,7 @@ export class CompositeTaskBuilder<
         subWorkflow,
         activities as unknown as CompositeTaskActivities<C>,
         shouldComplete as ShouldCompositeTaskCompleteFn<any, any, never, never>,
+        shouldFail as ShouldCompositeTaskFailFn<any, any, never, never>,
         { joinType, splitType }
       );
       subWorkflow.setParentTask(compositeTask);
@@ -395,7 +452,7 @@ export interface InitialCompositeTaskFnReturnType<C> {
     workflow: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
   ) => CompositeTaskBuilder<
     C,
-    any,
+    WorkflowBuilderC<W>,
     any,
     undefined,
     undefined,

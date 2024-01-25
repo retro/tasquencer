@@ -1,6 +1,3 @@
-import { Effect, pipe } from 'effect';
-
-import { State } from '../State.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -14,6 +11,8 @@ import {
   WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+import { Effect, pipe } from 'effect';
 import {
   ExecutionContext,
   JoinType,
@@ -22,8 +21,9 @@ import {
   TaskState,
   WorkflowId,
 } from '../types.js';
+
 import { Condition } from './Condition.js';
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+import { State } from '../State.js';
 import { Workflow } from './Workflow.js';
 
 // TODO: handle case where task is completed and prev condition(s)
@@ -251,10 +251,17 @@ export abstract class BaseTask {
 
     return Effect.all(
       [
-        Effect.allSuccesses(taskUpdates, { batching: true }),
-        Effect.all(conditionUpdates, { batching: true, discard: true }),
+        Effect.allSuccesses(taskUpdates, {
+          batching: 'inherit',
+          concurrency: 'inherit',
+        }),
+        Effect.all(conditionUpdates, {
+          batching: 'inherit',
+          concurrency: 'inherit',
+          discard: true,
+        }),
       ],
-      { discard: true }
+      { discard: true, concurrency: 'inherit' }
     );
   }
 
@@ -289,7 +296,13 @@ export abstract class BaseTask {
         });
       });
 
-      return yield* $(Effect.all(updates, { batching: true, discard: true }));
+      return yield* $(
+        Effect.all(updates, {
+          batching: 'inherit',
+          discard: true,
+          concurrency: 'inherit',
+        })
+      );
     });
   }
 
@@ -323,7 +336,11 @@ export abstract class BaseTask {
     const updates = Array.from(this.outgoingFlows).map((flow) => {
       return flow.nextElement.incrementMarking(workflowId);
     });
-    return Effect.all(updates, { batching: true, discard: true });
+    return Effect.all(updates, {
+      batching: 'inherit',
+      concurrency: 'inherit',
+      discard: true,
+    });
   }
 
   protected isJoinSatisfied(workflowId: WorkflowId) {
@@ -349,7 +366,7 @@ export abstract class BaseTask {
           Array.from(self.incomingFlows).map((flow) =>
             flow.priorElement.getMarking(workflowId)
           ),
-          { batching: true }
+          { batching: 'inherit', concurrency: 'inherit' }
         )
       );
       return markings.filter((m) => m > 0).length === 1 ? true : false;
@@ -364,7 +381,7 @@ export abstract class BaseTask {
           Array.from(self.incomingFlows).map((flow) =>
             flow.priorElement.getMarking(workflowId)
           ),
-          { batching: true }
+          { batching: 'inherit', concurrency: 'inherit' }
         )
       );
 

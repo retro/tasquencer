@@ -1,9 +1,9 @@
-import { Effect } from 'effect';
-
-import { State } from '../State.js';
 import { ConditionName, ConditionNode, WorkflowId } from '../types.js';
-import { BaseTask } from './BaseTask.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+
+import { BaseTask } from './BaseTask.js';
+import { Effect } from 'effect';
+import { State } from '../State.js';
 import { Workflow } from './Workflow.js';
 
 export class Condition {
@@ -71,7 +71,7 @@ export class Condition {
         // is fine because we are just trying to disable all that are enabled.
         Effect.allSuccesses(
           tasks.map((task) => task.enable(workflowId)),
-          { batching: true }
+          { batching: 'inherit', concurrency: 'inherit' }
         )
       );
     });
@@ -92,7 +92,7 @@ export class Condition {
           // is fine because we are just trying to disable all that are enabled.
           Effect.allSuccesses(
             tasks.map((task) => task.disable(workflowId)),
-            { batching: true }
+            { batching: 'inherit', concurrency: 'inherit' }
           )
         );
       }

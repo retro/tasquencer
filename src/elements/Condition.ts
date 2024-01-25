@@ -1,9 +1,9 @@
-import { ConditionName, ConditionNode, WorkflowId } from '../types.js';
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
-
-import { BaseTask } from './BaseTask.js';
 import { Effect } from 'effect';
+
 import { State } from '../State.js';
+import { ConditionName, ConditionNode, WorkflowId } from '../types.js';
+import { BaseTask } from './BaseTask.js';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
 export class Condition {

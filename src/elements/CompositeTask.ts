@@ -1,13 +1,6 @@
-import {
-  CompositeTaskActivities,
-  ExecutionContext,
-  JoinType,
-  ShouldCompositeTaskCompleteFn,
-  ShouldCompositeTaskFailFn,
-  SplitType,
-  WorkflowId,
-  isValidTaskInstanceTransition,
-} from '../types.js';
+import { Effect, pipe } from 'effect';
+
+import { State } from '../State.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -21,10 +14,17 @@ import {
   WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
-import { Effect, pipe } from 'effect';
-
+import {
+  CompositeTaskActivities,
+  ExecutionContext,
+  JoinType,
+  ShouldCompositeTaskCompleteFn,
+  ShouldCompositeTaskFailFn,
+  SplitType,
+  WorkflowId,
+  isValidTaskInstanceTransition,
+} from '../types.js';
 import { BaseTask } from './BaseTask.js';
-import { State } from '../State.js';
 import { Workflow } from './Workflow.js';
 
 export class CompositeTask extends BaseTask {

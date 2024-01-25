@@ -1,3 +1,7 @@
+import { Effect } from 'effect';
+
+import { State } from '../State.js';
+import { E2WFOJNet } from '../e2wfojnet.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -23,14 +27,10 @@ import {
   WorkflowInstanceParent,
   finalWorkflowInstanceStates,
 } from '../types.js';
-
 import { BaseTask } from './BaseTask.js';
 import { CompositeTask } from './CompositeTask.js';
 import { Condition } from './Condition.js';
-import { E2WFOJNet } from '../e2wfojnet.js';
-import { Effect } from 'effect';
 import { Marking } from './Marking.js';
-import { State } from '../State.js';
 
 export type WorkflowMetadata<T> = T extends Workflow<
   any,

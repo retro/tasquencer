@@ -1,3 +1,6 @@
+import { Effect, pipe } from 'effect';
+
+import { State } from '../State.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -11,8 +14,6 @@ import {
   WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
-import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
-import { Effect, pipe } from 'effect';
 import {
   ExecutionContext,
   JoinType,
@@ -21,9 +22,8 @@ import {
   TaskState,
   WorkflowId,
 } from '../types.js';
-
 import { Condition } from './Condition.js';
-import { State } from '../State.js';
+import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
 import { Workflow } from './Workflow.js';
 
 // TODO: handle case where task is completed and prev condition(s)

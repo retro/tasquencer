@@ -1,6 +1,13 @@
-import { Effect, pipe } from 'effect';
-
-import { State } from '../State.js';
+import {
+  CompositeTaskActivities,
+  ExecutionContext,
+  JoinType,
+  ShouldCompositeTaskCompleteFn,
+  ShouldCompositeTaskFailFn,
+  SplitType,
+  WorkflowId,
+  isValidTaskInstanceTransition,
+} from '../types.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -14,17 +21,10 @@ import {
   WorkItemDoesNotExist,
   WorkflowDoesNotExist,
 } from '../errors.js';
-import {
-  CompositeTaskActivities,
-  ExecutionContext,
-  JoinType,
-  ShouldCompositeTaskCompleteFn,
-  ShouldCompositeTaskFailFn,
-  SplitType,
-  WorkflowId,
-  isValidTaskInstanceTransition,
-} from '../types.js';
+import { Effect, pipe } from 'effect';
+
 import { BaseTask } from './BaseTask.js';
+import { State } from '../State.js';
 import { Workflow } from './Workflow.js';
 
 export class CompositeTask extends BaseTask {
@@ -167,7 +167,11 @@ export class CompositeTask extends BaseTask {
                 condition.decrementMarking(workflowId)
               );
               yield* $(
-                Effect.all(updates, { discard: true, batching: true }),
+                Effect.all(updates, {
+                  discard: true,
+                  batching: 'inherit',
+                  concurrency: 'inherit',
+                }),
                 Effect.provideService(State, stateManager),
                 Effect.provideService(ExecutionContext, executionContext)
               );
@@ -272,7 +276,7 @@ export class CompositeTask extends BaseTask {
                   workflows.map(({ id }) =>
                     self.subWorkflow.cancel(id, undefined, false)
                   ),
-                  { batching: true }
+                  { batching: 'inherit', concurrency: 'inherit' }
                 )
               );
               yield* $(stateManager.completeTask(workflowId, self.name));
@@ -347,7 +351,7 @@ export class CompositeTask extends BaseTask {
                   workflows.map(({ id }) =>
                     self.subWorkflow.cancel(id, undefined, false)
                   ),
-                  { batching: true }
+                  { batching: 'inherit', concurrency: 'inherit' }
                 )
               );
               yield* $(stateManager.cancelTask(workflowId, self.name));
@@ -407,7 +411,7 @@ export class CompositeTask extends BaseTask {
               yield* $(
                 Effect.all(
                   workflows.map(({ id }) => self.subWorkflow.cancel(id)),
-                  { batching: true }
+                  { batching: 'inherit', concurrency: 'inherit' }
                 )
               );
               yield* $(stateManager.failTask(workflowId, self.name));

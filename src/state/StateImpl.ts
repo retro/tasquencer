@@ -3,7 +3,6 @@ import { Effect } from 'effect';
 import { create } from 'mutative';
 
 import { State } from '../State.js';
-import { Workflow } from '../elements/Workflow.js';
 import {
   ConditionDoesNotExistInStore,
   InvalidTaskStateTransition,

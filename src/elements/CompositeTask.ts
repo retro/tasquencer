@@ -65,9 +65,10 @@ export class CompositeTask extends BaseTask {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied(workflowId));
         if (isJoinSatisfied) {
           const executionContext = yield* $(ExecutionContext);
+          const path = yield* $(self.getTaskPath(workflowId));
           const enqueueStartTask = (input?: unknown) => {
             return executionContext.queue.offer({
-              path: [...executionContext.path, self.name],
+              path,
               type: 'startTask',
               input,
             });
@@ -193,9 +194,11 @@ export class CompositeTask extends BaseTask {
             return workflow;
           }).pipe(Effect.provideService(State, stateManager));
 
+        const path = yield* $(self.getTaskPath(workflowId));
+
         const enqueueStartWorkflow = (id: WorkflowId, input: unknown) => {
           return executionContext.queue.offer({
-            path: [...executionContext.path, id],
+            path: [...path, id],
             type: 'startWorkflow',
             input,
           });

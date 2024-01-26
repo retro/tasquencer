@@ -71,9 +71,10 @@ export class Task extends BaseTask {
         const isJoinSatisfied = yield* $(self.isJoinSatisfied(workflowId));
         if (isJoinSatisfied) {
           const executionContext = yield* $(ExecutionContext);
+          const path = yield* $(self.getTaskPath(workflowId));
           const enqueueStartTask = (input?: unknown) => {
             return executionContext.queue.offer({
-              path: [...executionContext.path, self.name],
+              path,
               type: 'startTask',
               input,
             });
@@ -185,12 +186,14 @@ export class Task extends BaseTask {
             .initializeWorkItem(workflowId, payload)
             .pipe(Effect.provideService(State, stateManager));
 
+        const path = yield* $(self.getTaskPath(workflowId));
+
         const enqueueStartWorkItem = (
           workItemId: WorkItemId,
           input?: unknown
         ) => {
           return executionContext.queue.offer({
-            path: [...executionContext.path, workItemId],
+            path: [...path, workItemId],
             type: 'startWorkItem',
             input,
           });
@@ -562,6 +565,9 @@ export class Task extends BaseTask {
         self.getWorkItemActivityPayload(workflowId, workItemId)
       );
 
+      const taskPath = yield* $(self.getTaskPath(workflowId));
+      const path = [...taskPath, workItemId];
+
       const result = yield* $(
         self.workItemActivities.onStart(
           {
@@ -572,21 +578,21 @@ export class Task extends BaseTask {
                 return {
                   enqueueCompleteWorkItem(input?: unknown) {
                     return executionContext.queue.offer({
-                      path: executionContext.path,
+                      path,
                       type: 'completeWorkItem',
                       input,
                     });
                   },
                   enqueueFailWorkItem(input?: unknown) {
                     return executionContext.queue.offer({
-                      path: executionContext.path,
+                      path,
                       type: 'failWorkItem',
                       input,
                     });
                   },
                   enqueueCancelWorkItem(input?: unknown) {
                     return executionContext.queue.offer({
-                      path: executionContext.path,
+                      path,
                       type: 'cancelWorkItem',
                       input,
                     });

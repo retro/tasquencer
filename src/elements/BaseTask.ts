@@ -99,6 +99,17 @@ export abstract class BaseTask {
     });
   }
 
+  getTaskPath(workflowId: WorkflowId) {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const stateManager = yield* $(State);
+      const [_, ...path] = yield* $(
+        stateManager.getTaskPath(workflowId, self.name)
+      );
+      return path;
+    });
+  }
+
   isEnabled(workflowId: WorkflowId) {
     return this.isStateEqualTo(workflowId, 'enabled');
   }
@@ -122,7 +133,8 @@ export abstract class BaseTask {
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
-    | InvalidTaskStateTransition,
+    | InvalidTaskStateTransition
+    | WorkflowDoesNotExist,
     unknown
   >;
 

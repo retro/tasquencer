@@ -387,7 +387,7 @@ export class Workflow<
             return yield* $(stateManager.getWorkflowContext(parent.workflowId));
           });
         },
-        updateParentWorkflowContext(context: unknown) {
+        updateParentWorkflowContext(contextOrUpdater: unknown) {
           return Effect.gen(function* ($) {
             const parent = workflow.parent;
             if (!parent) {
@@ -400,8 +400,22 @@ export class Workflow<
                 )
               );
             }
+            if (typeof contextOrUpdater === 'function') {
+              const context = yield* $(
+                stateManager.getWorkflowContext(parent.workflowId)
+              );
+              return yield* $(
+                stateManager.updateWorkflowContext(
+                  parent.workflowId,
+                  contextOrUpdater(context)
+                )
+              );
+            }
             return yield* $(
-              stateManager.updateWorkflowContext(parent.workflowId, context)
+              stateManager.updateWorkflowContext(
+                parent.workflowId,
+                contextOrUpdater
+              )
             );
           });
         },
@@ -410,8 +424,21 @@ export class Workflow<
             return (yield* $(stateManager.getWorkflowContext(id))) as Context;
           });
         },
-        updateWorkflowContext(context: unknown) {
-          return stateManager.updateWorkflowContext(id, context);
+        updateWorkflowContext(contextOrUpdater: unknown) {
+          return Effect.gen(function* ($) {
+            if (typeof contextOrUpdater === 'function') {
+              const context = yield* $(stateManager.getWorkflowContext(id));
+              return yield* $(
+                stateManager.updateWorkflowContext(
+                  id,
+                  contextOrUpdater(context)
+                )
+              );
+            }
+            return yield* $(
+              stateManager.updateWorkflowContext(id, contextOrUpdater)
+            );
+          });
         },
       };
     });

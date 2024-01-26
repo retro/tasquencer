@@ -670,8 +670,21 @@ export class Service<
             .getWorkflow(input.workflowId)
             .pipe(Effect.map((w) => w.context));
         },
-        updateWorkflowContext(context: unknown) {
-          return state.updateWorkflowContext(input.workflowId, context);
+        updateWorkflowContext(contextOrUpdater: unknown) {
+          return Effect.gen(function* ($) {
+            if (typeof contextOrUpdater === 'function') {
+              const workflow = yield* $(state.getWorkflow(input.workflowId));
+              return yield* $(
+                state.updateWorkflowContext(
+                  input.workflowId,
+                  contextOrUpdater(workflow.context)
+                )
+              );
+            }
+            return yield* $(
+              state.updateWorkflowContext(input.workflowId, contextOrUpdater)
+            );
+          });
         },
       },
       queue: {

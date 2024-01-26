@@ -65,11 +65,13 @@ export interface WorkflowBuilderDefinition {
   };
 }
 
+type UpdateWorkflowContext<C> = (
+  contextOrUpdater: C | ((context: C) => C)
+) => Effect.Effect<never, WorkflowDoesNotExist, void>;
+
 export interface DefaultTaskOrWorkItemActivityPayload<C> {
   getWorkflowContext(): Effect.Effect<never, WorkflowDoesNotExist, C>;
-  updateWorkflowContext(
-    context: C
-  ): Effect.Effect<never, WorkflowDoesNotExist, void>;
+  updateWorkflowContext: UpdateWorkflowContext<C>;
 }
 
 export type TaskOnDisablePayload<C> =
@@ -534,9 +536,7 @@ export interface ExecutionContext {
       WorkflowDoesNotExist,
       unknown
     >;
-    updateWorkflowContext: (
-      context: unknown
-    ) => Effect.Effect<never, WorkflowDoesNotExist, void>;
+    updateWorkflowContext: UpdateWorkflowContext<unknown>;
   };
   queue: {
     offer: (
@@ -624,16 +624,14 @@ export interface DefaultWorkflowActivityPayload<C, PC> {
   updateParentWorkflowContext: PC extends never
     ? never
     : (
-        context: PC
+        context: PC | ((context: PC) => PC)
       ) => Effect.Effect<
         never,
         ParentWorkflowDoesNotExist | WorkflowDoesNotExist,
         void
       >;
   getWorkflowContext(): Effect.Effect<never, WorkflowDoesNotExist, C>;
-  updateWorkflowContext(
-    context: C
-  ): Effect.Effect<never, WorkflowDoesNotExist, void>;
+  updateWorkflowContext: UpdateWorkflowContext<C>;
 }
 
 export type WorkflowOnStartPayload<C, PC> = DefaultWorkflowActivityPayload<

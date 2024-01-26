@@ -1,4 +1,4 @@
-import { Effect, pipe } from 'effect';
+import { Effect } from 'effect';
 import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../index.js';

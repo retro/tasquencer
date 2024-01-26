@@ -3,6 +3,7 @@ import { Effect } from 'effect';
 import { create } from 'mutative';
 
 import { State } from '../State.js';
+import { Workflow } from '../elements/Workflow.js';
 import {
   ConditionDoesNotExistInStore,
   InvalidTaskStateTransition,
@@ -290,6 +291,29 @@ export class StateImpl implements State {
     return this.getTask(workflowId, taskName).pipe(
       Effect.map((task) => task.state)
     );
+  }
+
+  getTaskPath(
+    workflowId: WorkflowId,
+    taskName: TaskName
+  ): Effect.Effect<
+    never,
+    TaskDoesNotExistInStore | WorkflowDoesNotExist,
+    string[]
+  > {
+    const self = this;
+    return Effect.gen(function* ($) {
+      const task = yield* $(self.getTask(workflowId, taskName));
+      const workflow = yield* $(self.getWorkflow(workflowId));
+      const path = [workflow.id, task.name];
+      if (workflow.parent) {
+        const parentPath = yield* $(
+          self.getTaskPath(workflow.parent.workflowId, workflow.parent.taskName)
+        );
+        return [...parentPath, ...path];
+      }
+      return path;
+    });
   }
 
   getCondition(workflowId: WorkflowId, conditionName: ConditionName) {

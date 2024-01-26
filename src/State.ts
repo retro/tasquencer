@@ -61,6 +61,15 @@ export interface State {
     taskName: TaskName
   ): Effect.Effect<never, TaskDoesNotExistInStore, TaskInstanceState>;
 
+  getTaskPath(
+    workflowId: WorkflowId,
+    taskName: TaskName
+  ): Effect.Effect<
+    never,
+    TaskDoesNotExistInStore | WorkflowDoesNotExist,
+    string[]
+  >;
+
   getCondition(
     workflowId: WorkflowId,
     conditionName: ConditionName

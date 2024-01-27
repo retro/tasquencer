@@ -530,6 +530,7 @@ export type ExecutionContextQueueItem =
 export interface ExecutionContext {
   path: readonly string[];
   workflowId: WorkflowId;
+  emitStateChanges: () => Effect.Effect<never, never, void>;
   defaultActivityPayload: {
     getWorkflowContext: () => Effect.Effect<
       never,

@@ -84,6 +84,7 @@ export class CompositeTask extends BaseTask {
               enableTask() {
                 return pipe(
                   perform,
+                  Effect.tap(() => executionContext.emitStateChanges()),
                   Effect.map(() => ({ enqueueStartTask }))
                 );
               },
@@ -126,7 +127,10 @@ export class CompositeTask extends BaseTask {
           self.activities.onDisable({
             ...executionContext.defaultActivityPayload,
             disableTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -211,6 +215,7 @@ export class CompositeTask extends BaseTask {
               startTask() {
                 return pipe(
                   perform,
+                  Effect.tap(() => executionContext.emitStateChanges()),
                   Effect.map(() => ({
                     initializeWorkflow,
                     enqueueStartWorkflow,
@@ -306,6 +311,7 @@ export class CompositeTask extends BaseTask {
             completeTask() {
               return pipe(
                 perform,
+                Effect.tap(() => executionContext.emitStateChanges()),
                 Effect.provideService(State, stateManager),
                 Effect.provideService(ExecutionContext, executionContext)
               );
@@ -369,7 +375,10 @@ export class CompositeTask extends BaseTask {
           self.activities.onCancel({
             ...executionContext.defaultActivityPayload,
             cancelTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -430,7 +439,10 @@ export class CompositeTask extends BaseTask {
           self.activities.onFail({
             ...executionContext.defaultActivityPayload,
             failTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );

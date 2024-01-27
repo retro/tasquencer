@@ -1,0 +1,378 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`will start work items concurrently and emit state change on each work item start 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "t1",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workItems": [
+    {
+      "id": "workItem-1",
+      "payload": 1,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "t1",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "id": "workItem-2",
+      "payload": 2,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "t1",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+    {
+      "id": "workItem-3",
+      "payload": 3,
+      "state": "completed",
+      "taskGeneration": 1,
+      "taskName": "t1",
+      "workflowId": "workflow-1",
+      "workflowName": "activities",
+    },
+  ],
+  "workflows": [
+    {
+      "context": undefined,
+      "id": "workflow-1",
+      "name": "activities",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`will start work items concurrently and emit state change on each work item start 2`] = `
+[
+  [
+    {
+      "change": {
+        "type": "WORKFLOW_INITIALIZED",
+        "workflow": {
+          "context": undefined,
+          "id": "workflow-1",
+          "name": "activities",
+          "parent": null,
+          "state": "initialized",
+        },
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "task": {
+          "generation": 0,
+          "name": "t1",
+          "state": "disabled",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "TASK_INITIALIZED",
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "condition": {
+          "marking": 0,
+          "name": "start",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "CONDITION_INITIALIZED",
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "condition": {
+          "marking": 0,
+          "name": "end",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "CONDITION_INITIALIZED",
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORKFLOW_STATE_UPDATED",
+        "workflow": {
+          "context": undefined,
+          "id": "workflow-1",
+          "name": "activities",
+          "parent": null,
+          "state": "started",
+        },
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "condition": {
+          "marking": 1,
+          "name": "start",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "CONDITION_MARKING_UPDATED",
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "task": {
+          "generation": 0,
+          "name": "t1",
+          "state": "enabled",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "TASK_STATE_UPDATED",
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "task": {
+          "generation": 1,
+          "name": "t1",
+          "state": "started",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "TASK_STATE_UPDATED",
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "condition": {
+          "marking": 0,
+          "name": "start",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "CONDITION_MARKING_UPDATED",
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_INITIALIZED",
+        "workItem": {
+          "id": "workItem-1",
+          "payload": 1,
+          "state": "initialized",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "type": "WORK_ITEM_INITIALIZED",
+        "workItem": {
+          "id": "workItem-2",
+          "payload": 2,
+          "state": "initialized",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "type": "WORK_ITEM_INITIALIZED",
+        "workItem": {
+          "id": "workItem-3",
+          "payload": 3,
+          "state": "initialized",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_STATE_UPDATED",
+        "workItem": {
+          "id": "workItem-1",
+          "payload": 1,
+          "state": "started",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_STATE_UPDATED",
+        "workItem": {
+          "id": "workItem-2",
+          "payload": 2,
+          "state": "started",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_STATE_UPDATED",
+        "workItem": {
+          "id": "workItem-3",
+          "payload": 3,
+          "state": "started",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_STATE_UPDATED",
+        "workItem": {
+          "id": "workItem-1",
+          "payload": 1,
+          "state": "completed",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_STATE_UPDATED",
+        "workItem": {
+          "id": "workItem-2",
+          "payload": 2,
+          "state": "completed",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+  [
+    {
+      "change": {
+        "type": "WORK_ITEM_STATE_UPDATED",
+        "workItem": {
+          "id": "workItem-3",
+          "payload": 3,
+          "state": "completed",
+          "taskGeneration": 1,
+          "taskName": "t1",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "task": {
+          "generation": 1,
+          "name": "t1",
+          "state": "completed",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "TASK_STATE_UPDATED",
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "condition": {
+          "marking": 1,
+          "name": "end",
+          "workflowId": "workflow-1",
+          "workflowName": "activities",
+        },
+        "type": "CONDITION_MARKING_UPDATED",
+      },
+      "getState": [Function],
+    },
+    {
+      "change": {
+        "type": "WORKFLOW_STATE_UPDATED",
+        "workflow": {
+          "context": undefined,
+          "id": "workflow-1",
+          "name": "activities",
+          "parent": null,
+          "state": "completed",
+        },
+      },
+      "getState": [Function],
+    },
+  ],
+]
+`;

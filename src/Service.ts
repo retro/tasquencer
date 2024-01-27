@@ -1,4 +1,4 @@
-import { Effect, Match, Option, Queue, pipe } from 'effect';
+import { Chunk, Effect, Match, Option, Queue, pipe } from 'effect';
 import { Get } from 'type-fest';
 
 import { State } from './State.js';
@@ -613,42 +613,51 @@ export class Service<
     const self = this;
 
     return Effect.gen(function* ($) {
-      yield* $(self.emitStateChanges());
       while (true) {
-        const item = yield* $(
-          Queue.poll(self.queue),
-          Effect.map(Option.getOrNull)
+        yield* $(self.emitStateChanges());
+
+        const queued = yield* $(
+          Queue.takeAll(self.queue),
+          Effect.map(Chunk.toReadonlyArray)
         );
 
-        if (item === null) {
+        if (queued.length === 0) {
           return;
         }
 
-        const match = pipe(
-          Match.type<ExecutionContextQueueItem>(),
-          Match.when({ type: 'startTask' }, ({ path, input }) =>
-            self.unsafeStartTask(path, input, false)
-          ),
-          Match.when({ type: 'startWorkflow' }, ({ path, input }) =>
-            self.unsafeStartWorkflow(path, input, false)
-          ),
-          Match.when({ type: 'startWorkItem' }, ({ path, input }) =>
-            self.unsafeStartWorkItem(path, input, false)
-          ),
-          Match.when({ type: 'completeWorkItem' }, ({ path, input }) =>
-            self.unsafeCompleteWorkItem(path, input, false)
-          ),
-          Match.when({ type: 'cancelWorkItem' }, ({ path, input }) =>
-            self.unsafeCancelWorkItem(path, input, false)
-          ),
-          Match.when({ type: 'failWorkItem' }, ({ path, input }) =>
-            self.unsafeFailWorkItem(path, input, false)
-          ),
-          Match.exhaustive
-        );
+        const queuedFx = queued.map((item) => {
+          const match = pipe(
+            Match.type<ExecutionContextQueueItem>(),
+            Match.when({ type: 'startTask' }, ({ path, input }) =>
+              self.unsafeStartTask(path, input, false)
+            ),
+            Match.when({ type: 'startWorkflow' }, ({ path, input }) =>
+              self.unsafeStartWorkflow(path, input, false)
+            ),
+            Match.when({ type: 'startWorkItem' }, ({ path, input }) =>
+              self.unsafeStartWorkItem(path, input, false)
+            ),
+            Match.when({ type: 'completeWorkItem' }, ({ path, input }) =>
+              self.unsafeCompleteWorkItem(path, input, false)
+            ),
+            Match.when({ type: 'cancelWorkItem' }, ({ path, input }) =>
+              self.unsafeCancelWorkItem(path, input, false)
+            ),
+            Match.when({ type: 'failWorkItem' }, ({ path, input }) =>
+              self.unsafeFailWorkItem(path, input, false)
+            ),
+            Match.exhaustive
+          );
 
-        yield* $(match(item));
-        yield* $(self.emitStateChanges());
+          return Effect.gen(function* ($) {
+            yield* $(match(item));
+            yield* $(self.emitStateChanges());
+          });
+        });
+
+        yield* $(
+          Effect.all(queuedFx, { concurrency: 'inherit', discard: true })
+        );
       }
     });
   }
@@ -664,6 +673,7 @@ export class Service<
     const { queue, state } = this;
     return {
       ...input,
+      emitStateChanges: () => this.emitStateChanges(),
       defaultActivityPayload: {
         getWorkflowContext() {
           return state

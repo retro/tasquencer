@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { Effect, pipe } from 'effect';
 
 import { State } from '../State.js';
 import { E2WFOJNet } from '../e2wfojnet.js';
@@ -140,7 +140,10 @@ export class Workflow<
           {
             ...defaultActivityPayload,
             startWorkflow() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           },
           input
@@ -206,7 +209,10 @@ export class Workflow<
         self.activities.onComplete({
           ...defaultActivityPayload,
           completeWorkflow() {
-            return perform;
+            return pipe(
+              perform,
+              Effect.tap(() => executionContext.emitStateChanges())
+            );
           },
         }) as Effect.Effect<never, never, unknown>
       );
@@ -280,7 +286,10 @@ export class Workflow<
           {
             ...defaultActivityPayload,
             cancelWorkflow() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           },
           input
@@ -354,7 +363,10 @@ export class Workflow<
           {
             ...defaultActivityPayload,
             failWorkflow() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           },
           input

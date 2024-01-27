@@ -90,6 +90,7 @@ export class Task extends BaseTask {
               enableTask() {
                 return pipe(
                   perform,
+                  Effect.tap(() => executionContext.emitStateChanges()),
                   Effect.map(() => ({ enqueueStartTask }))
                 );
               },
@@ -132,7 +133,10 @@ export class Task extends BaseTask {
           self.activities.onDisable({
             ...executionContext.defaultActivityPayload,
             disableTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -206,6 +210,7 @@ export class Task extends BaseTask {
               startTask() {
                 return pipe(
                   perform,
+                  Effect.tap(() => executionContext.emitStateChanges()),
                   Effect.map(() => ({
                     initializeWorkItem,
                     enqueueStartWorkItem,
@@ -303,7 +308,10 @@ export class Task extends BaseTask {
           self.activities.onComplete({
             ...executionContext.defaultActivityPayload,
             completeTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -350,7 +358,7 @@ export class Task extends BaseTask {
                   workItems.map(({ id }) =>
                     self.cancelWorkItem(workflowId, id, undefined, false)
                   ),
-                  { batching: true }
+                  { concurrency: 'inherit' }
                 )
               );
               yield* $(stateManager.cancelTask(workflowId, self.name));
@@ -365,7 +373,10 @@ export class Task extends BaseTask {
           self.activities.onCancel({
             ...executionContext.defaultActivityPayload,
             cancelTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -412,7 +423,7 @@ export class Task extends BaseTask {
                   workItems.map(({ id }) =>
                     self.cancelWorkItem(workflowId, id, undefined, false)
                   ),
-                  { batching: true }
+                  { concurrency: 'inherit' }
                 )
               );
               yield* $(stateManager.failTask(workflowId, self.name));
@@ -428,7 +439,10 @@ export class Task extends BaseTask {
           self.activities.onFail({
             ...executionContext.defaultActivityPayload,
             failTask() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           }) as Effect.Effect<never, never, unknown>
         );
@@ -574,7 +588,10 @@ export class Task extends BaseTask {
             ...workItemActivityPayload,
             startWorkItem() {
               return Effect.gen(function* ($) {
-                yield* $(perform);
+                yield* $(
+                  perform,
+                  Effect.tap(() => executionContext.emitStateChanges())
+                );
                 return {
                   enqueueCompleteWorkItem(input?: unknown) {
                     return executionContext.queue.offer({
@@ -622,6 +639,8 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsStarted(workflowId));
 
       const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
+
       const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
@@ -646,7 +665,10 @@ export class Task extends BaseTask {
           {
             ...workItemActivityPayload,
             completeWorkItem() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           },
           input
@@ -671,6 +693,8 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsStarted(workflowId));
 
       const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
+
       const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
@@ -695,7 +719,10 @@ export class Task extends BaseTask {
           {
             ...workItemActivityPayload,
             cancelWorkItem() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           },
           input
@@ -722,6 +749,8 @@ export class Task extends BaseTask {
       yield* $(self.ensureIsStarted(workflowId));
 
       const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
+
       const perform = yield* $(
         Effect.once(
           Effect.gen(function* ($) {
@@ -746,7 +775,10 @@ export class Task extends BaseTask {
           {
             ...workItemActivityPayload,
             failWorkItem() {
-              return perform;
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges())
+              );
             },
           },
           input
@@ -754,6 +786,7 @@ export class Task extends BaseTask {
       );
 
       yield* $(perform);
+
       if (autoFailTask) {
         yield* $(self.maybeFail(workflowId));
       }

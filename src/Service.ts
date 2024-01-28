@@ -656,7 +656,11 @@ export class Service<
         });
 
         yield* $(
-          Effect.all(queuedFx, { concurrency: 'inherit', discard: true })
+          Effect.all(queuedFx, {
+            concurrency: 'inherit',
+            batching: 'inherit',
+            discard: true,
+          })
         );
       }
     });
@@ -670,36 +674,43 @@ export class Service<
     path: readonly string[];
     workflowId: WorkflowId;
   }): ExecutionContext {
-    const { queue, state } = this;
+    const self = this;
     return {
       ...input,
-      emitStateChanges: () => this.emitStateChanges(),
+      emitStateChanges: () => self.emitStateChanges(),
       defaultActivityPayload: {
         getWorkflowContext() {
-          return state
+          return self.state
             .getWorkflow(input.workflowId)
             .pipe(Effect.map((w) => w.context));
         },
         updateWorkflowContext(contextOrUpdater: unknown) {
           return Effect.gen(function* ($) {
             if (typeof contextOrUpdater === 'function') {
-              const workflow = yield* $(state.getWorkflow(input.workflowId));
+              const workflow = yield* $(
+                self.state.getWorkflow(input.workflowId)
+              );
               return yield* $(
-                state.updateWorkflowContext(
+                self.state.updateWorkflowContext(
                   input.workflowId,
                   contextOrUpdater(workflow.context)
-                )
+                ),
+                Effect.tap(() => self.emitStateChanges())
               );
             }
             return yield* $(
-              state.updateWorkflowContext(input.workflowId, contextOrUpdater)
+              self.state.updateWorkflowContext(
+                input.workflowId,
+                contextOrUpdater
+              ),
+              Effect.tap(() => self.emitStateChanges())
             );
           });
         },
       },
       queue: {
         offer(item: ExecutionContextQueueItem) {
-          return queue.offer(item);
+          return self.queue.offer(item);
         },
       },
     };

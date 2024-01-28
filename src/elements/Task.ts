@@ -177,7 +177,13 @@ export class Task extends BaseTask {
               const updates = preSet.map((condition) =>
                 condition.decrementMarking(workflowId)
               );
-              yield* $(Effect.all(updates, { discard: true, batching: true }));
+              yield* $(
+                Effect.all(updates, {
+                  discard: true,
+                  concurrency: 'inherit',
+                  batching: 'inherit',
+                })
+              );
             }).pipe(
               Effect.provideService(State, stateManager),
               Effect.provideService(ExecutionContext, executionContext)
@@ -279,7 +285,7 @@ export class Task extends BaseTask {
                   workItems.map(({ id }) =>
                     self.cancelWorkItem(workflowId, id, undefined, false)
                   ),
-                  { batching: true }
+                  { concurrency: 'inherit', batching: true }
                 )
               );
               yield* $(stateManager.completeTask(workflowId, self.name));
@@ -358,7 +364,7 @@ export class Task extends BaseTask {
                   workItems.map(({ id }) =>
                     self.cancelWorkItem(workflowId, id, undefined, false)
                   ),
-                  { concurrency: 'inherit' }
+                  { concurrency: 'inherit', batching: 'inherit' }
                 )
               );
               yield* $(stateManager.cancelTask(workflowId, self.name));
@@ -423,7 +429,7 @@ export class Task extends BaseTask {
                   workItems.map(({ id }) =>
                     self.cancelWorkItem(workflowId, id, undefined, false)
                   ),
-                  { concurrency: 'inherit' }
+                  { concurrency: 'inherit', batching: 'inherit' }
                 )
               );
               yield* $(stateManager.failTask(workflowId, self.name));
@@ -528,9 +534,10 @@ export class Task extends BaseTask {
             .pipe(Effect.provideService(State, stateManager));
         },
         updateWorkItemPayload(payload: unknown) {
-          return self
-            .updateWorkItem(workflowId, workItemId, payload)
-            .pipe(Effect.provideService(State, stateManager));
+          return self.updateWorkItem(workflowId, workItemId, payload).pipe(
+            Effect.tap(() => executionContext.emitStateChanges()),
+            Effect.provideService(State, stateManager)
+          );
         },
       };
     });

@@ -273,7 +273,7 @@ export abstract class BaseTask {
           discard: true,
         }),
       ],
-      { discard: true, concurrency: 'inherit' }
+      { discard: true, concurrency: 'inherit', batching: 'inherit' }
     );
   }
 
@@ -310,8 +310,8 @@ export abstract class BaseTask {
 
       return yield* $(
         Effect.all(updates, {
-          batching: 'inherit',
           discard: true,
+          batching: 'inherit',
           concurrency: 'inherit',
         })
       );
@@ -349,8 +349,8 @@ export abstract class BaseTask {
       return flow.nextElement.incrementMarking(workflowId);
     });
     return Effect.all(updates, {
-      batching: 'inherit',
       concurrency: 'inherit',
+      batching: 'inherit',
       discard: true,
     });
   }
@@ -378,7 +378,7 @@ export abstract class BaseTask {
           Array.from(self.incomingFlows).map((flow) =>
             flow.priorElement.getMarking(workflowId)
           ),
-          { batching: 'inherit', concurrency: 'inherit' }
+          { concurrency: 'inherit', batching: 'inherit' }
         )
       );
       return markings.filter((m) => m > 0).length === 1 ? true : false;
@@ -407,7 +407,8 @@ export abstract class BaseTask {
     return Effect.allSuccesses(
       Array.from(this.outgoingFlows).map((flow) =>
         flow.nextElement.enableTasks(workflowId)
-      )
+      ),
+      { concurrency: 'inherit', batching: 'inherit' }
     );
   }
 }

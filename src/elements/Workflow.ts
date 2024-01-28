@@ -189,7 +189,7 @@ export class Workflow<
                 Object.values(self.tasks).map((task) =>
                   task.maybeCancelOrDisable(id)
                 ),
-                { batching: true }
+                { concurrency: 'inherit', batching: 'inherit' }
               )
             );
             yield* $(stateManager.updateWorkflowState(id, 'completed'));
@@ -253,7 +253,7 @@ export class Workflow<
                 Object.values(self.tasks).map((task) =>
                   task.maybeCancelOrDisable(id)
                 ),
-                { batching: true }
+                { concurrency: 'inherit', batching: 'inherit' }
               )
             );
             yield* $(
@@ -261,7 +261,7 @@ export class Workflow<
                 Object.values(self.conditions).map((condition) =>
                   condition.cancel(id)
                 ),
-                { batching: true }
+                { concurrency: 'inherit', batching: 'inherit' }
               )
             );
             yield* $(stateManager.updateWorkflowState(id, 'canceled'));
@@ -336,7 +336,7 @@ export class Workflow<
                 Object.values(self.tasks).map((task) =>
                   task.maybeCancelOrDisable(id)
                 ),
-                { batching: true }
+                { concurrency: 'inherit', batching: 'inherit' }
               )
             );
             yield* $(
@@ -344,7 +344,7 @@ export class Workflow<
                 Object.values(self.conditions).map((condition) =>
                   condition.cancel(id)
                 ),
-                { batching: true }
+                { concurrency: 'inherit', batching: 'inherit' }
               )
             );
             yield* $(stateManager.updateWorkflowState(id, 'failed'));
@@ -380,6 +380,7 @@ export class Workflow<
   getDefaultActivityPayload(id: WorkflowId) {
     return Effect.gen(function* ($) {
       const stateManager = yield* $(State);
+      const executionContext = yield* $(ExecutionContext);
       const workflow = yield* $(stateManager.getWorkflow(id));
 
       return {
@@ -444,11 +445,13 @@ export class Workflow<
                 stateManager.updateWorkflowContext(
                   id,
                   contextOrUpdater(context)
-                )
+                ),
+                Effect.tap(() => executionContext.emitStateChanges())
               );
             }
             return yield* $(
-              stateManager.updateWorkflowContext(id, contextOrUpdater)
+              stateManager.updateWorkflowContext(id, contextOrUpdater),
+              Effect.tap(() => executionContext.emitStateChanges())
             );
           });
         },

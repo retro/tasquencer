@@ -233,7 +233,10 @@ export class OrXorTaskFlowBuilder<
         toTask.addIncomingFlow(rightFlow);
       } else if (defaultFlow?.type === 'condition') {
         const condition = yield* $(workflow.getCondition(defaultFlow.name));
-        const flow = new TaskToConditionFlow(task, condition);
+        const flow = new TaskToConditionFlow(task, condition, {
+          order: Infinity,
+          isDefault: true,
+        });
         condition.addIncomingFlow(flow);
         task.addOutgoingFlow(flow);
       }

@@ -1,0 +1,1891 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 1`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "register",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 2`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "register",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 3`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 4`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 5`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_car",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 6`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_hotel",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_car",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "enabled",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 7`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_hotel",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_car",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-1",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": true,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-1",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 8`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "register",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-2",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 9`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "register",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-2",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 10`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-2",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 11`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-2",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 12`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_hotel",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "enabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-2",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 13`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_flight",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_hotel",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-2",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": true,
+      },
+      "id": "workflow-2",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 14`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "register",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": false,
+      },
+      "id": "workflow-3",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "initialized",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 15`] = `
+{
+  "conditions": [
+    {
+      "marking": 1,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 0,
+      "name": "register",
+      "state": "enabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": false,
+      },
+      "id": "workflow-3",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 16`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_hotel",
+      "state": "enabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": false,
+      },
+      "id": "workflow-3",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 17`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_hotel",
+      "state": "completed",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "pay",
+      "state": "enabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": false,
+      },
+      "id": "workflow-3",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "started",
+    },
+  ],
+}
+`;
+
+exports[`runs a net with "or" split and "or" join (with using explicit condition for default or split target) 18`] = `
+{
+  "conditions": [
+    {
+      "marking": 0,
+      "name": "start",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "register->book_hotel",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 1,
+      "name": "end",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_flight",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:register->book_car",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_flight->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_hotel->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "marking": 0,
+      "name": "implicit:book_car->pay",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "tasks": [
+    {
+      "generation": 1,
+      "name": "register",
+      "state": "completed",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_flight",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "book_hotel",
+      "state": "completed",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 0,
+      "name": "book_car",
+      "state": "disabled",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+    {
+      "generation": 1,
+      "name": "pay",
+      "state": "completed",
+      "workflowId": "workflow-3",
+      "workflowName": "or-split-join",
+    },
+  ],
+  "workItems": [],
+  "workflows": [
+    {
+      "context": {
+        "shouldBookCar": false,
+        "shouldBookFlight": false,
+      },
+      "id": "workflow-3",
+      "name": "or-split-join",
+      "parent": null,
+      "state": "completed",
+    },
+  ],
+}
+`;

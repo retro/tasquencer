@@ -27,7 +27,7 @@
     "build:main": "swc ./src -d ./build",
     "clean": "rimraf build coverage nyc_output",
     "type:dts": "tsc --emitDeclarationOnly --project tsconfig.build.json",
-    "type:check": "vitest typecheck",
+    "type:check": "vitest --typecheck.only",
     "format": "prettier \"src/**/*.ts\" --write",
     "format:check": "prettier \"src/**/*.ts\" --check",
     "lint": "eslint src --ext .ts --fix",

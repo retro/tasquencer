@@ -336,7 +336,7 @@ export class TaskBuilder<
     TA,
     JT,
     ST,
-    P,
+    WorkItemBuilderP<W>,
     TM,
     WorkItemBuilderWIM<W>,
     R | WorkItemBuilderR<W>,

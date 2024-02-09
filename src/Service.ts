@@ -652,6 +652,7 @@ export class Service<
           return Effect.gen(function* ($) {
             yield* $(match(item));
             yield* $(self.emitStateChanges());
+            yield* $(self.executePostActions());
           });
         });
 

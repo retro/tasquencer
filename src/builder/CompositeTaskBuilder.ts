@@ -12,10 +12,13 @@ import {
 import {
   CompositeTaskActivities,
   CompositeTaskOnStartPayload,
+  ConditionInstance,
+  ElementTypes,
   JoinType,
   ShouldCompositeTaskCompleteFn,
   ShouldCompositeTaskFailFn,
   SplitType,
+  TaskInstance,
   TaskOnCancelPayload,
   TaskOnCompletePayload,
   TaskOnDisablePayload,
@@ -23,7 +26,6 @@ import {
   TaskOnFailPayload,
   TaskOnStartSym,
   WorkItemInstance,
-  WorkflowAndWorkItemTypes,
   WorkflowInstance,
   activeWorkflowInstanceStates,
 } from '../types.js';
@@ -32,9 +34,9 @@ import {
   AnyWorkflowBuilderWithCorrectParentContext,
   WorkflowBuilderC,
   WorkflowBuilderE,
+  WorkflowBuilderElementTypes,
   WorkflowBuilderMetadata,
   WorkflowBuilderR,
-  WorkflowBuilderWorkflowAndWorkItemTypes,
 } from './WorkflowBuilder.js';
 
 export type CompositeTaskBuilderContext<T> = T extends CompositeTaskBuilder<
@@ -158,21 +160,20 @@ interface CompositeTaskActivityMetadata<I, R> {
   return: R;
 }
 
-export type CompositeTaskWorkflowAndWorkItemTypes<T> =
-  T extends CompositeTaskBuilder<
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer WWAIT,
-    any,
-    any
-  >
-    ? WWAIT
-    : never;
+export type CompositeTaskElementTypes<T> = T extends CompositeTaskBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer ET,
+  any,
+  any
+>
+  ? ET
+  : never;
 
 export class CompositeTaskBuilder<
   C,
@@ -182,9 +183,11 @@ export class CompositeTaskBuilder<
   ST extends SplitType | undefined,
   CTM = object,
   WM = never,
-  WWAIT extends WorkflowAndWorkItemTypes = {
+  ET extends ElementTypes = {
     workflow: WorkflowInstance;
     workItem: WorkItemInstance;
+    condition: ConditionInstance;
+    task: TaskInstance;
   },
   R = never,
   E = never
@@ -217,14 +220,14 @@ export class CompositeTaskBuilder<
 
   withJoinType<T extends JoinType | undefined>(
     joinType: T
-  ): CompositeTaskBuilder<C, WC, TA, T, ST, CTM, WM, WWAIT, R, E> {
+  ): CompositeTaskBuilder<C, WC, TA, T, ST, CTM, WM, ET, R, E> {
     this.joinType = joinType;
     return this;
   }
 
   withSplitType<T extends SplitType | undefined>(
     splitType: T
-  ): CompositeTaskBuilder<C, WC, TA, JT, T, CTM, WM, WWAIT, R, E> {
+  ): CompositeTaskBuilder<C, WC, TA, JT, T, CTM, WM, ET, R, E> {
     this.splitType = splitType;
     return this;
   }
@@ -250,7 +253,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -270,7 +273,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -305,7 +308,7 @@ export class CompositeTaskBuilder<
       }
     >,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -327,7 +330,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -347,7 +350,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -367,7 +370,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -385,7 +388,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -403,7 +406,7 @@ export class CompositeTaskBuilder<
     ST,
     CTM,
     WM,
-    WWAIT,
+    ET,
     R | Effect.Effect.Context<ReturnType<F>>,
     E | Effect.Effect.Error<ReturnType<F>>
   > {
@@ -458,7 +461,7 @@ export interface InitialCompositeTaskFnReturnType<C> {
     undefined,
     object,
     WorkflowBuilderMetadata<W>,
-    WorkflowBuilderWorkflowAndWorkItemTypes<W>,
+    WorkflowBuilderElementTypes<W>,
     WorkflowBuilderR<W>,
     WorkflowBuilderE<W>
   >;
@@ -477,7 +480,7 @@ export function compositeTask<C>() {
         undefined,
         object,
         WorkflowBuilderMetadata<W>,
-        WorkflowBuilderWorkflowAndWorkItemTypes<W>,
+        WorkflowBuilderElementTypes<W>,
         WorkflowBuilderR<W>,
         WorkflowBuilderE<W>
       >(workflow).initialize();

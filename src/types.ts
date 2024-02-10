@@ -487,10 +487,11 @@ interface WorkflowState {
 export type Store = Record<WorkflowId, WorkflowState>;
 export interface StorePersistableState<
   W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance
+  WI extends WorkItemInstance = WorkItemInstance,
+  T extends TaskInstance = TaskInstance
 > {
   workflows: W[];
-  tasks: TaskInstance[];
+  tasks: T[];
   conditions: ConditionInstance[];
   workItems: WI[];
 }
@@ -579,13 +580,14 @@ export type ShouldCompositeTaskFailFn<
 
 export type StateChange<
   W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance
+  WI extends WorkItemInstance = WorkItemInstance,
+  T extends TaskInstance = TaskInstance
 > =
   | { type: 'WORKFLOW_INITIALIZED'; workflow: W }
   | { type: 'WORKFLOW_STATE_UPDATED'; workflow: W }
   | { type: 'WORKFLOW_CONTEXT_UPDATED'; workflow: W }
-  | { type: 'TASK_INITIALIZED'; task: TaskInstance }
-  | { type: 'TASK_STATE_UPDATED'; task: TaskInstance }
+  | { type: 'TASK_INITIALIZED'; task: T }
+  | { type: 'TASK_STATE_UPDATED'; task: T }
   | { type: 'CONDITION_MARKING_UPDATED'; condition: ConditionInstance }
   | { type: 'CONDITION_INITIALIZED'; condition: ConditionInstance }
   | { type: 'WORK_ITEM_INITIALIZED'; workItem: WI }
@@ -594,10 +596,11 @@ export type StateChange<
 
 export interface StateChangeItem<
   W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance
+  WI extends WorkItemInstance = WorkItemInstance,
+  T extends TaskInstance = TaskInstance
 > {
-  change: StateChange<W, WI>;
-  getState: () => StorePersistableState;
+  change: StateChange<W, WI, T>;
+  getState: () => StorePersistableState<W, WI, T>;
 }
 export interface StateChangeLogger {
   log: (item: StateChangeItem) => void;
@@ -606,12 +609,15 @@ export interface StateChangeLogger {
 
 export type OnStateChangeFn<
   W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance
-> = (changes: StateChangeItem<W, WI>[]) => Effect.Effect<never, never, void>;
+  WI extends WorkItemInstance = WorkItemInstance,
+  T extends TaskInstance = TaskInstance
+> = (changes: StateChangeItem<W, WI, T>[]) => Effect.Effect<never, never, void>;
 
-export interface WorkflowAndWorkItemTypes {
+export interface ElementTypes {
   workflow: WorkflowInstance;
   workItem: WorkItemInstance;
+  task: TaskInstance;
+  condition: ConditionInstance;
 }
 
 export interface DefaultWorkflowActivityPayload<C, PC> {

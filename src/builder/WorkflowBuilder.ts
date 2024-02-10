@@ -8,13 +8,17 @@ import {
   StartConditionDoesNotExist,
 } from '../errors.js';
 import {
+  ConditionName,
   ConditionNode,
+  ElementTypes,
   NotExtends,
+  TaskInstanceState,
+  TaskName,
   WorkItemInstance,
   WorkflowActivities,
-  WorkflowAndWorkItemTypes,
   WorkflowBuilderDefinition,
   WorkflowContextSym,
+  WorkflowId,
   WorkflowInstance,
   WorkflowOnCancelPayload,
   WorkflowOnCompletePayload,
@@ -170,24 +174,41 @@ export type WorkflowBuilderMetadata<T> = T extends WorkflowBuilder<
   ? M
   : never;
 
-export type WorkflowBuilderWorkflowAndWorkItemTypes<T> =
-  T extends WorkflowBuilder<
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer WAWIT,
-    any
-  >
-    ? WAWIT
-    : never;
+export type WorkflowBuilderElementTypes<T> = T extends WorkflowBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer WAWIT,
+  any
+>
+  ? WAWIT
+  : never;
+
+export type WorkflowBuilderTaskName<T> = T extends WorkflowBuilder<
+  any,
+  any,
+  any,
+  any,
+  infer TN,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
+  ? TN
+  : never;
 
 interface WorkflowActivityMetadata<I, R> {
   input: I;
@@ -207,9 +228,11 @@ export class WorkflowBuilder<
   WBConnectedTasks = never,
   WBConnectedConditions = never,
   WBMetadata = { [WorkflowContextSym]: WBContext },
-  WBWorkflowAndWorkItemTypes extends WorkflowAndWorkItemTypes = {
+  WBElementTypes extends ElementTypes = {
     workflow: WorkflowInstance<WBContext, WName>;
     workItem: never;
+    condition: never;
+    task: never;
   },
   WBParentContext = never
 > {
@@ -254,7 +277,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     PC
   > {
     return this;
@@ -287,7 +310,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   > {
     this.activities.onStart = f;
@@ -320,7 +343,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   > {
     this.activities.onComplete = f;
@@ -354,7 +377,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   > {
     this.activities.onFail = f;
@@ -388,7 +411,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   > {
     this.activities.onCancel = f;
@@ -409,7 +432,19 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    {
+      workflow: WBElementTypes['workflow'];
+      workItem: WBElementTypes['workItem'];
+      condition:
+        | WBElementTypes['condition']
+        | {
+            name: CN & ConditionName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            marking: number;
+          };
+      task: WBElementTypes['task'];
+    },
     WBParentContext
   > {
     return this.addConditionUnsafe(conditionName);
@@ -429,7 +464,19 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    {
+      workflow: WBElementTypes['workflow'];
+      workItem: WBElementTypes['workItem'];
+      condition:
+        | WBElementTypes['condition']
+        | {
+            name: CN & ConditionName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            marking: number;
+          };
+      task: WBElementTypes['task'];
+    },
     WBParentContext
   > {
     this.definition.startCondition = conditionName;
@@ -450,7 +497,19 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    {
+      workflow: WBElementTypes['workflow'];
+      workItem: WBElementTypes['workItem'];
+      condition:
+        | WBElementTypes['condition']
+        | {
+            name: CN & ConditionName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            marking: number;
+          };
+      task: WBElementTypes['task'];
+    },
     WBParentContext
   > {
     this.definition.endCondition = conditionName;
@@ -483,10 +542,20 @@ export class WorkflowBuilder<
       }
     >,
     {
-      workflow: WBWorkflowAndWorkItemTypes['workflow'];
+      workflow: WBElementTypes['workflow'];
       workItem:
-        | WBWorkflowAndWorkItemTypes['workItem']
+        | WBElementTypes['workItem']
         | WorkItemInstance<TB.TaskBuilderWIP<T>, WName, TN>;
+      condition: WBElementTypes['condition'];
+      task:
+        | WBElementTypes['task']
+        | {
+            name: TN & TaskName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            generation: number;
+            state: TaskInstanceState;
+          };
     },
     WBParentContext
   >;
@@ -520,10 +589,20 @@ export class WorkflowBuilder<
       }
     >,
     {
-      workflow: WBWorkflowAndWorkItemTypes['workflow'];
+      workflow: WBElementTypes['workflow'];
       workItem:
-        | WBWorkflowAndWorkItemTypes['workItem']
+        | WBElementTypes['workItem']
         | WorkItemInstance<TB.TaskBuilderWIP<ReturnType<T>>, WName, TN>;
+      condition: WBElementTypes['condition'];
+      task:
+        | WBElementTypes['task']
+        | {
+            name: TN & TaskName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            generation: number;
+            state: TaskInstanceState;
+          };
     },
     WBParentContext
   >;
@@ -546,10 +625,20 @@ export class WorkflowBuilder<
       }
     >,
     {
-      workflow: WBWorkflowAndWorkItemTypes['workflow'];
+      workflow: WBElementTypes['workflow'];
       workItem:
-        | WBWorkflowAndWorkItemTypes['workItem']
+        | WBElementTypes['workItem']
         | WorkItemInstance<undefined, WName, TN>;
+      condition: WBElementTypes['condition'];
+      task:
+        | WBElementTypes['task']
+        | {
+            name: TN & TaskName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            generation: number;
+            state: TaskInstanceState;
+          };
     },
     WBParentContext
   >;
@@ -597,11 +686,24 @@ export class WorkflowBuilder<
     },
     {
       workflow:
-        | WBWorkflowAndWorkItemTypes['workflow']
-        | CTB.CompositeTaskWorkflowAndWorkItemTypes<T>['workflow'];
+        | WBElementTypes['workflow']
+        | CTB.CompositeTaskElementTypes<T>['workflow'];
       workItem:
-        | WBWorkflowAndWorkItemTypes['workItem']
-        | CTB.CompositeTaskWorkflowAndWorkItemTypes<T>['workItem'];
+        | WBElementTypes['workItem']
+        | CTB.CompositeTaskElementTypes<T>['workItem'];
+      condition:
+        | WBElementTypes['condition']
+        | CTB.CompositeTaskElementTypes<T>['condition'];
+      task:
+        | WBElementTypes['task']
+        | {
+            name: TN & TaskName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            generation: number;
+            state: TaskInstanceState;
+          }
+        | CTB.CompositeTaskElementTypes<T>['task'];
     },
     WBParentContext
   >;
@@ -634,11 +736,24 @@ export class WorkflowBuilder<
     },
     {
       workflow:
-        | WBWorkflowAndWorkItemTypes['workflow']
-        | CTB.CompositeTaskWorkflowAndWorkItemTypes<ReturnType<T>>['workflow'];
+        | WBElementTypes['workflow']
+        | CTB.CompositeTaskElementTypes<ReturnType<T>>['workflow'];
       workItem:
-        | WBWorkflowAndWorkItemTypes['workItem']
-        | CTB.CompositeTaskWorkflowAndWorkItemTypes<ReturnType<T>>['workItem'];
+        | WBElementTypes['workItem']
+        | CTB.CompositeTaskElementTypes<ReturnType<T>>['workItem'];
+      condition:
+        | WBElementTypes['condition']
+        | CTB.CompositeTaskElementTypes<ReturnType<T>>['condition'];
+      task:
+        | WBElementTypes['task']
+        | {
+            name: TN & TaskName;
+            workflowName: WName;
+            workflowId: WorkflowId;
+            generation: number;
+            state: TaskInstanceState;
+          }
+        | CTB.CompositeTaskElementTypes<ReturnType<T>>['task'];
     },
     WBParentContext
   >;
@@ -678,7 +793,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
@@ -702,7 +817,7 @@ export class WorkflowBuilder<
     WBConnectedTasks,
     WBConnectedConditions | CN,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   > {
     this.definition.flows.conditions[conditionName] = builder(
@@ -737,7 +852,7 @@ export class WorkflowBuilder<
     WBConnectedTasks | TN,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   >;
 
@@ -758,7 +873,7 @@ export class WorkflowBuilder<
     WBConnectedTasks | TN,
     WBConnectedConditions,
     WBMetadata,
-    WBWorkflowAndWorkItemTypes,
+    WBElementTypes,
     WBParentContext
   >;
 
@@ -799,7 +914,7 @@ export class WorkflowBuilder<
         E,
         WBContext,
         WBMetadata,
-        WBWorkflowAndWorkItemTypes
+        WBElementTypes
       >(name, activities as unknown as WorkflowActivities<any, any>);
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {

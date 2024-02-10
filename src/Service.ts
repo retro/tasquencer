@@ -24,6 +24,7 @@ import {
 } from './errors.js';
 import * as StateImpl from './state/StateImpl.js';
 import {
+  ElementTypes,
   ExecutionContext,
   ExecutionContextQueueItem,
   GetSym,
@@ -37,7 +38,6 @@ import {
   WorkItemId,
   WorkItemInstance,
   WorkItemPayloadSym,
-  WorkflowAndWorkItemTypes,
   WorkflowContextSym,
   WorkflowId,
   WorkflowInstance,
@@ -50,7 +50,7 @@ function pathAsArray(path: string | string[] | readonly string[]) {
 
 export class Service<
   WorkflowMetadata,
-  WWAIT extends WorkflowAndWorkItemTypes = WorkflowAndWorkItemTypes,
+  ET extends ElementTypes = ElementTypes,
   R = never,
   E = never
 > {
@@ -64,7 +64,9 @@ export class Service<
     private stateChangeLogger: StateChangeLogger
   ) {}
 
-  onStateChange(fn: OnStateChangeFn<WWAIT['workflow'], WWAIT['workItem']>) {
+  onStateChange(
+    fn: OnStateChangeFn<ET['workflow'], ET['workItem'], ET['task']>
+  ) {
     const changeLog = this.stateChangeLogger.drain();
     this.onStateChangeListener = fn;
     if (changeLog.length) {
@@ -579,7 +581,7 @@ export class Service<
     return Effect.gen(function* ($) {
       return (yield* $(
         self.state.getState()
-      )) as StorePersistableState<WWAIT['workflow'], WWAIT['workItem']>;
+      )) as StorePersistableState<ET['workflow'], ET['workItem'], ET['task']>;
     });
   }
 
@@ -1083,14 +1085,8 @@ function makeStateChangeLogger(): StateChangeLogger {
 type WorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
 type WorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
 type WorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
-type WorkflowWorkflowAndWorkItemTypes<T> = T extends Workflow<
-  any,
-  any,
-  any,
-  any,
-  infer WWAIT
->
-  ? WWAIT
+type WorkflowElementTypes<T> = T extends Workflow<any, any, any, any, infer ET>
+  ? ET
   : never;
 
 type IsOptional<T> = T extends never
@@ -1124,7 +1120,7 @@ export function initialize<
 
     const interpreter = new Service<
       WorkflowMetadata<W>,
-      WorkflowWorkflowAndWorkItemTypes<W>,
+      WorkflowElementTypes<W>,
       R,
       E
     >(id, workflow, state, queue, stateChangeLogger);
@@ -1137,10 +1133,14 @@ export function resume<
   W extends Workflow<any, any, any, any, any>,
   R extends WorkflowR<W> = WorkflowR<W>,
   E extends WorkflowE<W> = WorkflowE<W>,
-  WWAIT extends WorkflowWorkflowAndWorkItemTypes<W> = WorkflowWorkflowAndWorkItemTypes<W>
+  ET extends WorkflowElementTypes<W> = WorkflowElementTypes<W>
 >(
   workflow: W,
-  resumableState: StorePersistableState<WWAIT['workflow'], WWAIT['workItem']>
+  resumableState: StorePersistableState<
+    ET['workflow'],
+    ET['workItem'],
+    ET['task']
+  >
 ) {
   return Effect.gen(function* ($) {
     const queue = yield* $(Queue.unbounded<ExecutionContextQueueItem>());
@@ -1164,7 +1164,7 @@ export function resume<
       return yield* $(Effect.fail(new InvalidResumableState({})));
     }
 
-    const interpreter = new Service<WorkflowMetadata<W>, WWAIT, R, E>(
+    const interpreter = new Service<WorkflowMetadata<W>, ET, R, E>(
       rootWorkflow.id,
       workflow,
       state,

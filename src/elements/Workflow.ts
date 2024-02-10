@@ -19,10 +19,10 @@ import {
 } from '../errors.js';
 import {
   ConditionName,
+  ElementTypes,
   ExecutionContext,
   TaskName,
   WorkflowActivities,
-  WorkflowAndWorkItemTypes,
   WorkflowId,
   WorkflowInstanceParent,
   finalWorkflowInstanceStates,
@@ -46,7 +46,7 @@ export class Workflow<
   _E = never,
   Context = unknown,
   _WorkflowMetadata = object,
-  _WorkflowAndWorkItemInstances = WorkflowAndWorkItemTypes
+  _WorkflowAndWorkItemInstances = ElementTypes
 > {
   readonly tasks: Record<string, BaseTask> = {};
   readonly conditions: Record<string, Condition> = {};

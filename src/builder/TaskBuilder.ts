@@ -194,12 +194,12 @@ export class TaskBuilder<
   }
 
   initialize() {
-    return this.onDisable(() => Effect.unit)
-      .onEnable(() => Effect.unit)
+    return this.onDisable(() => Effect.void)
+      .onEnable(() => Effect.void)
       .onStart((_, input) => Effect.succeed(input))
-      .onComplete(() => Effect.unit)
-      .onCancel(() => Effect.unit)
-      .onFail(() => Effect.unit);
+      .onComplete(() => Effect.void)
+      .onCancel(() => Effect.void)
+      .onFail(() => Effect.void);
   }
 
   onDisable<
@@ -425,7 +425,7 @@ export class TaskBuilder<
     );
     workflow.addTask(task);
 
-    return Effect.unit;
+    return Effect.void;
   }
 }
 

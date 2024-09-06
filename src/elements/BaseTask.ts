@@ -85,26 +85,27 @@ export abstract class BaseTask {
 
   getTask(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      return yield* $(stateManager.getTask(workflowId, self.name));
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      return yield* stateManager.getTask(workflowId, self.name);
     });
   }
 
   getTaskState(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      return yield* $(stateManager.getTaskState(workflowId, self.name));
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      return yield* stateManager.getTaskState(workflowId, self.name);
     });
   }
 
   getTaskPath(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      const [_, ...path] = yield* $(
-        stateManager.getTaskPath(workflowId, self.name)
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      const [_, ...path] = yield* stateManager.getTaskPath(
+        workflowId,
+        self.name
       );
       return path;
     });
@@ -128,29 +129,29 @@ export abstract class BaseTask {
   abstract enable(
     workflowId: WorkflowId
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
     | ConditionDoesNotExistInStore
     | InvalidTaskStateTransition
     | WorkflowDoesNotExist,
-    unknown
+    ExecutionContext | State
   >;
 
   abstract disable(
     workflowId: WorkflowId
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    unknown
+    ExecutionContext | State
   >;
 
   abstract start(
     workflowId: WorkflowId,
     input?: unknown
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | InvalidTaskStateTransition
@@ -162,14 +163,14 @@ export abstract class BaseTask {
     | EndConditionDoesNotExist
     | InvalidWorkflowStateTransition
     | InvalidWorkItemTransition,
-    unknown
+    ExecutionContext | State
   >;
 
   abstract complete(
     workflowId: WorkflowId,
     input?: unknown
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -181,13 +182,13 @@ export abstract class BaseTask {
     | InvalidWorkflowStateTransition
     | WorkItemDoesNotExist
     | InvalidWorkItemTransition,
-    unknown
+    ExecutionContext | State
   >;
 
   abstract cancel(
     workflowId: WorkflowId
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -199,13 +200,13 @@ export abstract class BaseTask {
     | InvalidTaskStateTransition
     | InvalidWorkflowStateTransition
     | InvalidWorkItemTransition,
-    unknown
+    ExecutionContext | State
   >;
 
   abstract fail(
     workflowId: WorkflowId
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | InvalidTaskStateTransition
@@ -217,13 +218,13 @@ export abstract class BaseTask {
     | WorkflowDoesNotExist
     | InvalidWorkItemTransition
     | WorkItemDoesNotExist,
-    unknown
+    ExecutionContext | State
   >;
 
   abstract maybeComplete(
     workflowId: WorkflowId
   ): Effect.Effect<
-    ExecutionContext | State,
+    void,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -235,20 +236,18 @@ export abstract class BaseTask {
     | InvalidWorkflowStateTransition
     | WorkItemDoesNotExist
     | InvalidWorkItemTransition,
-    void
+    ExecutionContext | State
   >;
 
   maybeCancelOrDisable(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      const taskState = yield* $(
-        stateManager.getTaskState(workflowId, self.name)
-      );
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      const taskState = yield* stateManager.getTaskState(workflowId, self.name);
       if (taskState === 'started') {
-        return yield* $(self.cancel(workflowId));
+        return yield* self.cancel(workflowId);
       } else if (taskState === 'enabled') {
-        return yield* $(self.disable(workflowId));
+        return yield* self.disable(workflowId);
       }
     });
   }
@@ -291,39 +290,37 @@ export abstract class BaseTask {
   protected produceOrSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
     const self = this;
 
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      const context = yield* $(stateManager.getWorkflowContext(workflowId)); // TODO: Load context from store
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      const context = yield* stateManager.getWorkflowContext(workflowId); // TODO: Load context from store
       const flows = self.outgoingFlows;
 
       const updates = Array.from(flows).map((flow) => {
-        return Effect.gen(function* ($) {
+        return Effect.gen(function* () {
           if (flow.isDefault) {
-            yield* $(flow.nextElement.incrementMarking(workflowId));
+            yield* flow.nextElement.incrementMarking(workflowId);
           } else if (
-            flow.predicate ? yield* $(flow.predicate({ context })) : false
+            flow.predicate ? yield* flow.predicate({ context }) : false
           ) {
-            yield* $(flow.nextElement.incrementMarking(workflowId));
+            yield* flow.nextElement.incrementMarking(workflowId);
           }
         });
       });
 
-      return yield* $(
-        Effect.all(updates, {
-          discard: true,
-          batching: 'inherit',
-          concurrency: 'inherit',
-        })
-      );
+      return yield* Effect.all(updates, {
+        discard: true,
+        batching: 'inherit',
+        concurrency: 'inherit',
+      });
     });
   }
 
   protected produceXorSplitTokensInOutgoingFlows(workflowId: WorkflowId) {
     const self = this;
 
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      const context = yield* $(stateManager.getWorkflowContext(workflowId)); // TODO: Load context from store
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      const context = yield* stateManager.getWorkflowContext(workflowId); // TODO: Load context from store
       const flows = self.outgoingFlows;
       const sortedFlows = Array.from(flows).sort((flowA, flowB) => {
         return flowA.order > flowB.order
@@ -334,11 +331,11 @@ export abstract class BaseTask {
       });
       for (const flow of sortedFlows) {
         if (flow.isDefault) {
-          return yield* $(flow.nextElement.incrementMarking(workflowId));
+          return yield* flow.nextElement.incrementMarking(workflowId);
         } else if (
-          flow.predicate ? yield* $(flow.predicate({ context })) : false
+          flow.predicate ? yield* flow.predicate({ context }) : false
         ) {
-          return yield* $(flow.nextElement.incrementMarking(workflowId));
+          return yield* flow.nextElement.incrementMarking(workflowId);
         }
       }
     });
@@ -372,14 +369,12 @@ export abstract class BaseTask {
 
   protected isXorJoinSatisfied(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const markings = yield* $(
-        Effect.all(
-          Array.from(self.incomingFlows).map((flow) =>
-            flow.priorElement.getMarking(workflowId)
-          ),
-          { concurrency: 'inherit', batching: 'inherit' }
-        )
+    return Effect.gen(function* () {
+      const markings = yield* Effect.all(
+        Array.from(self.incomingFlows).map((flow) =>
+          flow.priorElement.getMarking(workflowId)
+        ),
+        { concurrency: 'inherit', batching: 'inherit' }
       );
       return markings.filter((m) => m > 0).length === 1 ? true : false;
     });
@@ -387,14 +382,12 @@ export abstract class BaseTask {
 
   protected isAndJoinSatisfied(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const markings = yield* $(
-        Effect.all(
-          Array.from(self.incomingFlows).map((flow) =>
-            flow.priorElement.getMarking(workflowId)
-          ),
-          { batching: 'inherit', concurrency: 'inherit' }
-        )
+    return Effect.gen(function* () {
+      const markings = yield* Effect.all(
+        Array.from(self.incomingFlows).map((flow) =>
+          flow.priorElement.getMarking(workflowId)
+        ),
+        { batching: 'inherit', concurrency: 'inherit' }
       );
 
       return markings.filter((m) => m > 0).length === markings.length

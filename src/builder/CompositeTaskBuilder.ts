@@ -233,12 +233,12 @@ export class CompositeTaskBuilder<
   }
 
   initialize() {
-    return this.onDisable(() => Effect.unit)
-      .onEnable(() => Effect.unit)
+    return this.onDisable(() => Effect.void)
+      .onEnable(() => Effect.void)
       .onStart((_, input) => Effect.succeed(input))
-      .onComplete(() => Effect.unit)
-      .onCancel(() => Effect.unit)
-      .onFail(() => Effect.unit);
+      .onComplete(() => Effect.void)
+      .onCancel(() => Effect.void)
+      .onFail(() => Effect.void);
   }
 
   onDisable<
@@ -418,12 +418,11 @@ export class CompositeTaskBuilder<
     workflow: Workflow,
     name: string
   ): Effect.Effect<
-    never,
+    void,
     | StartConditionDoesNotExist
     | EndConditionDoesNotExist
     | ConditionDoesNotExist
-    | TaskDoesNotExist,
-    void
+    | TaskDoesNotExist
   > {
     const {
       splitType,
@@ -433,8 +432,8 @@ export class CompositeTaskBuilder<
       shouldComplete,
       shouldFail,
     } = this;
-    return Effect.gen(function* ($) {
-      const subWorkflow = yield* $(workflowBuilder.build());
+    return Effect.gen(function* () {
+      const subWorkflow = yield* workflowBuilder.build();
       const compositeTask = new CompositeTask(
         name,
         workflow,

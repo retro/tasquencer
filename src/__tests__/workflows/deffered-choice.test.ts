@@ -19,29 +19,28 @@ it('supports the deferred choice pattern', ({ expect }) => {
     .connectTask('task_1a', (to) => to.condition('end'))
     .connectTask('task_2a', (to) => to.condition('end'));
 
-  const program = Effect.gen(function* ($) {
+  const program = Effect.gen(function* () {
     const idGenerator = makeIdGenerator();
 
-    const service = yield* $(
-      workflowDefinition.build(),
+    const service = yield* workflowDefinition.build().pipe(
       Effect.flatMap((workflow) => Service.initialize(workflow)),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    expect(yield* $(service.getState())).toMatchSnapshot();
+    expect(yield* service.getState()).toMatchSnapshot();
 
-    yield* $(service.start());
-    const state1 = yield* $(service.getState());
+    yield* service.start();
+    const state1 = yield* service.getState();
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['task_1', 'task_2']));
 
-    yield* $(service.startTask('task_1'));
-    const state2 = yield* $(service.getState());
+    yield* service.startTask('task_1');
+    const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['task_1a']));
 
-    yield* $(service.startTask('task_1a'));
-    const state3 = yield* $(service.getState());
+    yield* service.startTask('task_1a');
+    const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(state3.workflows[0]?.state).toBe('completed');
   });

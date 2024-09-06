@@ -57,15 +57,15 @@ export class CompositeTask extends BaseTask {
   enable(workflowId: WorkflowId) {
     const self = this;
 
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getTaskState(workflowId));
-      const stateManager = yield* $(State);
+    return Effect.gen(function* () {
+      const state = yield* self.getTaskState(workflowId);
+      const stateManager = yield* State;
 
       if (isValidTaskInstanceTransition(state, 'enabled')) {
-        const isJoinSatisfied = yield* $(self.isJoinSatisfied(workflowId));
+        const isJoinSatisfied = yield* self.isJoinSatisfied(workflowId);
         if (isJoinSatisfied) {
-          const executionContext = yield* $(ExecutionContext);
-          const path = yield* $(self.getTaskPath(workflowId));
+          const executionContext = yield* ExecutionContext;
+          const path = yield* self.getTaskPath(workflowId);
           const enqueueStartTask = (input?: unknown) => {
             return executionContext.queue.offer({
               path,
@@ -74,37 +74,33 @@ export class CompositeTask extends BaseTask {
             });
           };
 
-          const perform = yield* $(
-            Effect.once(stateManager.enableTask(workflowId, self.name))
+          const perform = yield* Effect.once(
+            stateManager.enableTask(workflowId, self.name)
           );
 
-          const result = yield* $(
-            self.activities.onEnable({
-              ...executionContext.defaultActivityPayload,
-              enableTask() {
-                return pipe(
-                  perform,
-                  Effect.tap(() => executionContext.emitStateChanges()),
-                  Effect.map(() => ({ enqueueStartTask }))
-                );
-              },
-            }) as Effect.Effect<never, never, unknown>
-          );
+          const result = yield* self.activities.onEnable({
+            ...executionContext.defaultActivityPayload,
+            enableTask() {
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges()),
+                Effect.map(() => ({ enqueueStartTask }))
+              );
+            },
+          }) as Effect.Effect<unknown>;
 
-          yield* $(perform);
+          yield* perform;
 
           return result;
         }
       } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              taskName: self.name,
-              workflowId,
-              from: state,
-              to: 'enabled',
-            })
-          )
+        yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            taskName: self.name,
+            workflowId,
+            from: state,
+            to: 'enabled',
+          })
         );
       }
     });
@@ -112,42 +108,38 @@ export class CompositeTask extends BaseTask {
 
   disable(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getTaskState(workflowId));
-      const stateManager = yield* $(State);
+    return Effect.gen(function* () {
+      const state = yield* self.getTaskState(workflowId);
+      const stateManager = yield* State;
 
       if (isValidTaskInstanceTransition(state, 'disabled')) {
-        const executionContext = yield* $(ExecutionContext);
+        const executionContext = yield* ExecutionContext;
 
-        const perform = yield* $(
-          Effect.once(stateManager.disableTask(workflowId, self.name))
+        const perform = yield* Effect.once(
+          stateManager.disableTask(workflowId, self.name)
         );
 
-        const result = yield* $(
-          self.activities.onDisable({
-            ...executionContext.defaultActivityPayload,
-            disableTask() {
-              return pipe(
-                perform,
-                Effect.tap(() => executionContext.emitStateChanges())
-              );
-            },
-          }) as Effect.Effect<never, never, unknown>
-        );
+        const result = yield* self.activities.onDisable({
+          ...executionContext.defaultActivityPayload,
+          disableTask() {
+            return pipe(
+              perform,
+              Effect.tap(() => executionContext.emitStateChanges())
+            );
+          },
+        }) as Effect.Effect<unknown>;
 
-        yield* $(perform);
+        yield* perform;
 
         return result;
       } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              taskName: self.name,
-              workflowId,
-              from: state,
-              to: 'disabled',
-            })
-          )
+        yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            taskName: self.name,
+            workflowId,
+            from: state,
+            to: 'disabled',
+          })
         );
       }
     });
@@ -155,50 +147,45 @@ export class CompositeTask extends BaseTask {
 
   start(workflowId: WorkflowId, input: unknown = undefined) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getTaskState(workflowId));
-      const stateManager = yield* $(State);
+    return Effect.gen(function* () {
+      const state = yield* self.getTaskState(workflowId);
+      const stateManager = yield* State;
 
       if (isValidTaskInstanceTransition(state, 'started')) {
-        const executionContext = yield* $(ExecutionContext);
+        const executionContext = yield* ExecutionContext;
 
-        const perform = yield* $(
-          Effect.once(
-            Effect.gen(function* ($) {
-              yield* $(stateManager.startTask(workflowId, self.name));
+        const perform = yield* Effect.once(
+          Effect.gen(function* () {
+            yield* stateManager.startTask(workflowId, self.name);
 
-              const preSet = Object.values(self.preSet);
-              const updates = preSet.map((condition) =>
-                condition.decrementMarking(workflowId)
-              );
-              yield* $(
-                Effect.all(updates, {
-                  discard: true,
-                  batching: 'inherit',
-                  concurrency: 'inherit',
-                }),
-                Effect.provideService(State, stateManager),
-                Effect.provideService(ExecutionContext, executionContext)
-              );
-            })
-          )
+            const preSet = Object.values(self.preSet);
+            const updates = preSet.map((condition) =>
+              condition.decrementMarking(workflowId)
+            );
+            yield* Effect.all(updates, {
+              discard: true,
+              batching: 'inherit',
+              concurrency: 'inherit',
+            }).pipe(
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            );
+          })
         );
 
         const initializeWorkflow = (context: unknown) =>
-          Effect.gen(function* ($) {
-            const taskData = yield* $(self.getTask(workflowId));
-            const workflow = yield* $(
-              self.subWorkflow.initialize(context, {
-                workflowId,
-                workflowName: self.workflow.name,
-                taskName: self.name,
-                taskGeneration: taskData.generation,
-              })
-            );
+          Effect.gen(function* () {
+            const taskData = yield* self.getTask(workflowId);
+            const workflow = yield* self.subWorkflow.initialize(context, {
+              workflowId,
+              workflowName: self.workflow.name,
+              taskName: self.name,
+              taskGeneration: taskData.generation,
+            });
             return workflow;
           }).pipe(Effect.provideService(State, stateManager));
 
-        const path = yield* $(self.getTaskPath(workflowId));
+        const path = yield* self.getTaskPath(workflowId);
 
         const enqueueStartWorkflow = (id: WorkflowId, input: unknown) => {
           return executionContext.queue.offer({
@@ -208,40 +195,36 @@ export class CompositeTask extends BaseTask {
           });
         };
 
-        const result = yield* $(
-          self.activities.onStart(
-            {
-              ...executionContext.defaultActivityPayload,
-              startTask() {
-                return pipe(
-                  perform,
-                  Effect.tap(() => executionContext.emitStateChanges()),
-                  Effect.map(() => ({
-                    initializeWorkflow,
-                    enqueueStartWorkflow,
-                  }))
-                );
-              },
+        const result = yield* self.activities.onStart(
+          {
+            ...executionContext.defaultActivityPayload,
+            startTask() {
+              return pipe(
+                perform,
+                Effect.tap(() => executionContext.emitStateChanges()),
+                Effect.map(() => ({
+                  initializeWorkflow,
+                  enqueueStartWorkflow,
+                }))
+              );
             },
-            input
-          ) as Effect.Effect<never, never, unknown>
-        );
+          },
+          input
+        ) as Effect.Effect<unknown>;
 
-        yield* $(perform);
+        yield* perform;
 
-        yield* $(self.maybeComplete(workflowId));
+        yield* self.maybeComplete(workflowId);
 
         return result;
       } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              taskName: self.name,
-              workflowId,
-              from: state,
-              to: 'started',
-            })
-          )
+        yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            taskName: self.name,
+            workflowId,
+            from: state,
+            to: 'started',
+          })
         );
       }
     });
@@ -250,7 +233,7 @@ export class CompositeTask extends BaseTask {
   complete(
     workflowId: WorkflowId
   ): Effect.Effect<
-    ExecutionContext | State,
+    unknown,
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
     | ConditionDoesNotExist
@@ -262,76 +245,67 @@ export class CompositeTask extends BaseTask {
     | InvalidWorkflowStateTransition
     | WorkItemDoesNotExist
     | InvalidWorkItemTransition,
-    unknown
+    ExecutionContext | State
   > {
     const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getTaskState(workflowId));
-      const stateManager = yield* $(State);
+    return Effect.gen(function* () {
+      const state = yield* self.getTaskState(workflowId);
+      const stateManager = yield* State;
       if (isValidTaskInstanceTransition(state, 'completed')) {
-        const executionContext = yield* $(ExecutionContext);
+        const executionContext = yield* ExecutionContext;
 
-        const perform = yield* $(
-          Effect.once(
-            Effect.gen(function* ($) {
-              const workflows = (yield* $(
-                stateManager.getWorkflows(workflowId, self.name)
-              )).filter(
-                (w) => w.state === 'started' || w.state === 'initialized'
-              );
-              yield* $(
-                Effect.all(
-                  workflows.map(({ id }) =>
-                    self.subWorkflow.cancel(id, undefined, false)
-                  ),
-                  { batching: 'inherit', concurrency: 'inherit' }
-                )
-              );
-              yield* $(stateManager.completeTask(workflowId, self.name));
-              yield* $(self.cancelCancellationRegion(workflowId));
+        const perform = yield* Effect.once(
+          Effect.gen(function* () {
+            const workflows = (yield* stateManager.getWorkflows(
+              workflowId,
+              self.name
+            )).filter(
+              (w) => w.state === 'started' || w.state === 'initialized'
+            );
+            yield* Effect.all(
+              workflows.map(({ id }) =>
+                self.subWorkflow.cancel(id, undefined, false)
+              ),
+              { batching: 'inherit', concurrency: 'inherit' }
+            );
+            yield* stateManager.completeTask(workflowId, self.name);
+            yield* self.cancelCancellationRegion(workflowId);
 
-              const isJoinSatisfied = yield* $(
-                self.isJoinSatisfied(workflowId)
-              );
+            const isJoinSatisfied = yield* self.isJoinSatisfied(workflowId);
 
-              if (isJoinSatisfied) {
-                yield* $(self.enable(workflowId));
-              }
+            if (isJoinSatisfied) {
+              yield* self.enable(workflowId);
+            }
 
-              yield* $(self.produceTokensInOutgoingFlows(workflowId));
-              yield* $(self.enablePostTasks(workflowId));
-              yield* $(self.workflow.maybeComplete(workflowId));
-            })
-          )
+            yield* self.produceTokensInOutgoingFlows(workflowId);
+            yield* self.enablePostTasks(workflowId);
+            yield* self.workflow.maybeComplete(workflowId);
+          })
         );
 
-        const result = yield* $(
-          self.activities.onComplete({
-            ...executionContext.defaultActivityPayload,
-            completeTask() {
-              return pipe(
-                perform,
-                Effect.tap(() => executionContext.emitStateChanges()),
-                Effect.provideService(State, stateManager),
-                Effect.provideService(ExecutionContext, executionContext)
-              );
-            },
-          }) as Effect.Effect<never, never, unknown>
-        );
+        const result = yield* self.activities.onComplete({
+          ...executionContext.defaultActivityPayload,
+          completeTask() {
+            return pipe(
+              perform,
+              Effect.tap(() => executionContext.emitStateChanges()),
+              Effect.provideService(State, stateManager),
+              Effect.provideService(ExecutionContext, executionContext)
+            );
+          },
+        }) as Effect.Effect<unknown>;
 
-        yield* $(perform);
+        yield* perform;
 
         return result;
       } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              taskName: self.name,
-              workflowId,
-              from: state,
-              to: 'completed',
-            })
-          )
+        yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            taskName: self.name,
+            workflowId,
+            from: state,
+            to: 'completed',
+          })
         );
       }
     });
@@ -339,63 +313,55 @@ export class CompositeTask extends BaseTask {
 
   cancel(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getTaskState(workflowId));
-      const stateManager = yield* $(State);
+    return Effect.gen(function* () {
+      const state = yield* self.getTaskState(workflowId);
+      const stateManager = yield* State;
       if (isValidTaskInstanceTransition(state, 'canceled')) {
-        const executionContext = yield* $(ExecutionContext);
+        const executionContext = yield* ExecutionContext;
 
-        const perform = yield* $(
-          Effect.once(
-            Effect.gen(function* ($) {
-              const workflows = (yield* $(
-                stateManager.getWorkflows(workflowId, self.name)
-              )).filter(
-                (workflow) =>
-                  workflow.state === 'started' ||
-                  workflow.state === 'initialized'
-              );
-              yield* $(
-                Effect.all(
-                  workflows.map(({ id }) =>
-                    self.subWorkflow.cancel(id, undefined, false)
-                  ),
-                  { batching: 'inherit', concurrency: 'inherit' }
-                )
-              );
-              yield* $(stateManager.cancelTask(workflowId, self.name));
-            }).pipe(
-              Effect.provideService(State, stateManager),
-              Effect.provideService(ExecutionContext, executionContext)
-            )
+        const perform = yield* Effect.once(
+          Effect.gen(function* () {
+            const workflows = (yield* stateManager.getWorkflows(
+              workflowId,
+              self.name
+            )).filter(
+              (workflow) =>
+                workflow.state === 'started' || workflow.state === 'initialized'
+            );
+            yield* Effect.all(
+              workflows.map(({ id }) =>
+                self.subWorkflow.cancel(id, undefined, false)
+              ),
+              { batching: 'inherit', concurrency: 'inherit' }
+            );
+            yield* stateManager.cancelTask(workflowId, self.name);
+          }).pipe(
+            Effect.provideService(State, stateManager),
+            Effect.provideService(ExecutionContext, executionContext)
           )
         );
 
-        const result = yield* $(
-          self.activities.onCancel({
-            ...executionContext.defaultActivityPayload,
-            cancelTask() {
-              return pipe(
-                perform,
-                Effect.tap(() => executionContext.emitStateChanges())
-              );
-            },
-          }) as Effect.Effect<never, never, unknown>
-        );
+        const result = yield* self.activities.onCancel({
+          ...executionContext.defaultActivityPayload,
+          cancelTask() {
+            return pipe(
+              perform,
+              Effect.tap(() => executionContext.emitStateChanges())
+            );
+          },
+        }) as Effect.Effect<unknown>;
 
-        yield* $(perform);
+        yield* perform;
 
         return result;
       } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              taskName: self.name,
-              workflowId,
-              from: state,
-              to: 'canceled',
-            })
-          )
+        yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            taskName: self.name,
+            workflowId,
+            from: state,
+            to: 'canceled',
+          })
         );
       }
     });
@@ -403,63 +369,55 @@ export class CompositeTask extends BaseTask {
 
   fail(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const state = yield* $(self.getTaskState(workflowId));
-      const stateManager = yield* $(State);
+    return Effect.gen(function* () {
+      const state = yield* self.getTaskState(workflowId);
+      const stateManager = yield* State;
 
       if (isValidTaskInstanceTransition(state, 'canceled')) {
-        const executionContext = yield* $(ExecutionContext);
+        const executionContext = yield* ExecutionContext;
 
-        const perform = yield* $(
-          Effect.once(
-            Effect.gen(function* ($) {
-              const workflows = (yield* $(
-                stateManager.getWorkflows(workflowId, self.name)
-              )).filter(
-                (workflow) =>
-                  workflow.state === 'started' ||
-                  workflow.state === 'initialized'
-              );
-              yield* $(
-                Effect.all(
-                  workflows.map(({ id }) => self.subWorkflow.cancel(id)),
-                  { batching: 'inherit', concurrency: 'inherit' }
-                )
-              );
-              yield* $(stateManager.failTask(workflowId, self.name));
-              yield* $(self.workflow.fail(workflowId));
-            }).pipe(
-              Effect.provideService(State, stateManager),
-              Effect.provideService(ExecutionContext, executionContext)
-            )
+        const perform = yield* Effect.once(
+          Effect.gen(function* () {
+            const workflows = (yield* stateManager.getWorkflows(
+              workflowId,
+              self.name
+            )).filter(
+              (workflow) =>
+                workflow.state === 'started' || workflow.state === 'initialized'
+            );
+            yield* Effect.all(
+              workflows.map(({ id }) => self.subWorkflow.cancel(id)),
+              { batching: 'inherit', concurrency: 'inherit' }
+            );
+            yield* stateManager.failTask(workflowId, self.name);
+            yield* self.workflow.fail(workflowId);
+          }).pipe(
+            Effect.provideService(State, stateManager),
+            Effect.provideService(ExecutionContext, executionContext)
           )
         );
 
-        const result = yield* $(
-          self.activities.onFail({
-            ...executionContext.defaultActivityPayload,
-            failTask() {
-              return pipe(
-                perform,
-                Effect.tap(() => executionContext.emitStateChanges())
-              );
-            },
-          }) as Effect.Effect<never, never, unknown>
-        );
+        const result = yield* self.activities.onFail({
+          ...executionContext.defaultActivityPayload,
+          failTask() {
+            return pipe(
+              perform,
+              Effect.tap(() => executionContext.emitStateChanges())
+            );
+          },
+        }) as Effect.Effect<unknown>;
 
-        yield* $(perform);
+        yield* perform;
 
         return result;
       } else {
-        yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              taskName: self.name,
-              workflowId,
-              from: state,
-              to: 'canceled',
-            })
-          )
+        yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            taskName: self.name,
+            workflowId,
+            from: state,
+            to: 'canceled',
+          })
         );
       }
     });
@@ -467,46 +425,38 @@ export class CompositeTask extends BaseTask {
 
   maybeComplete(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      const workflows = yield* $(
-        stateManager.getWorkflows(workflowId, self.name)
-      );
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      const workflows = yield* stateManager.getWorkflows(workflowId, self.name);
 
-      const result = yield* $(
-        self.shouldComplete({
-          workflows,
-          getWorkflowContext() {
-            return stateManager.getWorkflowContext(workflowId);
-          },
-        })
-      );
+      const result = yield* self.shouldComplete({
+        workflows,
+        getWorkflowContext() {
+          return stateManager.getWorkflowContext(workflowId);
+        },
+      });
 
       if (result) {
-        yield* $(self.complete(workflowId));
+        yield* self.complete(workflowId);
       }
     });
   }
 
   maybeFail(workflowId: WorkflowId) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const stateManager = yield* $(State);
-      const workflows = yield* $(
-        stateManager.getWorkflows(workflowId, self.name)
-      );
+    return Effect.gen(function* () {
+      const stateManager = yield* State;
+      const workflows = yield* stateManager.getWorkflows(workflowId, self.name);
 
-      const result = yield* $(
-        self.shouldFail({
-          workflows,
-          getWorkflowContext() {
-            return stateManager.getWorkflowContext(workflowId);
-          },
-        })
-      );
+      const result = yield* self.shouldFail({
+        workflows,
+        getWorkflowContext() {
+          return stateManager.getWorkflowContext(workflowId);
+        },
+      });
 
       if (result) {
-        yield* $(self.fail(workflowId));
+        yield* self.fail(workflowId);
       }
     });
   }

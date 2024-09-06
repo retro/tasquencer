@@ -11,36 +11,35 @@ const workflowDefinition = Builder.workflow<'complete' | 'fail' | 'cancel'>()
     t()
       .withWorkItem((w) =>
         w().onStart(({ startWorkItem, getWorkflowContext }) =>
-          Effect.gen(function* ($) {
-            const context = yield* $(getWorkflowContext());
+          Effect.gen(function* () {
+            const context = yield* getWorkflowContext();
             const {
               enqueueCancelWorkItem,
               enqueueCompleteWorkItem,
               enqueueFailWorkItem,
-            } = yield* $(startWorkItem());
+            } = yield* startWorkItem();
             if (context === 'cancel') {
-              yield* $(enqueueCancelWorkItem());
+              yield* enqueueCancelWorkItem();
             } else if (context === 'fail') {
-              yield* $(enqueueFailWorkItem());
+              yield* enqueueFailWorkItem();
             } else {
-              yield* $(enqueueCompleteWorkItem());
+              yield* enqueueCompleteWorkItem();
             }
           })
         )
       )
       .onEnable(({ enableTask }) =>
-        Effect.gen(function* ($) {
-          const { enqueueStartTask } = yield* $(enableTask());
-          yield* $(enqueueStartTask());
+        Effect.gen(function* () {
+          const { enqueueStartTask } = yield* enableTask();
+          yield* enqueueStartTask();
         })
       )
       .onStart(({ startTask }) =>
-        Effect.gen(function* ($) {
-          const { initializeWorkItem, enqueueStartWorkItem } = yield* $(
-            startTask()
-          );
-          const { id } = yield* $(initializeWorkItem());
-          yield* $(enqueueStartWorkItem(id));
+        Effect.gen(function* () {
+          const { initializeWorkItem, enqueueStartWorkItem } =
+            yield* startTask();
+          const { id } = yield* initializeWorkItem();
+          yield* enqueueStartWorkItem(id);
         })
       )
   )
@@ -49,17 +48,16 @@ const workflowDefinition = Builder.workflow<'complete' | 'fail' | 'cancel'>()
   .connectTask('t1', (to) => to.condition('end'));
 
 it('handles simple enqueueing (1)', ({ expect }) => {
-  const program = Effect.gen(function* ($) {
+  const program = Effect.gen(function* () {
     const idGenerator = makeIdGenerator();
 
-    const service = yield* $(
-      workflowDefinition.build(),
+    const service = yield* workflowDefinition.build().pipe(
       Effect.flatMap((workflow) => Service.initialize(workflow, 'complete')),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(service.start());
-    const state = yield* $(service.getState());
+    yield* service.start();
+    const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());
     expect(state.workflows[0]?.state).toEqual('completed');
@@ -69,17 +67,16 @@ it('handles simple enqueueing (1)', ({ expect }) => {
 });
 
 it('handles simple enqueueing (2)', ({ expect }) => {
-  const program = Effect.gen(function* ($) {
+  const program = Effect.gen(function* () {
     const idGenerator = makeIdGenerator();
 
-    const service = yield* $(
-      workflowDefinition.build(),
+    const service = yield* workflowDefinition.build().pipe(
       Effect.flatMap((workflow) => Service.initialize(workflow, 'cancel')),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(service.start());
-    const state = yield* $(service.getState());
+    yield* service.start();
+    const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());
     expect(state.workflows[0]?.state).toEqual('started');
@@ -89,17 +86,16 @@ it('handles simple enqueueing (2)', ({ expect }) => {
 });
 
 it('handles simple enqueueing (3)', ({ expect }) => {
-  const program = Effect.gen(function* ($) {
+  const program = Effect.gen(function* () {
     const idGenerator = makeIdGenerator();
 
-    const service = yield* $(
-      workflowDefinition.build(),
+    const service = yield* workflowDefinition.build().pipe(
       Effect.flatMap((workflow) => Service.initialize(workflow, 'fail')),
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* $(service.start());
-    const state = yield* $(service.getState());
+    yield* service.start();
+    const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());
     expect(state.workflows[0]?.state).toEqual('failed');

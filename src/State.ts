@@ -26,202 +26,185 @@ import {
   WorkflowInstanceState,
 } from './types.js';
 
-export interface State {
-  initializeWorkflow(
-    payload: {
-      name: string;
-      tasks: TaskName[];
-      conditions: ConditionName[];
-    },
-    context: unknown,
-    parent: WorkflowInstanceParent
-  ): Effect.Effect<never, never, WorkflowInstance>;
+export class State extends Context.Tag('tasquencer/State')<
+  State,
+  {
+    initializeWorkflow(
+      payload: {
+        name: string;
+        tasks: TaskName[];
+        conditions: ConditionName[];
+      },
+      context: unknown,
+      parent: WorkflowInstanceParent
+    ): Effect.Effect<WorkflowInstance>;
 
-  getWorkflow(
-    id: WorkflowId
-  ): Effect.Effect<never, WorkflowDoesNotExist, WorkflowInstance>;
+    getWorkflow(
+      id: WorkflowId
+    ): Effect.Effect<WorkflowInstance, WorkflowDoesNotExist>;
 
-  getWorkflowContext(
-    id: WorkflowId
-  ): Effect.Effect<never, WorkflowDoesNotExist, unknown>;
+    getWorkflowContext(
+      id: WorkflowId
+    ): Effect.Effect<unknown, WorkflowDoesNotExist>;
 
-  getTasks(id: WorkflowId): Effect.Effect<never, never, TaskInstance[]>;
+    getTasks(id: WorkflowId): Effect.Effect<TaskInstance[]>;
 
-  getConditions(
-    id: WorkflowId
-  ): Effect.Effect<never, never, ConditionInstance[]>;
+    getConditions(id: WorkflowId): Effect.Effect<ConditionInstance[]>;
 
-  getTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<never, TaskDoesNotExistInStore, TaskInstance>;
+    getTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<TaskInstance, TaskDoesNotExistInStore>;
 
-  getTaskState(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<never, TaskDoesNotExistInStore, TaskInstanceState>;
+    getTaskState(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<TaskInstanceState, TaskDoesNotExistInStore>;
 
-  getTaskPath(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | WorkflowDoesNotExist,
-    string[]
-  >;
+    getTaskPath(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<string[], TaskDoesNotExistInStore | WorkflowDoesNotExist>;
 
-  getCondition(
-    workflowId: WorkflowId,
-    conditionName: ConditionName
-  ): Effect.Effect<never, ConditionDoesNotExistInStore, ConditionInstance>;
+    getCondition(
+      workflowId: WorkflowId,
+      conditionName: ConditionName
+    ): Effect.Effect<ConditionInstance, ConditionDoesNotExistInStore>;
 
-  getConditionMarking(
-    workflowId: WorkflowId,
-    conditionName: ConditionName
-  ): Effect.Effect<never, ConditionDoesNotExistInStore, number>;
+    getConditionMarking(
+      workflowId: WorkflowId,
+      conditionName: ConditionName
+    ): Effect.Effect<number, ConditionDoesNotExistInStore>;
 
-  updateWorkflowState(
-    workflowId: WorkflowId,
-    workflowState: Exclude<WorkflowInstanceState, 'running'>
-  ): Effect.Effect<
-    never,
-    WorkflowDoesNotExist | InvalidWorkflowStateTransition,
-    void
-  >;
+    updateWorkflowState(
+      workflowId: WorkflowId,
+      workflowState: Exclude<WorkflowInstanceState, 'running'>
+    ): Effect.Effect<
+      void,
+      WorkflowDoesNotExist | InvalidWorkflowStateTransition
+    >;
 
-  updateWorkflowContext(
-    workflowId: WorkflowId,
-    context: unknown
-  ): Effect.Effect<never, WorkflowDoesNotExist, void>;
+    updateWorkflowContext(
+      workflowId: WorkflowId,
+      context: unknown
+    ): Effect.Effect<void, WorkflowDoesNotExist>;
 
-  updateTaskState(
-    workflowId: WorkflowId,
-    taskName: TaskName,
-    taskState: TaskInstanceState
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    updateTaskState(
+      workflowId: WorkflowId,
+      taskName: TaskName,
+      taskState: TaskInstanceState
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  enableTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    enableTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  disableTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    disableTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  startTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    startTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  completeTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    completeTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  cancelTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    cancelTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  failTask(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | InvalidTaskStateTransition,
-    void
-  >;
+    failTask(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<
+      void,
+      TaskDoesNotExistInStore | InvalidTaskStateTransition
+    >;
 
-  updateCondition(
-    workflowId: WorkflowId,
-    conditionName: ConditionName,
-    f: (condition: ConditionInstance) => ConditionInstance
-  ): Effect.Effect<never, ConditionDoesNotExistInStore, void>;
+    updateCondition(
+      workflowId: WorkflowId,
+      conditionName: ConditionName,
+      f: (condition: ConditionInstance) => ConditionInstance
+    ): Effect.Effect<void, ConditionDoesNotExistInStore>;
 
-  incrementConditionMarking(
-    workflowId: WorkflowId,
-    conditionName: ConditionName
-  ): Effect.Effect<never, ConditionDoesNotExistInStore, void>;
+    incrementConditionMarking(
+      workflowId: WorkflowId,
+      conditionName: ConditionName
+    ): Effect.Effect<void, ConditionDoesNotExistInStore>;
 
-  decrementConditionMarking(
-    workflowId: WorkflowId,
-    conditionName: ConditionName
-  ): Effect.Effect<never, ConditionDoesNotExistInStore, void>;
+    decrementConditionMarking(
+      workflowId: WorkflowId,
+      conditionName: ConditionName
+    ): Effect.Effect<void, ConditionDoesNotExistInStore>;
 
-  emptyConditionMarking(
-    workflowId: WorkflowId,
-    conditionName: ConditionName
-  ): Effect.Effect<never, ConditionDoesNotExistInStore, void>;
+    emptyConditionMarking(
+      workflowId: WorkflowId,
+      conditionName: ConditionName
+    ): Effect.Effect<void, ConditionDoesNotExistInStore>;
 
-  initializeWorkItem(
-    workflowId: WorkflowId,
-    taskName: TaskName,
-    payload: unknown
-  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItemInstance>;
+    initializeWorkItem(
+      workflowId: WorkflowId,
+      taskName: TaskName,
+      payload: unknown
+    ): Effect.Effect<WorkItemInstance, TaskDoesNotExistInStore>;
 
-  updateWorkItemPayload(
-    workflowId: WorkflowId,
-    taskName: TaskName,
-    workItemId: WorkItemId,
-    payload: unknown
-  ): Effect.Effect<never, WorkItemDoesNotExist, void>;
+    updateWorkItemPayload(
+      workflowId: WorkflowId,
+      taskName: TaskName,
+      workItemId: WorkItemId,
+      payload: unknown
+    ): Effect.Effect<void, WorkItemDoesNotExist>;
 
-  getWorkItem(
-    workflowId: WorkflowId,
-    taskName: TaskName,
-    workItemId: WorkItemId
-  ): Effect.Effect<never, WorkItemDoesNotExist, WorkItemInstance>;
+    getWorkItem(
+      workflowId: WorkflowId,
+      taskName: TaskName,
+      workItemId: WorkItemId
+    ): Effect.Effect<WorkItemInstance, WorkItemDoesNotExist>;
 
-  updateWorkItemState(
-    workflowId: WorkflowId,
-    taskName: TaskName,
-    workItemId: WorkItemId,
-    nextState: WorkItemInstanceState
-  ): Effect.Effect<
-    never,
-    InvalidWorkItemTransition | WorkItemDoesNotExist,
-    void
-  >;
+    updateWorkItemState(
+      workflowId: WorkflowId,
+      taskName: TaskName,
+      workItemId: WorkItemId,
+      nextState: WorkItemInstanceState
+    ): Effect.Effect<void, InvalidWorkItemTransition | WorkItemDoesNotExist>;
 
-  getWorkItems(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkItemInstance[]>;
+    getWorkItems(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<WorkItemInstance[], TaskDoesNotExistInStore>;
 
-  getWorkflows(
-    workflowId: WorkflowId,
-    taskName: TaskName
-  ): Effect.Effect<never, TaskDoesNotExistInStore, WorkflowInstance[]>;
+    getWorkflows(
+      workflowId: WorkflowId,
+      taskName: TaskName
+    ): Effect.Effect<WorkflowInstance[], TaskDoesNotExistInStore>;
 
-  getState(): Effect.Effect<never, never, StorePersistableState>;
+    getState(): Effect.Effect<StorePersistableState, never>;
 
-  inspect(): Effect.Effect<never, never, Store>;
-}
-
-export const State = Context.Tag<State>();
+    inspect(): Effect.Effect<Store, never>;
+  }
+>() {}

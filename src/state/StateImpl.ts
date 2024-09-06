@@ -1,5 +1,5 @@
 /* eslint @typescript-eslint/no-non-null-assertion: 0 */
-import { Effect } from 'effect';
+import { Context, Effect } from 'effect';
 import { create } from 'mutative';
 
 import { State } from '../State.js';
@@ -127,13 +127,13 @@ function makeGetState(store: Store) {
   return () => storeToPersistableState(store);
 }
 
-export class StateImpl implements State {
+export class StateImpl implements Context.Tag.Service<State> {
   private store: Store;
-  private idGenerator: IdGenerator;
+  private idGenerator: Context.Tag.Service<IdGenerator>;
   private changeLogger: StateChangeLogger;
 
   constructor(
-    idGenerator: IdGenerator,
+    idGenerator: Context.Tag.Service<IdGenerator>,
     changeLogger: StateChangeLogger,
     state?: StorePersistableState
   ) {
@@ -157,8 +157,8 @@ export class StateImpl implements State {
   ) {
     const self = this;
     const { idGenerator } = this;
-    return Effect.gen(function* ($) {
-      const workflowId = yield* $(idGenerator.workflow());
+    return Effect.gen(function* () {
+      const workflowId = yield* idGenerator.workflow();
       const workflowTasks = payload.tasks.reduce<
         Record<TaskName, TaskInstance>
       >((acc, task) => {
@@ -247,11 +247,11 @@ export class StateImpl implements State {
 
   getWorkflow(workflowId: WorkflowId) {
     const { store } = this;
-    return Effect.gen(function* ($) {
+    return Effect.gen(function* () {
       const workflow = store[workflowId]?.workflow;
 
       if (!workflow) {
-        return yield* $(Effect.fail(new WorkflowDoesNotExist({ workflowId })));
+        return yield* Effect.fail(new WorkflowDoesNotExist({ workflowId }));
       }
       return workflow;
     });
@@ -273,12 +273,12 @@ export class StateImpl implements State {
 
   getTask(workflowId: WorkflowId, taskName: TaskName) {
     const { store } = this;
-    return Effect.gen(function* ($) {
+    return Effect.gen(function* () {
       const task = store[workflowId]?.tasks[taskName];
 
       if (!task) {
-        return yield* $(
-          Effect.fail(new TaskDoesNotExistInStore({ taskName, workflowId }))
+        return yield* Effect.fail(
+          new TaskDoesNotExistInStore({ taskName, workflowId })
         );
       }
 
@@ -295,19 +295,16 @@ export class StateImpl implements State {
   getTaskPath(
     workflowId: WorkflowId,
     taskName: TaskName
-  ): Effect.Effect<
-    never,
-    TaskDoesNotExistInStore | WorkflowDoesNotExist,
-    string[]
-  > {
+  ): Effect.Effect<string[], TaskDoesNotExistInStore | WorkflowDoesNotExist> {
     const self = this;
-    return Effect.gen(function* ($) {
-      const task = yield* $(self.getTask(workflowId, taskName));
-      const workflow = yield* $(self.getWorkflow(workflowId));
+    return Effect.gen(function* () {
+      const task = yield* self.getTask(workflowId, taskName);
+      const workflow = yield* self.getWorkflow(workflowId);
       const path = [workflow.id, task.name];
       if (workflow.parent) {
-        const parentPath = yield* $(
-          self.getTaskPath(workflow.parent.workflowId, workflow.parent.taskName)
+        const parentPath = yield* self.getTaskPath(
+          workflow.parent.workflowId,
+          workflow.parent.taskName
         );
         return [...parentPath, ...path];
       }
@@ -317,14 +314,12 @@ export class StateImpl implements State {
 
   getCondition(workflowId: WorkflowId, conditionName: ConditionName) {
     const { store } = this;
-    return Effect.gen(function* ($) {
+    return Effect.gen(function* () {
       const condition = store[workflowId]?.conditions[conditionName];
 
       if (!condition || condition.workflowId !== workflowId) {
-        return yield* $(
-          Effect.fail(
-            new ConditionDoesNotExistInStore({ conditionName, workflowId })
-          )
+        return yield* Effect.fail(
+          new ConditionDoesNotExistInStore({ conditionName, workflowId })
         );
       }
 
@@ -343,20 +338,18 @@ export class StateImpl implements State {
     workflowState: Exclude<WorkflowInstanceState, 'initialized'>
   ) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const workflow = yield* $(self.getWorkflow(workflowId));
+    return Effect.gen(function* () {
+      const workflow = yield* self.getWorkflow(workflowId);
 
       if (
         !validWorkflowInstanceTransitions[workflow.state].has(workflowState)
       ) {
-        return yield* $(
-          Effect.fail(
-            new InvalidWorkflowStateTransition({
-              workflowId,
-              from: workflow.state,
-              to: workflowState,
-            })
-          )
+        return yield* Effect.fail(
+          new InvalidWorkflowStateTransition({
+            workflowId,
+            from: workflow.state,
+            to: workflowState,
+          })
         );
       }
 
@@ -376,8 +369,8 @@ export class StateImpl implements State {
 
   updateWorkflowContext(workflowId: WorkflowId, context: unknown) {
     const self = this;
-    return Effect.gen(function* ($) {
-      yield* $(self.getWorkflow(workflowId));
+    return Effect.gen(function* () {
+      yield* self.getWorkflow(workflowId);
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.workflow.context = context;
@@ -400,19 +393,17 @@ export class StateImpl implements State {
   ) {
     const self = this;
 
-    return Effect.gen(function* ($) {
-      const task = yield* $(self.getTask(workflowId, taskName));
+    return Effect.gen(function* () {
+      const task = yield* self.getTask(workflowId, taskName);
 
       if (!isValidTaskInstanceTransition(task.state, nextTaskState)) {
-        return yield* $(
-          Effect.fail(
-            new InvalidTaskStateTransition({
-              workflowId,
-              taskName,
-              from: task.state,
-              to: nextTaskState,
-            })
-          )
+        return yield* Effect.fail(
+          new InvalidTaskStateTransition({
+            workflowId,
+            taskName,
+            from: task.state,
+            to: nextTaskState,
+          })
         );
       }
 
@@ -464,8 +455,8 @@ export class StateImpl implements State {
   ) {
     const self = this;
 
-    return Effect.gen(function* ($) {
-      const condition = yield* $(self.getCondition(workflowId, conditionName));
+    return Effect.gen(function* () {
+      const condition = yield* self.getCondition(workflowId, conditionName);
 
       self.store = create(self.store, (draft) => {
         draft[workflowId]!.conditions[conditionName] = f(condition);
@@ -511,10 +502,10 @@ export class StateImpl implements State {
     payload: unknown = null
   ) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const workItemId = yield* $(self.idGenerator.workItem());
+    return Effect.gen(function* () {
+      const workItemId = yield* self.idGenerator.workItem();
 
-      const task = yield* $(self.getTask(workflowId, taskName));
+      const task = yield* self.getTask(workflowId, taskName);
       const workItem: WorkItemInstance = {
         id: workItemId,
         taskName,
@@ -549,12 +540,12 @@ export class StateImpl implements State {
     workItemId: WorkItemId
   ) {
     const self = this;
-    return Effect.gen(function* ($) {
+    return Effect.gen(function* () {
       const workItem = self.store[workflowId]?.workItems[workItemId];
 
       if (!workItem || workItem.taskName !== taskName) {
-        return yield* $(
-          Effect.fail(new WorkItemDoesNotExist({ workflowId, workItemId }))
+        return yield* Effect.fail(
+          new WorkItemDoesNotExist({ workflowId, workItemId })
         );
       }
 
@@ -569,12 +560,12 @@ export class StateImpl implements State {
     payload: unknown
   ) {
     const self = this;
-    return Effect.gen(function* ($) {
+    return Effect.gen(function* () {
       const workItem = self.store[workflowId]?.workItems[workItemId];
 
       if (!workItem || workItem.taskName !== taskName) {
-        return yield* $(
-          Effect.fail(new WorkItemDoesNotExist({ workflowId, workItemId }))
+        return yield* Effect.fail(
+          new WorkItemDoesNotExist({ workflowId, workItemId })
         );
       }
 
@@ -599,23 +590,23 @@ export class StateImpl implements State {
     nextState: WorkItemInstanceState
   ) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const workItem = yield* $(
-        self.getWorkItem(workflowId, taskName, workItemId)
+    return Effect.gen(function* () {
+      const workItem = yield* self.getWorkItem(
+        workflowId,
+        taskName,
+        workItemId
       );
 
       if (
         !validWorkItemInstanceStateTransitions[workItem.state].has(nextState)
       ) {
-        return yield* $(
-          Effect.fail(
-            new InvalidWorkItemTransition({
-              workflowId,
-              workItemId,
-              from: workItem.state,
-              to: nextState,
-            })
-          )
+        return yield* Effect.fail(
+          new InvalidWorkItemTransition({
+            workflowId,
+            workItemId,
+            from: workItem.state,
+            to: nextState,
+          })
         );
       }
 
@@ -635,8 +626,8 @@ export class StateImpl implements State {
 
   getWorkItems(workflowId: WorkflowId, taskName: TaskName) {
     const self = this;
-    return Effect.gen(function* ($) {
-      const task = yield* $(self.getTask(workflowId, taskName));
+    return Effect.gen(function* () {
+      const task = yield* self.getTask(workflowId, taskName);
 
       const workItemIds =
         self.store[workflowId]?.tasksToWorkItems[taskName]?.[task.generation] ??
@@ -654,8 +645,8 @@ export class StateImpl implements State {
   getWorkflows(workflowId: WorkflowId, taskName: TaskName) {
     const self = this;
 
-    return Effect.gen(function* ($) {
-      const task = yield* $(self.getTask(workflowId, taskName));
+    return Effect.gen(function* () {
+      const task = yield* self.getTask(workflowId, taskName);
 
       const workflowIds =
         self.store[workflowId]?.tasksToWorkflows[taskName]?.[task.generation] ??

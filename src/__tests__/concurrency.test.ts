@@ -11,28 +11,27 @@ const workflowDefinition = Builder.workflow()
     t()
       .withWorkItem((w) =>
         w<number>().onStart(({ startWorkItem, getWorkItem }) =>
-          Effect.gen(function* ($) {
-            const { enqueueCompleteWorkItem } = yield* $(startWorkItem());
-            const workItem = yield* $(getWorkItem());
-            yield* $(Effect.sleep(`${workItem.payload * 100} millis`));
-            yield* $(enqueueCompleteWorkItem());
+          Effect.gen(function* () {
+            const { enqueueCompleteWorkItem } = yield* startWorkItem();
+            const workItem = yield* getWorkItem();
+            yield* Effect.sleep(`${workItem.payload * 100} millis`);
+            yield* enqueueCompleteWorkItem();
           })
         )
       )
       .onEnable(({ enableTask }) =>
-        Effect.gen(function* ($) {
-          const { enqueueStartTask } = yield* $(enableTask());
-          yield* $(enqueueStartTask());
+        Effect.gen(function* () {
+          const { enqueueStartTask } = yield* enableTask();
+          yield* enqueueStartTask();
         })
       )
       .onStart(({ startTask }) =>
-        Effect.gen(function* ($) {
-          const { initializeWorkItem, enqueueStartWorkItem } = yield* $(
-            startTask()
-          );
+        Effect.gen(function* () {
+          const { initializeWorkItem, enqueueStartWorkItem } =
+            yield* startTask();
           for (const i of [1, 2, 3]) {
-            const { id } = yield* $(initializeWorkItem(i));
-            yield* $(enqueueStartWorkItem(id));
+            const { id } = yield* initializeWorkItem(i);
+            yield* enqueueStartWorkItem(id);
           }
         })
       )
@@ -44,12 +43,11 @@ const workflowDefinition = Builder.workflow()
 it('will start work items concurrently and emit state change on each work item start', async ({
   expect,
 }) => {
-  const program = Effect.gen(function* ($) {
+  const program = Effect.gen(function* () {
     const idGenerator = makeIdGenerator();
     const logs: unknown[] = [];
 
-    const service = yield* $(
-      workflowDefinition.build(),
+    const service = yield* workflowDefinition.build().pipe(
       Effect.flatMap((workflow) => Service.initialize(workflow)),
       Effect.provideService(IdGenerator, idGenerator)
     );
@@ -58,8 +56,8 @@ it('will start work items concurrently and emit state change on each work item s
       return Effect.succeed(logs.push(changes));
     });
 
-    yield* $(service.start());
-    const state = yield* $(service.getState());
+    yield* service.start();
+    const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(logs).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());

@@ -2,7 +2,11 @@ import { Effect } from 'effect';
 import { it } from 'vitest';
 
 import { Builder, IdGenerator, Service } from '../index.js';
-import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
+import { makeIdGenerator } from './shared.js';
+
+function fail(message: string) {
+  return Effect.fail(new Error(message));
+}
 
 const workflowDefinition = Builder.workflow()
   .withName('activities')
@@ -13,6 +17,7 @@ const workflowDefinition = Builder.workflow()
         w().onStart(({ startWorkItem }) =>
           Effect.gen(function* () {
             const { enqueueCompleteWorkItem } = yield* startWorkItem();
+            yield* fail('Failing');
             yield* enqueueCompleteWorkItem();
           })
         )
@@ -52,8 +57,9 @@ const workflowDefinition = Builder.workflow()
   .connectTask('t1', (to) => to.task('t2'))
   .connectTask('t2', (to) => to.condition('end'));
 
-it('handles series of auto advancing tasks', ({ expect }) => {
+it('correctly propagates errors', ({ expect }) => {
   const program = Effect.gen(function* () {
+    let errorHandlerCalled = false;
     const idGenerator = makeIdGenerator();
 
     const service = yield* workflowDefinition.build().pipe(
@@ -61,11 +67,17 @@ it('handles series of auto advancing tasks', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
-    const state = yield* service.getState();
-    expect(state).toMatchSnapshot();
-    expect(getEnabledTaskNames(state)).toEqual(new Set());
-    expect(state.workflows[0]?.state).toEqual('completed');
+    yield* service.start().pipe(
+      Effect.catchAll((error) => {
+        if (error instanceof Error) {
+          errorHandlerCalled = true;
+          expect(error.message).toBe('Failing');
+        }
+        return Effect.void;
+      })
+    );
+
+    expect(errorHandlerCalled).toBe(true);
   });
 
   Effect.runSync(program);

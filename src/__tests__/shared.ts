@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { Context, Effect } from 'effect';
 
 import {
   IdGenerator,
@@ -7,7 +7,7 @@ import {
   WorkflowId,
 } from '../index.js';
 
-export function makeIdGenerator(): IdGenerator {
+export function makeIdGenerator(): Context.Tag.Service<IdGenerator> {
   const ids = {
     workItem: 0,
     workflow: 0,

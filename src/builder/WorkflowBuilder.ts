@@ -908,7 +908,7 @@ export class WorkflowBuilder<
   build() {
     const { name, definition, activities } = this;
 
-    return Effect.gen(function* ($) {
+    return Effect.gen(function* () {
       const workflow = new Workflow<
         R,
         E,
@@ -920,7 +920,7 @@ export class WorkflowBuilder<
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow
         // This casting is ok, because task doesn't care about Workflow generics
-        yield* $(taskBuilder.build(workflow as Workflow, taskName));
+        yield* taskBuilder.build(workflow as Workflow, taskName);
       }
 
       for (const [conditionName, conditionNode] of Object.entries(
@@ -942,10 +942,8 @@ export class WorkflowBuilder<
       ) {
         workflow.setStartCondition(definition.startCondition);
       } else {
-        yield* $(
-          Effect.fail(
-            new StartConditionDoesNotExist({ workflowName: workflow.name })
-          )
+        yield* Effect.fail(
+          new StartConditionDoesNotExist({ workflowName: workflow.name })
         );
       }
 
@@ -955,10 +953,8 @@ export class WorkflowBuilder<
       ) {
         workflow.setEndCondition(definition.endCondition);
       } else {
-        yield* $(
-          Effect.fail(
-            new EndConditionDoesNotExist({ workflowName: workflow.name })
-          )
+        yield* Effect.fail(
+          new EndConditionDoesNotExist({ workflowName: workflow.name })
         );
       }
 
@@ -966,27 +962,27 @@ export class WorkflowBuilder<
         definition.flows.conditions
       )) {
         // This casting is ok, because condition flow doesn't care about Workflow generics
-        yield* $(conditionFlows.build(workflow as Workflow));
+        yield* conditionFlows.build(workflow as Workflow);
       }
 
       for (const [, taskFlows] of Object.entries(definition.flows.tasks)) {
         // This casting is ok, because task flow doesn't care about Workflow generics
-        yield* $(taskFlows.build(workflow as Workflow));
+        yield* taskFlows.build(workflow as Workflow);
       }
 
       for (const [taskName, cancellationRegion] of Object.entries(
         definition.cancellationRegions
       )) {
-        const task = yield* $(workflow.getTask(taskName));
+        const task = yield* workflow.getTask(taskName);
         for (const cancelledTaskName of cancellationRegion.tasks ?? []) {
           task.addTaskToCancellationRegion(
-            yield* $(workflow.getTask(cancelledTaskName))
+            yield* workflow.getTask(cancelledTaskName)
           );
         }
         for (const cancelledConditionName of cancellationRegion.conditions ??
           []) {
           task.addConditionToCancellationRegion(
-            yield* $(workflow.getCondition(cancelledConditionName))
+            yield* workflow.getCondition(cancelledConditionName)
           );
         }
       }

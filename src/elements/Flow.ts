@@ -14,16 +14,14 @@ export class ConditionToTaskFlow {
 
 export interface TaskToConditionFlowProps {
   order?: number;
-  predicate?: (...args: any[]) => Effect.Effect<never, never, boolean>;
+  predicate?: (...args: any[]) => Effect.Effect<boolean>;
   isDefault?: boolean;
 }
 
 export class TaskToConditionFlow {
   readonly order: number;
   readonly isDefault: boolean = false;
-  readonly predicate:
-    | ((...args: any[]) => Effect.Effect<never, never, boolean>)
-    | undefined;
+  readonly predicate: ((...args: any[]) => Effect.Effect<boolean>) | undefined;
   constructor(
     readonly priorElement: BaseTask,
     readonly nextElement: Condition,

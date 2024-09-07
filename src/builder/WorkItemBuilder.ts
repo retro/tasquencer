@@ -16,52 +16,43 @@ export type AnyWorkItemBuilder = WorkItemBuilder<
   WorkItemActivities<any, any>
 >;
 
-export type WorkItemBuilderP<T> = T extends WorkItemBuilder<any, infer P, any>
-  ? P
-  : never;
+export type WorkItemPayload<TWorkItemBuilder> =
+  TWorkItemBuilder extends WorkItemBuilder<any, infer TWorkItemPayload, any>
+    ? TWorkItemPayload
+    : never;
 
-export type WorkItemBuilderR<T> = T extends WorkItemBuilder<
-  any,
-  any,
-  any,
-  any,
-  infer R
->
-  ? R
-  : never;
+export type WorkItemBuilderR<TWorkItemBuilder> =
+  TWorkItemBuilder extends WorkItemBuilder<any, any, any, any, infer R>
+    ? R
+    : never;
 
-export type WorkItemBuilderE<T> = T extends WorkItemBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer E
->
-  ? E
-  : never;
+export type WorkItemBuilderE<TWorkItemBuilder> =
+  TWorkItemBuilder extends WorkItemBuilder<any, any, any, any, any, infer E>
+    ? E
+    : never;
 
-export type WorkItemBuilderWIM<T> = T extends WorkItemBuilder<
-  any,
-  any,
-  any,
-  infer WIM,
-  any,
-  any
->
-  ? WIM
-  : never;
+export type WorkItemBuilderWorkItemMetadata<TWorkItemBuilder> =
+  TWorkItemBuilder extends WorkItemBuilder<
+    any,
+    any,
+    any,
+    infer TWorkItemMetadata,
+    any,
+    any
+  >
+    ? TWorkItemMetadata
+    : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyWorkItemActivities = WorkItemActivities<any, any>;
 
-interface WorkItemActivityMetadata<I, P, R> {
-  input: I;
-  return: R;
-  payload: P;
+interface WorkItemActivityMetadata<TInput, TPayload, TReturn> {
+  input: TInput;
+  payload: TPayload;
+  return: TReturn;
 }
 
-export interface DefaultWIM {
+export interface DefaultWorkItemMetadata {
   [WorkItemPayloadSym]: undefined;
   onStart: WorkItemActivityMetadata<undefined, undefined, undefined>;
   onComplete: WorkItemActivityMetadata<undefined, undefined, undefined>;
@@ -69,32 +60,32 @@ export interface DefaultWIM {
   onFail: WorkItemActivityMetadata<undefined, undefined, undefined>;
 }
 
-export interface InitializedWIM<P> {
-  [WorkItemPayloadSym]: P;
-  onStart: WorkItemActivityMetadata<undefined, P, undefined>;
-  onComplete: WorkItemActivityMetadata<undefined, P, undefined>;
-  onCancel: WorkItemActivityMetadata<undefined, P, undefined>;
-  onFail: WorkItemActivityMetadata<undefined, P, undefined>;
+export interface InitializedWorkItemMetadata<TPayload> {
+  [WorkItemPayloadSym]: TPayload;
+  onStart: WorkItemActivityMetadata<undefined, TPayload, undefined>;
+  onComplete: WorkItemActivityMetadata<undefined, TPayload, undefined>;
+  onCancel: WorkItemActivityMetadata<undefined, TPayload, undefined>;
+  onFail: WorkItemActivityMetadata<undefined, TPayload, undefined>;
 }
 
-export type InitializedWorkItemBuilder<C, P> = WorkItemBuilder<
-  C,
-  P,
+export type InitializedWorkItemBuilder<TContext, TPayload> = WorkItemBuilder<
+  TContext,
+  TPayload,
   WorkItemActivities<any, any>,
-  InitializedWIM<P>
+  InitializedWorkItemMetadata<TPayload>
 >;
 
 export class WorkItemBuilder<
-  C,
-  P,
-  WIA extends WorkItemActivities<any, any>,
-  WIM = {
-    [WorkItemPayloadSym]: P;
+  TContext,
+  TPayload,
+  TWorkItemActivities extends WorkItemActivities<any, any>,
+  TWorkItemPayload = {
+    [WorkItemPayloadSym]: TPayload;
   },
   R = never,
   E = never
 > {
-  private activities: WIA = {} as WIA;
+  private activities: TWorkItemActivities = {} as TWorkItemActivities;
 
   initialize() {
     return this.onStart((_, _input?: undefined) => Effect.succeed(_input))
@@ -104,118 +95,118 @@ export class WorkItemBuilder<
   }
 
   onStart<
-    I,
-    F extends (
+    TOnStartInput,
+    TOnStartActivity extends (
       payload: WorkItemOnStartPayload<
-        C,
-        P,
-        Get<WIM, ['onComplete', 'input']>,
-        Get<WIM, ['onCancel', 'input']>,
-        Get<WIM, ['onFail', 'input']>
+        TContext,
+        TPayload,
+        Get<TWorkItemPayload, ['onComplete', 'input']>,
+        Get<TWorkItemPayload, ['onCancel', 'input']>,
+        Get<TWorkItemPayload, ['onFail', 'input']>
       >,
-      input: I
+      input: TOnStartInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnStartActivity
   ): WorkItemBuilder<
-    C,
-    P,
-    WIA,
+    TContext,
+    TPayload,
+    TWorkItemActivities,
     Simplify<
-      Omit<WIM, 'onStart'> & {
+      Omit<TWorkItemPayload, 'onStart'> & {
         onStart: WorkItemActivityMetadata<
-          Parameters<F>[1],
-          P,
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnStartActivity>[1],
+          TPayload,
+          Effect.Effect.Success<ReturnType<TOnStartActivity>>
         >;
       }
     >,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    R | Effect.Effect.Context<ReturnType<TOnStartActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnStartActivity>>
   > {
     this.activities.onStart = f;
     return this;
   }
 
   onComplete<
-    I,
-    F extends (
-      payload: WorkItemOnCompletePayload<C, P>,
-      input: I
+    TOnCompleteActivityInput,
+    TOnCompleteActivity extends (
+      payload: WorkItemOnCompletePayload<TContext, TPayload>,
+      input: TOnCompleteActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCompleteActivity
   ): WorkItemBuilder<
-    C,
-    P,
-    WIA,
+    TContext,
+    TPayload,
+    TWorkItemActivities,
     Simplify<
-      Omit<WIM, 'onComplete'> & {
+      Omit<TWorkItemPayload, 'onComplete'> & {
         onComplete: WorkItemActivityMetadata<
-          Parameters<F>[1],
-          P,
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnCompleteActivity>[1],
+          TPayload,
+          Effect.Effect.Success<ReturnType<TOnCompleteActivity>>
         >;
       }
     >,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    R | Effect.Effect.Context<ReturnType<TOnCompleteActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCompleteActivity>>
   > {
     this.activities.onComplete = f;
     return this;
   }
 
   onCancel<
-    I,
-    F extends (
-      payload: WorkItemOnCancelPayload<C, P>,
-      input?: I
+    TOnCancelActivityInput,
+    TOnCancelActivity extends (
+      payload: WorkItemOnCancelPayload<TContext, TPayload>,
+      input?: TOnCancelActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCancelActivity
   ): WorkItemBuilder<
-    C,
-    P,
-    WIA,
+    TContext,
+    TPayload,
+    TWorkItemActivities,
     Simplify<
-      Omit<WIM, 'onCancel'> & {
+      Omit<TWorkItemPayload, 'onCancel'> & {
         onCancel: WorkItemActivityMetadata<
-          Parameters<F>[1],
-          P,
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnCancelActivity>[1],
+          TPayload,
+          Effect.Effect.Success<ReturnType<TOnCancelActivity>>
         >;
       }
     >,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    R | Effect.Effect.Context<ReturnType<TOnCancelActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCancelActivity>>
   > {
     this.activities.onCancel = f;
     return this;
   }
 
   onFail<
-    I,
-    F extends (
-      payload: WorkItemOnFailPayload<C, P>,
-      input: I
+    TOnFailActivityInput,
+    TOnFailActivity extends (
+      payload: WorkItemOnFailPayload<TContext, TPayload>,
+      input: TOnFailActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnFailActivity
   ): WorkItemBuilder<
-    C,
-    P,
-    WIA,
+    TContext,
+    TPayload,
+    TWorkItemActivities,
     Simplify<
-      Omit<WIM, 'onFail'> & {
+      Omit<TWorkItemPayload, 'onFail'> & {
         onFail: WorkItemActivityMetadata<
-          Parameters<F>[1],
-          P,
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnFailActivity>[1],
+          TPayload,
+          Effect.Effect.Success<ReturnType<TOnFailActivity>>
         >;
       }
     >,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    R | Effect.Effect.Context<ReturnType<TOnFailActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnFailActivity>>
   > {
     this.activities.onFail = f;
     return this;
@@ -226,6 +217,10 @@ export class WorkItemBuilder<
   }
 }
 
-export function workItem<C, P>() {
-  return new WorkItemBuilder<C, P, WorkItemActivities<C, P>>().initialize();
+export function workItem<TContext, TPayload>() {
+  return new WorkItemBuilder<
+    TContext,
+    TPayload,
+    WorkItemActivities<TContext, TPayload>
+  >().initialize();
 }

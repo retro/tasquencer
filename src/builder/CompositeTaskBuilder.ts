@@ -32,114 +32,127 @@ import {
 import {
   AnyWorkflowBuilder,
   AnyWorkflowBuilderWithCorrectParentContext,
-  WorkflowBuilderC,
+  WorkflowBuilderContext,
   WorkflowBuilderE,
   WorkflowBuilderElementTypes,
   WorkflowBuilderMetadata,
   WorkflowBuilderR,
 } from './WorkflowBuilder.js';
 
-export type CompositeTaskBuilderContext<T> = T extends CompositeTaskBuilder<
-  infer C,
-  any,
-  any,
-  any,
-  any
->
-  ? C
-  : never;
-
-export type CompositeTaskBuilderSplitType<T> = T extends CompositeTaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  infer ST,
-  any,
-  any,
-  any,
-  any,
-  any
->
-  ? ST
-  : never;
-
-export type CompositeTaskBuilderActivitiesReturnType<T> =
-  T extends CompositeTaskBuilder<any, any, any, any, any, infer AO>
-    ? AO
+export type CompositeTaskBuilderContext<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    infer TContext,
+    any,
+    any,
+    any,
+    any
+  >
+    ? TContext
     : never;
 
-export type CompositeTaskBuilderR<T> = T extends CompositeTaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer R
->
-  ? R
-  : never;
+export type CompositeTaskBuilderSplitType<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    infer TSplitType,
+    any,
+    any,
+    any,
+    any,
+    any
+  >
+    ? TSplitType
+    : never;
 
-export type CompositeTaskBuilderE<T> = T extends CompositeTaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer E
->
-  ? E
-  : never;
+export type CompositeTaskBuilderActivitiesReturnType<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TActivitiesReturnType
+  >
+    ? TActivitiesReturnType
+    : never;
 
-export type AnyCompositeTaskBuilder<C = unknown> = CompositeTaskBuilder<
-  C,
+export type CompositeTaskBuilderR<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer R
+  >
+    ? R
+    : never;
+
+export type CompositeTaskBuilderE<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer E
+  >
+    ? E
+    : never;
+
+export type AnyCompositeTaskBuilder<TContext = unknown> = CompositeTaskBuilder<
+  TContext,
   any,
-  CompositeTaskActivities<C>,
+  CompositeTaskActivities<TContext>,
   JoinType | undefined,
   SplitType | undefined
 >;
 
-export type InitializedCompositeTaskBuilder<C> = CompositeTaskBuilder<
-  C,
+export type InitializedCompositeTaskBuilder<TContext> = CompositeTaskBuilder<
+  TContext,
   object,
-  CompositeTaskActivities<C>,
+  CompositeTaskActivities<TContext>,
   undefined,
   undefined
 >;
 
-type CompositeTaskBuilderCTM<T> = T extends CompositeTaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer CTM,
-  any
->
-  ? CTM
-  : never;
+type CompositeTaskBuilderCompositeTaskMetadata<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer CompositeTaskMetadata,
+    any
+  >
+    ? CompositeTaskMetadata
+    : never;
 
-type CompositeTaskBuilderWIM<T> = T extends CompositeTaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer WIM
->
-  ? WIM
-  : never;
+type CompositeTaskBuilderWorkItemMetadata<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer WIM
+  >
+    ? WIM
+    : never;
 
 export type CompositeTaskBuilderMetadata<
-  T extends CompositeTaskBuilder<
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
     any,
     any,
     any,
@@ -152,38 +165,40 @@ export type CompositeTaskBuilderMetadata<
     any
   >
 > = Simplify<
-  CompositeTaskBuilderCTM<T> & Record<string, CompositeTaskBuilderWIM<T>>
+  CompositeTaskBuilderCompositeTaskMetadata<TCompositeTaskBuilder> &
+    Record<string, CompositeTaskBuilderWorkItemMetadata<TCompositeTaskBuilder>>
 >;
 
-interface CompositeTaskActivityMetadata<I, R> {
-  input: I;
-  return: R;
+interface CompositeTaskActivityMetadata<TInput, TReturn> {
+  input: TInput;
+  return: TReturn;
 }
 
-export type CompositeTaskElementTypes<T> = T extends CompositeTaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer ET,
-  any,
-  any
->
-  ? ET
-  : never;
+export type CompositeTaskElementTypes<TCompositeTaskBuilder> =
+  TCompositeTaskBuilder extends CompositeTaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TElementTypes,
+    any,
+    any
+  >
+    ? TElementTypes
+    : never;
 
 export class CompositeTaskBuilder<
-  C,
-  WC,
-  TA extends CompositeTaskActivities<C>,
-  JT extends JoinType | undefined,
-  ST extends SplitType | undefined,
-  CTM = object,
-  WM = never,
-  ET extends ElementTypes = {
+  TContext,
+  TChildWorkflowContext,
+  TCompositeTaskActivities extends CompositeTaskActivities<TContext>,
+  TJoinType extends JoinType | undefined,
+  TSplitType extends SplitType | undefined,
+  TCompositeTaskMetadata = object,
+  TWorkItemMetadata = never,
+  TElementTypes extends ElementTypes = {
     workflow: WorkflowInstance;
     workItem: WorkItemInstance;
     condition: ConditionInstance;
@@ -194,7 +209,7 @@ export class CompositeTaskBuilder<
 > {
   joinType: JoinType | undefined;
   splitType: SplitType | undefined;
-  private activities: TA = {} as TA;
+  private activities: TCompositeTaskActivities = {} as TCompositeTaskActivities;
   private workflowBuilder: AnyWorkflowBuilder;
   private shouldComplete: ShouldCompositeTaskCompleteFn<any, any> = ({
     workflows,
@@ -218,16 +233,38 @@ export class CompositeTaskBuilder<
     this.workflowBuilder = workflowBuilder;
   }
 
-  withJoinType<T extends JoinType | undefined>(
-    joinType: T
-  ): CompositeTaskBuilder<C, WC, TA, T, ST, CTM, WM, ET, R, E> {
+  withJoinType<TNewJoinType extends JoinType | undefined>(
+    joinType: TNewJoinType
+  ): CompositeTaskBuilder<
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TNewJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R,
+    E
+  > {
     this.joinType = joinType;
     return this;
   }
 
-  withSplitType<T extends SplitType | undefined>(
-    splitType: T
-  ): CompositeTaskBuilder<C, WC, TA, JT, T, CTM, WM, ET, R, E> {
+  withSplitType<TNewSplitType extends SplitType | undefined>(
+    splitType: TNewSplitType
+  ): CompositeTaskBuilder<
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TNewSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R,
+    E
+  > {
     this.splitType = splitType;
     return this;
   }
@@ -242,173 +279,191 @@ export class CompositeTaskBuilder<
   }
 
   onDisable<
-    F extends (payload: TaskOnDisablePayload<C>) => Effect.Effect<any, any, any>
+    TOnDisableActivity extends (
+      payload: TaskOnDisablePayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnDisableActivity
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TOnDisableActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnDisableActivity>>
   > {
     this.activities.onDisable = f;
     return this;
   }
 
   onEnable<
-    F extends (payload: TaskOnEnablePayload<C>) => Effect.Effect<any, any, any>
+    TOnEnableActivity extends (
+      payload: TaskOnEnablePayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnEnableActivity
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TOnEnableActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnEnableActivity>>
   > {
     this.activities.onEnable = f;
     return this;
   }
 
   onStart<
-    I,
-    F extends (
+    TOnStartActivityInput,
+    TOnStartActivity extends (
       payload: CompositeTaskOnStartPayload<
-        C,
-        WC,
-        Get<WM, ['onStart', 'input']>
+        TContext,
+        TChildWorkflowContext,
+        Get<TWorkItemMetadata, ['onStart', 'input']>
       >,
-      input: I
+      input: TOnStartActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnStartActivity
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
     Simplify<
-      Omit<CTM, TaskOnStartSym> & {
+      Omit<TCompositeTaskMetadata, TaskOnStartSym> & {
         [TaskOnStartSym]: CompositeTaskActivityMetadata<
-          Parameters<F>[1],
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnStartActivity>[1],
+          Effect.Effect.Success<ReturnType<TOnStartActivity>>
         >;
       }
     >,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TOnStartActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnStartActivity>>
   > {
     this.activities.onStart = f;
     return this;
   }
 
   onComplete<
-    F extends (
-      payload: TaskOnCompletePayload<C>
+    TOnCompleteActivity extends (
+      payload: TaskOnCompletePayload<TContext>
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCompleteActivity
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TOnCompleteActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCompleteActivity>>
   > {
     this.activities.onComplete = f;
     return this;
   }
 
   onCancel<
-    F extends (payload: TaskOnCancelPayload<C>) => Effect.Effect<any, any, any>
+    TOnCancelActivity extends (
+      payload: TaskOnCancelPayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCancelActivity
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TOnCancelActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCancelActivity>>
   > {
     this.activities.onCancel = f;
     return this;
   }
 
   onFail<
-    F extends (payload: TaskOnFailPayload<C>) => Effect.Effect<any, any, any>
+    TOnFailActivity extends (
+      payload: TaskOnFailPayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnFailActivity
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TOnFailActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnFailActivity>>
   > {
     this.activities.onFail = f;
     return this;
   }
 
-  withShouldComplete<F extends ShouldCompositeTaskCompleteFn<C, WC>>(
-    f: F
+  withShouldComplete<
+    TShouldComplete extends ShouldCompositeTaskCompleteFn<
+      TContext,
+      TChildWorkflowContext
+    >
+  >(
+    f: TShouldComplete
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TShouldComplete>>,
+    E | Effect.Effect.Error<ReturnType<TShouldComplete>>
   > {
     this.shouldComplete = f;
     return this;
   }
 
-  withShouldFail<F extends ShouldCompositeTaskFailFn<C, WC>>(
-    f: F
+  withShouldFail<
+    TShouldFail extends ShouldCompositeTaskFailFn<
+      TContext,
+      TChildWorkflowContext
+    >
+  >(
+    f: TShouldFail
   ): CompositeTaskBuilder<
-    C,
-    WC,
-    TA,
-    JT,
-    ST,
-    CTM,
-    WM,
-    ET,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TChildWorkflowContext,
+    TCompositeTaskActivities,
+    TJoinType,
+    TSplitType,
+    TCompositeTaskMetadata,
+    TWorkItemMetadata,
+    TElementTypes,
+    R | Effect.Effect.Context<ReturnType<TShouldFail>>,
+    E | Effect.Effect.Error<ReturnType<TShouldFail>>
   > {
     this.shouldFail = f;
     return this;
@@ -438,7 +493,7 @@ export class CompositeTaskBuilder<
         name,
         workflow,
         subWorkflow,
-        activities as unknown as CompositeTaskActivities<C>,
+        activities as unknown as CompositeTaskActivities<TContext>,
         shouldComplete as ShouldCompositeTaskCompleteFn<any, any, never, never>,
         shouldFail as ShouldCompositeTaskFailFn<any, any, never, never>,
         { joinType, splitType }
@@ -449,39 +504,41 @@ export class CompositeTaskBuilder<
   }
 }
 
-export interface InitialCompositeTaskFnReturnType<C> {
-  withSubWorkflow: <W extends AnyWorkflowBuilder>(
-    workflow: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
+export interface InitialCompositeTaskFnReturnType<TContext> {
+  withSubWorkflow: <TWorkflowBuilder extends AnyWorkflowBuilder>(
+    workflow: TWorkflowBuilder &
+      AnyWorkflowBuilderWithCorrectParentContext<TWorkflowBuilder, TContext>
   ) => CompositeTaskBuilder<
-    C,
-    WorkflowBuilderC<W>,
+    TContext,
+    WorkflowBuilderContext<TWorkflowBuilder>,
     any,
     undefined,
     undefined,
     object,
-    WorkflowBuilderMetadata<W>,
-    WorkflowBuilderElementTypes<W>,
-    WorkflowBuilderR<W>,
-    WorkflowBuilderE<W>
+    WorkflowBuilderMetadata<TWorkflowBuilder>,
+    WorkflowBuilderElementTypes<TWorkflowBuilder>,
+    WorkflowBuilderR<TWorkflowBuilder>,
+    WorkflowBuilderE<TWorkflowBuilder>
   >;
 }
 
-export function compositeTask<C>() {
+export function compositeTask<TContext>() {
   return {
-    withSubWorkflow<W extends AnyWorkflowBuilder>(
-      workflow: W & AnyWorkflowBuilderWithCorrectParentContext<W, C>
+    withSubWorkflow<TWorkflowBuilder extends AnyWorkflowBuilder>(
+      workflow: TWorkflowBuilder &
+        AnyWorkflowBuilderWithCorrectParentContext<TWorkflowBuilder, TContext>
     ) {
       return new CompositeTaskBuilder<
-        C,
-        WorkflowBuilderC<W>,
-        CompositeTaskActivities<C>,
+        TContext,
+        WorkflowBuilderContext<TWorkflowBuilder>,
+        CompositeTaskActivities<TContext>,
         undefined,
         undefined,
         object,
-        WorkflowBuilderMetadata<W>,
-        WorkflowBuilderElementTypes<W>,
-        WorkflowBuilderR<W>,
-        WorkflowBuilderE<W>
+        WorkflowBuilderMetadata<TWorkflowBuilder>,
+        WorkflowBuilderElementTypes<TWorkflowBuilder>,
+        WorkflowBuilderR<TWorkflowBuilder>,
+        WorkflowBuilderE<TWorkflowBuilder>
       >(workflow).initialize();
     },
   };

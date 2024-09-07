@@ -17,21 +17,21 @@ export type ValidOrXorTaskFlow<F> = F extends OrXorTaskFlowBuilder<
   any,
   any,
   any,
-  infer D,
+  infer THasDefault,
   any
 >
-  ? D extends true
+  ? THasDefault extends true
     ? F
     : never
   : never;
 
-export class ConditionFlowBuilder<BNTasks> {
+export class ConditionFlowBuilder<TTasks> {
   private readonly from: string;
-  readonly to = new Set<BNTasks & string>();
+  readonly to = new Set<TTasks & string>();
   constructor(from: string) {
     this.from = from;
   }
-  task(taskName: BNTasks & string) {
+  task(taskName: TTasks & string) {
     this.to.add(taskName);
     return this;
   }
@@ -50,18 +50,18 @@ export class ConditionFlowBuilder<BNTasks> {
   }
 }
 
-export class TaskFlowBuilder<BNConditions, BNTasks> {
+export class TaskFlowBuilder<TConditions, TTasks> {
   private readonly from: string;
   readonly toConditions: Record<string, object> = {};
   readonly toTasks: Record<string, object> = {};
   constructor(from: string) {
     this.from = from;
   }
-  task(taskName: BNTasks & string) {
+  task(taskName: TTasks & string) {
     this.toTasks[taskName] = {};
     return this;
   }
-  condition(conditionName: BNConditions & string) {
+  condition(conditionName: TConditions & string) {
     this.toConditions[conditionName] = {};
     return this;
   }
@@ -100,12 +100,12 @@ export class TaskFlowBuilder<BNConditions, BNTasks> {
 }
 
 export class OrXorTaskFlowBuilder<
-  BNConditions,
-  BNTasks,
+  TConditions,
+  TTasks,
   R = never,
   E = never,
-  HasDefault = never,
-  Context = unknown
+  THasDefault = never,
+  TContext = unknown
 > {
   private order = 0;
   readonly from: string;
@@ -121,45 +121,49 @@ export class OrXorTaskFlowBuilder<
   constructor(from: string) {
     this.from = from;
   }
-  task<R1, E1>(
-    taskName: BNTasks & string,
-    predicate: (payload: { context: Context }) => Effect.Effect<boolean, E1, R1>
+  task<TTaskR, TTaskE>(
+    taskName: TTasks & string,
+    predicate: (payload: {
+      context: TContext;
+    }) => Effect.Effect<boolean, TTaskE, TTaskR>
   ): OrXorTaskFlowBuilder<
-    BNConditions,
-    BNTasks,
-    R | R1,
-    E | E1,
-    HasDefault,
-    Context
+    TConditions,
+    TTasks,
+    R | TTaskR,
+    E | TTaskE,
+    THasDefault,
+    TContext
   > {
     this.order++;
     this.toTasks[taskName] = { order: this.order, predicate };
     return this;
   }
-  condition<R1, E1>(
-    conditionName: BNTasks & string,
-    predicate: (payload: { context: Context }) => Effect.Effect<boolean, E1, R1>
+  condition<TConditionR, TConditionE>(
+    conditionName: TTasks & string,
+    predicate: (payload: {
+      context: TContext;
+    }) => Effect.Effect<boolean, TConditionE, TConditionR>
   ): OrXorTaskFlowBuilder<
-    BNConditions,
-    BNTasks,
-    R | R1,
-    E | E1,
-    HasDefault,
-    Context
+    TConditions,
+    TTasks,
+    R | TConditionR,
+    E | TConditionE,
+    THasDefault,
+    TContext
   > {
     this.order++;
     this.toConditions[conditionName] = { order: this.order, predicate };
     return this;
   }
   defaultTask(
-    taskName: BNTasks & string
-  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, R, E, true, Context> {
+    taskName: TTasks & string
+  ): OrXorTaskFlowBuilder<TConditions, TTasks, R, E, true, TContext> {
     this.toDefault = { type: 'task', name: taskName };
     return this;
   }
   defaultCondition(
-    conditionName: BNConditions & string
-  ): OrXorTaskFlowBuilder<BNConditions, BNTasks, R, E, true, Context> {
+    conditionName: TConditions & string
+  ): OrXorTaskFlowBuilder<TConditions, TTasks, R, E, true, TContext> {
     this.toDefault = { type: 'condition', name: conditionName };
     return this;
   }

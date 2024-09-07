@@ -67,51 +67,54 @@ export interface WorkflowBuilderDefinition {
   };
 }
 
-type UpdateWorkflowContext<C> = (
-  contextOrUpdater: C | ((context: C) => C)
+type UpdateWorkflowContext<TContext> = (
+  contextOrUpdater: TContext | ((context: TContext) => TContext)
 ) => Effect.Effect<void, WorkflowDoesNotExist>;
 
-export interface DefaultTaskOrWorkItemActivityPayload<C> {
-  getWorkflowContext(): Effect.Effect<C, WorkflowDoesNotExist>;
-  updateWorkflowContext: UpdateWorkflowContext<C>;
+export interface DefaultTaskOrWorkItemActivityPayload<TContext> {
+  getWorkflowContext(): Effect.Effect<TContext, WorkflowDoesNotExist>;
+  updateWorkflowContext: UpdateWorkflowContext<TContext>;
 }
 
-export type TaskOnDisablePayload<C> =
-  DefaultTaskOrWorkItemActivityPayload<C> & {
+export type TaskOnDisablePayload<TContext> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
     disableTask: () => Effect.Effect<
       void,
       TaskDoesNotExist | TaskDoesNotExistInStore | InvalidTaskStateTransition
     >;
   };
 
-export type TaskOnEnablePayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
-  enableTask: () => Effect.Effect<
-    {
-      enqueueStartTask: (input?: unknown) => Effect.Effect<void>;
-    },
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | InvalidTaskStateTransition
-  >;
-};
+export type TaskOnEnablePayload<TContext> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
+    enableTask: () => Effect.Effect<
+      {
+        enqueueStartTask: (input?: unknown) => Effect.Effect<void>;
+      },
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | InvalidTaskStateTransition
+    >;
+  };
 
 export type TaskOnStartPayload<
-  C,
-  P = unknown,
-  SWI = unknown
-> = DefaultTaskOrWorkItemActivityPayload<C> & {
+  TContext,
+  TPayload = unknown,
+  TStartWorkItemInput = unknown
+> = DefaultTaskOrWorkItemActivityPayload<TContext> & {
   startTask: () => Effect.Effect<
     {
       enqueueStartWorkItem(
         id: WorkItemId,
-        ...input: undefined extends SWI ? [SWI?] : [SWI]
+        ...input: undefined extends TStartWorkItemInput
+          ? [TStartWorkItemInput?]
+          : [TStartWorkItemInput]
       ): Effect.Effect<void>;
       initializeWorkItem: (
-        ...payload: undefined extends P ? [P?] : [P]
+        ...payload: undefined extends TPayload ? [TPayload?] : [TPayload]
       ) => Effect.Effect<
-        WorkItemInstance<P>,
+        WorkItemInstance<TPayload>,
         TaskDoesNotExistInStore | InvalidTaskState
       >;
     },
@@ -124,19 +127,21 @@ export type TaskOnStartPayload<
 };
 
 export type CompositeTaskOnStartPayload<
-  C,
-  P = unknown,
-  SWI = unknown
-> = DefaultTaskOrWorkItemActivityPayload<C> & {
+  TContext,
+  TPayload = unknown,
+  TStartWorkItemInput = unknown
+> = DefaultTaskOrWorkItemActivityPayload<TContext> & {
   startTask: () => Effect.Effect<
     {
       enqueueStartWorkflow(
         id: WorkflowId,
-        ...input: undefined extends SWI ? [SWI?] : [SWI]
+        ...input: undefined extends TStartWorkItemInput
+          ? [TStartWorkItemInput?]
+          : [TStartWorkItemInput]
       ): Effect.Effect<void>;
       initializeWorkflow: (
-        ...context: undefined extends P ? [P?] : [P]
-      ) => Effect.Effect<WorkflowInstance<P>, TaskDoesNotExistInStore>;
+        ...context: undefined extends TPayload ? [TPayload?] : [TPayload]
+      ) => Effect.Effect<WorkflowInstance<TPayload>, TaskDoesNotExistInStore>;
     },
     | TaskDoesNotExist
     | TaskDoesNotExistInStore
@@ -146,8 +151,8 @@ export type CompositeTaskOnStartPayload<
   >;
 };
 
-export type TaskOnCompletePayload<C> =
-  DefaultTaskOrWorkItemActivityPayload<C> & {
+export type TaskOnCompletePayload<TContext> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
     completeTask: () => Effect.Effect<
       void,
       | TaskDoesNotExist
@@ -164,93 +169,107 @@ export type TaskOnCompletePayload<C> =
     >;
   };
 
-export type TaskOnCancelPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
-  cancelTask: () => Effect.Effect<
-    void,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskState
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
-    | InvalidWorkItemTransition
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist
-    | WorkItemDoesNotExist
-  >;
-};
+export type TaskOnCancelPayload<TContext> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
+    cancelTask: () => Effect.Effect<
+      void,
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | EndConditionDoesNotExist
+      | InvalidTaskState
+      | InvalidTaskStateTransition
+      | InvalidWorkflowStateTransition
+      | InvalidWorkItemTransition
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | WorkflowDoesNotExist
+      | WorkItemDoesNotExist
+    >;
+  };
 
-export type TaskOnFailPayload<C> = DefaultTaskOrWorkItemActivityPayload<C> & {
-  failTask: () => Effect.Effect<
-    void,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskState
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
-    | InvalidWorkItemTransition
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist
-    | WorkItemDoesNotExist
-  >;
-};
+export type TaskOnFailPayload<TContext> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
+    failTask: () => Effect.Effect<
+      void,
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | EndConditionDoesNotExist
+      | InvalidTaskState
+      | InvalidTaskStateTransition
+      | InvalidWorkflowStateTransition
+      | InvalidWorkItemTransition
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | WorkflowDoesNotExist
+      | WorkItemDoesNotExist
+    >;
+  };
 
-export interface TaskActivities<C> {
-  onDisable: (payload: TaskOnDisablePayload<C>) => UnknownEffect;
-  onEnable: (payload: TaskOnEnablePayload<C>) => UnknownEffect;
-  onStart: (payload: TaskOnStartPayload<C, any>, input?: any) => UnknownEffect;
-  onComplete: (payload: TaskOnCompletePayload<C>) => UnknownEffect;
-  onCancel: (payload: TaskOnCancelPayload<C>) => UnknownEffect;
-  onFail: (payload: TaskOnFailPayload<C>) => UnknownEffect;
-}
-export type CompositeTaskActivities<C> = Omit<TaskActivities<C>, 'onStart'> & {
+export interface TaskActivities<TContext> {
+  onDisable: (payload: TaskOnDisablePayload<TContext>) => UnknownEffect;
+  onEnable: (payload: TaskOnEnablePayload<TContext>) => UnknownEffect;
   onStart: (
-    payload: CompositeTaskOnStartPayload<C, any>,
+    payload: TaskOnStartPayload<TContext, any>,
+    input?: any
+  ) => UnknownEffect;
+  onComplete: (payload: TaskOnCompletePayload<TContext>) => UnknownEffect;
+  onCancel: (payload: TaskOnCancelPayload<TContext>) => UnknownEffect;
+  onFail: (payload: TaskOnFailPayload<TContext>) => UnknownEffect;
+}
+export type CompositeTaskActivities<TContext> = Omit<
+  TaskActivities<TContext>,
+  'onStart'
+> & {
+  onStart: (
+    payload: CompositeTaskOnStartPayload<TContext, any>,
     input?: any
   ) => UnknownEffect;
 };
 
 export type WorkItemOnStartPayload<
-  C,
-  P,
-  OCOI = unknown,
-  OCAI = unknown,
-  OFI = unknown
-> = DefaultTaskOrWorkItemActivityPayload<C> & {
+  TContext,
+  TPayload,
+  TOnCompleteInput = unknown,
+  TOnCancelInput = unknown,
+  TOnFailInput = unknown
+> = DefaultTaskOrWorkItemActivityPayload<TContext> & {
   getWorkItem(): Effect.Effect<
-    WorkItemInstance<P>,
+    WorkItemInstance<TPayload>,
     WorkItemDoesNotExist | TaskDoesNotExistInStore
   >;
   updateWorkItemPayload: (
-    workItemPayload: P
+    workItemPayload: TPayload
   ) => Effect.Effect<void, WorkItemDoesNotExist>;
   startWorkItem: () => Effect.Effect<
     {
       enqueueCompleteWorkItem(
-        ...input: undefined extends OCOI ? [OCOI?] : [OCOI]
+        ...input: undefined extends TOnCompleteInput
+          ? [TOnCompleteInput?]
+          : [TOnCompleteInput]
       ): Effect.Effect<void>;
       enqueueCancelWorkItem(
-        ...input: undefined extends OCAI ? [OCAI?] : [OCAI]
+        ...input: undefined extends TOnCancelInput
+          ? [TOnCancelInput?]
+          : [TOnCancelInput]
       ): Effect.Effect<void>;
       enqueueFailWorkItem(
-        ...input: undefined extends OFI ? [OFI?] : [OFI]
+        ...input: undefined extends TOnFailInput
+          ? [TOnFailInput?]
+          : [TOnFailInput]
       ): Effect.Effect<void>;
     },
     WorkItemDoesNotExist | InvalidWorkItemTransition
   >;
 };
 
-export type WorkItemOnCompletePayload<C, P> =
-  DefaultTaskOrWorkItemActivityPayload<C> & {
+export type WorkItemOnCompletePayload<TContext, TPayload> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
     getWorkItem(): Effect.Effect<
-      WorkItemInstance<P>,
+      WorkItemInstance<TPayload>,
       WorkItemDoesNotExist | TaskDoesNotExistInStore
     >;
     updateWorkItemPayload: (
-      workItemPayload: P
+      workItemPayload: TPayload
     ) => Effect.Effect<void, WorkItemDoesNotExist>;
     completeWorkItem: () => Effect.Effect<
       void,
@@ -258,14 +277,14 @@ export type WorkItemOnCompletePayload<C, P> =
     >;
   };
 
-export type WorkItemOnCancelPayload<C, P> =
-  DefaultTaskOrWorkItemActivityPayload<C> & {
+export type WorkItemOnCancelPayload<TContext, TPayload> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
     getWorkItem(): Effect.Effect<
-      WorkItemInstance<P>,
+      WorkItemInstance<TPayload>,
       WorkItemDoesNotExist | TaskDoesNotExistInStore
     >;
     updateWorkItemPayload: (
-      workItemPayload: P
+      workItemPayload: TPayload
     ) => Effect.Effect<void, WorkItemDoesNotExist>;
     cancelWorkItem: () => Effect.Effect<
       void,
@@ -273,34 +292,37 @@ export type WorkItemOnCancelPayload<C, P> =
     >;
   };
 
-export type WorkItemOnFailPayload<C, P> =
-  DefaultTaskOrWorkItemActivityPayload<C> & {
+export type WorkItemOnFailPayload<TContext, TPayload> =
+  DefaultTaskOrWorkItemActivityPayload<TContext> & {
     getWorkItem(): Effect.Effect<
-      WorkItemInstance<P>,
+      WorkItemInstance<TPayload>,
       WorkItemDoesNotExist | TaskDoesNotExistInStore
     >;
     updateWorkItemPayload: (
-      workItemPayload: P
+      workItemPayload: TPayload
     ) => Effect.Effect<void, WorkItemDoesNotExist>;
     failWorkItem: () => Effect.Effect<
       void,
       WorkItemDoesNotExist | InvalidWorkItemTransition
     >;
   };
-export interface WorkItemActivities<C, P> {
+export interface WorkItemActivities<TContext, TPayload> {
   onStart: (
-    payload: WorkItemOnStartPayload<C, P, any, any, any>,
+    payload: WorkItemOnStartPayload<TContext, TPayload, any, any, any>,
     input?: any
   ) => UnknownEffect;
   onComplete: (
-    payload: WorkItemOnCompletePayload<C, P>,
+    payload: WorkItemOnCompletePayload<TContext, TPayload>,
     input?: any
   ) => UnknownEffect;
   onCancel: (
-    payload: WorkItemOnCancelPayload<C, P>,
+    payload: WorkItemOnCancelPayload<TContext, TPayload>,
     input?: any
   ) => UnknownEffect;
-  onFail: (payload: WorkItemOnFailPayload<C, P>, input?: any) => UnknownEffect;
+  onFail: (
+    payload: WorkItemOnFailPayload<TContext, TPayload>,
+    input?: any
+  ) => UnknownEffect;
 }
 
 export class IdGenerator extends Context.Tag('tasquencer/IdGenerator')<
@@ -349,12 +371,15 @@ export type WorkflowInstanceParent = {
   taskGeneration: number;
 } | null;
 
-export interface WorkflowInstance<C = unknown, N extends string = string> {
+export interface WorkflowInstance<
+  TContext = unknown,
+  TName extends string = string
+> {
   parent: WorkflowInstanceParent;
   id: WorkflowId;
-  name: N;
+  name: TName;
   state: WorkflowInstanceState;
-  context: C;
+  context: TContext;
 }
 
 export const validWorkflowInstanceTransitions: Record<
@@ -421,17 +446,17 @@ export interface ConditionInstance {
 export type WorkItemInstanceState = WorkflowInstanceState;
 
 export interface WorkItemInstance<
-  P = unknown,
-  WN extends string = string,
-  TN extends string = string
+  TPayload = unknown,
+  TWorkflowName extends string = string,
+  TTaskName extends string = string
 > {
   id: WorkItemId;
-  taskName: TN;
+  taskName: TTaskName;
   taskGeneration: number;
   workflowId: WorkflowId;
-  workflowName: WN;
+  workflowName: TWorkflowName;
   state: WorkItemInstanceState;
-  payload: P;
+  payload: TPayload;
 }
 
 export const validWorkItemInstanceStateTransitions: Record<
@@ -458,14 +483,14 @@ interface WorkflowState {
 }
 export type Store = Record<WorkflowId, WorkflowState>;
 export interface StorePersistableState<
-  W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance,
-  T extends TaskInstance = TaskInstance
+  TWorkflowInstance extends WorkflowInstance = WorkflowInstance,
+  TWorkItemInstance extends WorkItemInstance = WorkItemInstance,
+  TTaskInstance extends TaskInstance = TaskInstance
 > {
-  workflows: W[];
-  tasks: T[];
+  workflows: TWorkflowInstance[];
+  tasks: TTaskInstance[];
   conditions: ConditionInstance[];
-  workItems: WI[];
+  workItems: TWorkItemInstance[];
 }
 
 export const WorkflowContextSym = Symbol('WorkflowContext');
@@ -519,58 +544,67 @@ export class ExecutionContext extends Context.Tag(
   }
 >() {}
 
-export type ShouldTaskCompleteFn<C, WIP, R = unknown, E = unknown> = (payload: {
-  getWorkflowContext: () => Effect.Effect<any, any, C>;
-  workItems: WorkItemInstance<WIP>[];
-}) => Effect.Effect<boolean, R, E>;
-
-export type ShouldTaskFailFn<
-  C,
-  WIP,
-  R = unknown,
-  E = unknown
-> = ShouldTaskCompleteFn<C, WIP, R, E>;
-
-export type ShouldCompositeTaskCompleteFn<
-  C,
-  WC,
+export type ShouldTaskCompleteFn<
+  TContext,
+  TWorkItemPayload,
   R = unknown,
   E = unknown
 > = (payload: {
-  getWorkflowContext: () => Effect.Effect<C, any, any>;
-  workflows: WorkflowInstance<WC>[];
+  getWorkflowContext: () => Effect.Effect<any, any, TContext>;
+  workItems: WorkItemInstance<TWorkItemPayload>[];
+}) => Effect.Effect<boolean, R, E>;
+
+export type ShouldTaskFailFn<
+  TContext,
+  TWorkItemPayload,
+  R = unknown,
+  E = unknown
+> = ShouldTaskCompleteFn<TContext, TWorkItemPayload, R, E>;
+
+export type ShouldCompositeTaskCompleteFn<
+  TContext,
+  TChildWorkflowContext,
+  R = unknown,
+  E = unknown
+> = (payload: {
+  getWorkflowContext: () => Effect.Effect<TContext, any, any>;
+  workflows: WorkflowInstance<TChildWorkflowContext>[];
 }) => Effect.Effect<boolean, E, R>;
 
 export type ShouldCompositeTaskFailFn<
-  C,
-  WC,
+  TContext,
+  TChildWorkflowContext,
   R = unknown,
   E = unknown
-> = ShouldCompositeTaskCompleteFn<C, WC, R, E>;
+> = ShouldCompositeTaskCompleteFn<TContext, TChildWorkflowContext, R, E>;
 
 export type StateChange<
-  W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance,
-  T extends TaskInstance = TaskInstance
+  TWorkflowInstance extends WorkflowInstance = WorkflowInstance,
+  TWorkItemInstance extends WorkItemInstance = WorkItemInstance,
+  TTaskInstance extends TaskInstance = TaskInstance
 > =
-  | { type: 'WORKFLOW_INITIALIZED'; workflow: W }
-  | { type: 'WORKFLOW_STATE_UPDATED'; workflow: W }
-  | { type: 'WORKFLOW_CONTEXT_UPDATED'; workflow: W }
-  | { type: 'TASK_INITIALIZED'; task: T }
-  | { type: 'TASK_STATE_UPDATED'; task: T }
+  | { type: 'WORKFLOW_INITIALIZED'; workflow: TWorkflowInstance }
+  | { type: 'WORKFLOW_STATE_UPDATED'; workflow: TWorkflowInstance }
+  | { type: 'WORKFLOW_CONTEXT_UPDATED'; workflow: TWorkflowInstance }
+  | { type: 'TASK_INITIALIZED'; task: TTaskInstance }
+  | { type: 'TASK_STATE_UPDATED'; task: TTaskInstance }
   | { type: 'CONDITION_MARKING_UPDATED'; condition: ConditionInstance }
   | { type: 'CONDITION_INITIALIZED'; condition: ConditionInstance }
-  | { type: 'WORK_ITEM_INITIALIZED'; workItem: WI }
-  | { type: 'WORK_ITEM_STATE_UPDATED'; workItem: WI }
-  | { type: 'WORK_ITEM_PAYLOAD_UPDATED'; workItem: WI };
+  | { type: 'WORK_ITEM_INITIALIZED'; workItem: TWorkItemInstance }
+  | { type: 'WORK_ITEM_STATE_UPDATED'; workItem: TWorkItemInstance }
+  | { type: 'WORK_ITEM_PAYLOAD_UPDATED'; workItem: TWorkItemInstance };
 
 export interface StateChangeItem<
-  W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance,
-  T extends TaskInstance = TaskInstance
+  TWorkflowInstance extends WorkflowInstance = WorkflowInstance,
+  TWorkItemInstance extends WorkItemInstance = WorkItemInstance,
+  TTask extends TaskInstance = TaskInstance
 > {
-  change: StateChange<W, WI, T>;
-  getState: () => StorePersistableState<W, WI, T>;
+  change: StateChange<TWorkflowInstance, TWorkItemInstance, TTask>;
+  getState: () => StorePersistableState<
+    TWorkflowInstance,
+    TWorkItemInstance,
+    TTask
+  >;
 }
 export interface StateChangeLogger {
   log: (item: StateChangeItem) => void;
@@ -578,10 +612,16 @@ export interface StateChangeLogger {
 }
 
 export type OnStateChangeFn<
-  W extends WorkflowInstance = WorkflowInstance,
-  WI extends WorkItemInstance = WorkItemInstance,
-  T extends TaskInstance = TaskInstance
-> = (changes: StateChangeItem<W, WI, T>[]) => Effect.Effect<void>;
+  TWorkflowInstance extends WorkflowInstance = WorkflowInstance,
+  TWorkItemInstance extends WorkItemInstance = WorkItemInstance,
+  TTaskInstance extends TaskInstance = TaskInstance
+> = (
+  changes: StateChangeItem<
+    TWorkflowInstance,
+    TWorkItemInstance,
+    TTaskInstance
+  >[]
+) => Effect.Effect<void>;
 
 export interface ElementTypes {
   workflow: WorkflowInstance;
@@ -590,113 +630,116 @@ export interface ElementTypes {
   condition: ConditionInstance;
 }
 
-export interface DefaultWorkflowActivityPayload<C, PC> {
-  getParentWorkflowContext: PC extends never
+export interface DefaultWorkflowActivityPayload<
+  TContext,
+  TParentWorkflowContext
+> {
+  getParentWorkflowContext: TParentWorkflowContext extends never
     ? never
     : () => Effect.Effect<
-        PC,
+        TParentWorkflowContext,
         ParentWorkflowDoesNotExist | WorkflowDoesNotExist
       >;
-  updateParentWorkflowContext: PC extends never
+  updateParentWorkflowContext: TParentWorkflowContext extends never
     ? never
     : (
-        context: PC | ((context: PC) => PC)
+        context:
+          | TParentWorkflowContext
+          | ((context: TParentWorkflowContext) => TParentWorkflowContext)
       ) => Effect.Effect<
         void,
         ParentWorkflowDoesNotExist | WorkflowDoesNotExist
       >;
-  getWorkflowContext(): Effect.Effect<C, WorkflowDoesNotExist>;
-  updateWorkflowContext: UpdateWorkflowContext<C>;
+  getWorkflowContext(): Effect.Effect<TContext, WorkflowDoesNotExist>;
+  updateWorkflowContext: UpdateWorkflowContext<TContext>;
 }
 
-export type WorkflowOnStartPayload<C, PC> = DefaultWorkflowActivityPayload<
-  C,
-  PC
-> & {
-  startWorkflow(): Effect.Effect<
-    void,
-    | ConditionDoesNotExist
-    | WorkflowDoesNotExist
-    | StartConditionDoesNotExist
-    | InvalidWorkflowStateTransition
-    | ConditionDoesNotExistInStore
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | InvalidTaskStateTransition
-  >;
-};
+export type WorkflowOnStartPayload<TContext, TParentWorkflowContext> =
+  DefaultWorkflowActivityPayload<TContext, TParentWorkflowContext> & {
+    startWorkflow(): Effect.Effect<
+      void,
+      | ConditionDoesNotExist
+      | WorkflowDoesNotExist
+      | StartConditionDoesNotExist
+      | InvalidWorkflowStateTransition
+      | ConditionDoesNotExistInStore
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | InvalidTaskStateTransition
+    >;
+  };
 
-export type WorkflowOnCompletePayload<C, PC> = DefaultWorkflowActivityPayload<
-  C,
-  PC
-> & {
-  completeWorkflow: () => Effect.Effect<
-    void,
-    | ConditionDoesNotExist
-    | WorkflowDoesNotExist
-    | InvalidWorkflowStateTransition
-    | ConditionDoesNotExistInStore
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | InvalidTaskStateTransition
-    | InvalidTaskState
-    | EndConditionDoesNotExist
-    | WorkItemDoesNotExist
-    | InvalidWorkItemTransition
-  >;
-};
+export type WorkflowOnCompletePayload<TContext, TParentWorkflowContext> =
+  DefaultWorkflowActivityPayload<TContext, TParentWorkflowContext> & {
+    completeWorkflow: () => Effect.Effect<
+      void,
+      | ConditionDoesNotExist
+      | WorkflowDoesNotExist
+      | InvalidWorkflowStateTransition
+      | ConditionDoesNotExistInStore
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | InvalidTaskStateTransition
+      | InvalidTaskState
+      | EndConditionDoesNotExist
+      | WorkItemDoesNotExist
+      | InvalidWorkItemTransition
+    >;
+  };
 
-export type WorkflowOnCancelPayload<C, PC> = DefaultWorkflowActivityPayload<
-  C,
-  PC
-> & {
-  cancelWorkflow: () => Effect.Effect<
-    void,
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | EndConditionDoesNotExist
-    | InvalidTaskState
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
-    | InvalidWorkItemTransition
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | WorkflowDoesNotExist
-    | WorkItemDoesNotExist
-  >;
-};
+export type WorkflowOnCancelPayload<TContext, TParentWorkflowContext> =
+  DefaultWorkflowActivityPayload<TContext, TParentWorkflowContext> & {
+    cancelWorkflow: () => Effect.Effect<
+      void,
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | EndConditionDoesNotExist
+      | InvalidTaskState
+      | InvalidTaskStateTransition
+      | InvalidWorkflowStateTransition
+      | InvalidWorkItemTransition
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | WorkflowDoesNotExist
+      | WorkItemDoesNotExist
+    >;
+  };
 
-export type WorkflowOnFailPayload<C, PC> = DefaultWorkflowActivityPayload<
-  C,
-  PC
-> & {
-  failWorkflow: () => Effect.Effect<
-    void,
-    | TaskDoesNotExist
-    | TaskDoesNotExistInStore
-    | ConditionDoesNotExist
-    | ConditionDoesNotExistInStore
-    | InvalidTaskState
-    | WorkflowDoesNotExist
-    | WorkItemDoesNotExist
-    | EndConditionDoesNotExist
-    | InvalidTaskStateTransition
-    | InvalidWorkflowStateTransition
-    | InvalidWorkItemTransition
-  >;
-};
-export interface WorkflowActivities<C = unknown, PC = never> {
+export type WorkflowOnFailPayload<TContext, TParentWorkflowContext> =
+  DefaultWorkflowActivityPayload<TContext, TParentWorkflowContext> & {
+    failWorkflow: () => Effect.Effect<
+      void,
+      | TaskDoesNotExist
+      | TaskDoesNotExistInStore
+      | ConditionDoesNotExist
+      | ConditionDoesNotExistInStore
+      | InvalidTaskState
+      | WorkflowDoesNotExist
+      | WorkItemDoesNotExist
+      | EndConditionDoesNotExist
+      | InvalidTaskStateTransition
+      | InvalidWorkflowStateTransition
+      | InvalidWorkItemTransition
+    >;
+  };
+export interface WorkflowActivities<
+  TContext = unknown,
+  TParentWorkflowContext = never
+> {
   onStart: (
-    payload: WorkflowOnStartPayload<C, PC>,
+    payload: WorkflowOnStartPayload<TContext, TParentWorkflowContext>,
     input?: any
   ) => UnknownEffect;
   onComplete: (
-    payload: WorkflowOnCompletePayload<C, PC>,
+    payload: WorkflowOnCompletePayload<TContext, TParentWorkflowContext>,
     input?: any
   ) => UnknownEffect;
   onCancel: (
-    payload: WorkflowOnCancelPayload<C, PC>,
+    payload: WorkflowOnCancelPayload<TContext, TParentWorkflowContext>,
     input?: any
   ) => UnknownEffect;
-  onFail: (payload: WorkflowOnFailPayload<C, PC>, input?: any) => UnknownEffect;
+  onFail: (
+    payload: WorkflowOnFailPayload<TContext, TParentWorkflowContext>,
+    input?: any
+  ) => UnknownEffect;
 }

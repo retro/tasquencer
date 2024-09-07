@@ -34,12 +34,13 @@ import {
 } from './FlowBuilder.js';
 import * as TB from './TaskBuilder.js';
 
-type TaskWithValidContext<C, T> = C extends TB.TaskBuilderContext<T>
-  ? T
-  : never;
+type TaskWithValidContext<TContext, TTaskBuilder> =
+  TContext extends TB.TaskBuilderContext<TTaskBuilder> ? TTaskBuilder : never;
 
-type CompositeTaskWithValidContext<C, T> =
-  C extends CTB.CompositeTaskBuilderContext<T> ? T : never;
+type CompositeTaskWithValidContext<TContext, TCompositeTaskBuilder> =
+  TContext extends CTB.CompositeTaskBuilderContext<TCompositeTaskBuilder>
+    ? TCompositeTaskBuilder
+    : never;
 
 type IsXorOrOrJoinSplit<T> = T extends never
   ? never
@@ -63,8 +64,33 @@ export type AnyWorkflowBuilder = WorkflowBuilder<
   any
 >;
 
-export type AnyWorkflowBuilderWithCorrectParentContext<W, PC> =
-  W extends WorkflowBuilder<
+export type AnyWorkflowBuilderWithCorrectParentContext<
+  TWorkflowBuilder,
+  TParentContext
+> = TWorkflowBuilder extends WorkflowBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer TWorkflowParentContext
+>
+  ? TParentContext extends TWorkflowParentContext
+    ? TWorkflowBuilder
+    : never
+  : never;
+
+export type WorkflowBuilderContext<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    infer TContext,
     any,
     any,
     any,
@@ -75,173 +101,157 @@ export type AnyWorkflowBuilderWithCorrectParentContext<W, PC> =
     any,
     any,
     any,
-    any,
-    any,
-    infer WPC
+    any
   >
-    ? PC extends WPC
-      ? W
-      : never
+    ? TContext
     : never;
 
-export type WorkflowBuilderC<T> = T extends WorkflowBuilder<
-  any,
-  infer C,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->
-  ? C
-  : never;
+export type WorkflowBuilderR<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    any,
+    infer R,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >
+    ? R
+    : never;
 
-export type WorkflowBuilderR<T> = T extends WorkflowBuilder<
-  any,
-  any,
-  infer R,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->
-  ? R
-  : never;
+export type WorkflowBuilderE<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    any,
+    any,
+    infer E,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >
+    ? E
+    : never;
 
-export type WorkflowBuilderE<T> = T extends WorkflowBuilder<
-  any,
-  any,
-  any,
-  infer E,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->
-  ? E
-  : never;
+export type WorkflowBuilderTaskActivitiesReturnType<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TTaskActivitiesReturnType,
+    any,
+    any
+  >
+    ? TTaskActivitiesReturnType
+    : never;
 
-export type WorkflowBuilderTaskActivitiesOutputs<T> = T extends WorkflowBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer AO,
-  any,
-  any
->
-  ? AO
-  : never;
+export type WorkflowBuilderMetadata<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TWorkflowBuilderMetadata,
+    any,
+    any
+  >
+    ? TWorkflowBuilderMetadata
+    : never;
 
-export type WorkflowBuilderMetadata<T> = T extends WorkflowBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer M,
-  any,
-  any
->
-  ? M
-  : never;
+export type WorkflowBuilderElementTypes<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TElementTypes,
+    any
+  >
+    ? TElementTypes
+    : never;
 
-export type WorkflowBuilderElementTypes<T> = T extends WorkflowBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer WAWIT,
-  any
->
-  ? WAWIT
-  : never;
+export type WorkflowBuilderTaskNames<TWorkflowBuilder> =
+  TWorkflowBuilder extends WorkflowBuilder<
+    any,
+    any,
+    any,
+    any,
+    infer TTaskNames,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >
+    ? TTaskNames
+    : never;
 
-export type WorkflowBuilderTaskName<T> = T extends WorkflowBuilder<
-  any,
-  any,
-  any,
-  any,
-  infer TN,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->
-  ? TN
-  : never;
-
-interface WorkflowActivityMetadata<I, R> {
-  input: I;
-  return: R;
+interface WorkflowActivityMetadata<TInput, TReturnType> {
+  input: TInput;
+  return: TReturnType;
 }
 
 // TODO: implement invariant checking
 export class WorkflowBuilder<
-  WName extends string,
-  WBContext,
+  TWorkflowName extends string,
+  TContext,
   R,
   E,
-  WBTasks = never,
-  WBConditions = never,
-  WBCancellationRegions = never,
-  WBTasksWithOrXorSplit = never,
-  WBConnectedTasks = never,
-  WBConnectedConditions = never,
-  WBMetadata = { [WorkflowContextSym]: WBContext },
-  WBElementTypes extends ElementTypes = {
-    workflow: WorkflowInstance<WBContext, WName>;
+  TTasks = never,
+  TConditions = never,
+  TCancellationRegions = never,
+  TTasksWithOrXorSplit = never,
+  TConnectedTasks = never,
+  TConnectedConditions = never,
+  TMetadata = { [WorkflowContextSym]: TContext },
+  TElementTypes extends ElementTypes = {
+    workflow: WorkflowInstance<TContext, TWorkflowName>;
     workItem: never;
     condition: never;
     task: never;
   },
-  WBParentContext = never
+  TParentContext = never
 > {
   readonly name: string;
   readonly definition: WorkflowBuilderDefinition;
-  readonly activities: WorkflowActivities<WBContext> =
-    {} as WorkflowActivities<WBContext>;
+  readonly activities: WorkflowActivities<TContext> =
+    {} as WorkflowActivities<TContext>;
 
-  constructor(name: WName) {
+  constructor(name: TWorkflowName) {
     this.name = name;
     this.definition = {
       conditions: {},
@@ -265,382 +275,395 @@ export class WorkflowBuilder<
       .onFail((_, _input?: undefined) => Effect.succeed(_input));
   }
 
-  withParentContext<PC>(): WorkflowBuilder<
-    WName,
-    WBContext,
+  withParentContext<TNewParentContext>(): WorkflowBuilder<
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
-    WBElementTypes,
-    PC
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata,
+    TElementTypes,
+    TNewParentContext
   > {
     return this;
   }
 
   onStart<
-    I,
-    F extends (
-      payload: WorkflowOnStartPayload<WBContext, WBParentContext>,
-      input: I
+    TOnStartActivityInput,
+    TOnStartActivity extends (
+      payload: WorkflowOnStartPayload<TContext, TParentContext>,
+      input: TOnStartActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnStartActivity
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
+    TWorkflowName,
+    TContext,
+    R | Effect.Effect.Context<ReturnType<TOnStartActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnStartActivity>>,
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
     Simplify<
-      Omit<WBMetadata, 'onStart'> & {
+      Omit<TMetadata, 'onStart'> & {
         onStart: WorkflowActivityMetadata<
-          Parameters<F>[1],
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnStartActivity>[1],
+          Effect.Effect.Success<ReturnType<TOnStartActivity>>
         >;
       }
     >,
-    WBElementTypes,
-    WBParentContext
+    TElementTypes,
+    TParentContext
   > {
     this.activities.onStart = f;
     return this;
   }
   onComplete<
-    I,
-    F extends (
-      payload: WorkflowOnCompletePayload<WBContext, WBParentContext>,
-      input: I
+    TOnCompleteActivityInput,
+    TOnCompleteActivity extends (
+      payload: WorkflowOnCompletePayload<TContext, TParentContext>,
+      input: TOnCompleteActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCompleteActivity
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
+    TWorkflowName,
+    TContext,
+    R | Effect.Effect.Context<ReturnType<TOnCompleteActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCompleteActivity>>,
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
     Simplify<
-      Omit<WBMetadata, 'onComplete'> & {
+      Omit<TMetadata, 'onComplete'> & {
         onComplete: WorkflowActivityMetadata<
-          Parameters<F>[1],
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnCompleteActivity>[1],
+          Effect.Effect.Success<ReturnType<TOnCompleteActivity>>
         >;
       }
     >,
-    WBElementTypes,
-    WBParentContext
+    TElementTypes,
+    TParentContext
   > {
     this.activities.onComplete = f;
     return this;
   }
 
   onFail<
-    I,
-    F extends (
-      payload: WorkflowOnFailPayload<WBContext, WBParentContext>,
-      input?: I
+    TOnFailActivityInput,
+    TOnFailActivity extends (
+      payload: WorkflowOnFailPayload<TContext, TParentContext>,
+      input?: TOnFailActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnFailActivity
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
+    TWorkflowName,
+    TContext,
+    R | Effect.Effect.Context<ReturnType<TOnFailActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnFailActivity>>,
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
     Simplify<
-      Omit<WBMetadata, 'onFail'> & {
+      Omit<TMetadata, 'onFail'> & {
         onFail: WorkflowActivityMetadata<
-          Parameters<F>[1],
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnFailActivity>[1],
+          Effect.Effect.Success<ReturnType<TOnFailActivity>>
         >;
       }
     >,
-    WBElementTypes,
-    WBParentContext
+    TElementTypes,
+    TParentContext
   > {
     this.activities.onFail = f;
     return this;
   }
 
   onCancel<
-    I,
-    F extends (
-      payload: WorkflowOnCancelPayload<WBContext, WBParentContext>,
-      input?: I
+    TOnCancelActivityInput,
+    TOnCancelActivity extends (
+      payload: WorkflowOnCancelPayload<TContext, TParentContext>,
+      input?: TOnCancelActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCancelActivity
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
+    TWorkflowName,
+    TContext,
+    R | Effect.Effect.Context<ReturnType<TOnCancelActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCancelActivity>>,
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
     Simplify<
-      Omit<WBMetadata, 'onCancel'> & {
+      Omit<TMetadata, 'onCancel'> & {
         onCancel: WorkflowActivityMetadata<
-          Parameters<F>[1],
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnCancelActivity>[1],
+          Effect.Effect.Success<ReturnType<TOnCancelActivity>>
         >;
       }
     >,
-    WBElementTypes,
-    WBParentContext
+    TElementTypes,
+    TParentContext
   > {
     this.activities.onCancel = f;
     return this;
   }
 
-  condition<CN extends string>(
-    conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
+  condition<TConditionName extends string>(
+    conditionName: TConditionName &
+      NotExtends<TTasks | TConditions, TConditionName>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks,
-    WBConditions | CN,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
+    TTasks,
+    TConditions | TConditionName,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata,
     {
-      workflow: WBElementTypes['workflow'];
-      workItem: WBElementTypes['workItem'];
+      workflow: TElementTypes['workflow'];
+      workItem: TElementTypes['workItem'];
       condition:
-        | WBElementTypes['condition']
+        | TElementTypes['condition']
         | {
-            name: CN & ConditionName;
-            workflowName: WName;
+            name: TConditionName & ConditionName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             marking: number;
           };
-      task: WBElementTypes['task'];
+      task: TElementTypes['task'];
     },
-    WBParentContext
+    TParentContext
   > {
     return this.addConditionUnsafe(conditionName);
   }
 
-  startCondition<CN extends string>(
-    conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
+  startCondition<TStartConditionName extends string>(
+    conditionName: TStartConditionName &
+      NotExtends<TTasks | TConditions, TStartConditionName>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks,
-    WBConditions | CN,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
+    TTasks,
+    TConditions | TStartConditionName,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata,
     {
-      workflow: WBElementTypes['workflow'];
-      workItem: WBElementTypes['workItem'];
+      workflow: TElementTypes['workflow'];
+      workItem: TElementTypes['workItem'];
       condition:
-        | WBElementTypes['condition']
+        | TElementTypes['condition']
         | {
-            name: CN & ConditionName;
-            workflowName: WName;
+            name: TStartConditionName & ConditionName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             marking: number;
           };
-      task: WBElementTypes['task'];
+      task: TElementTypes['task'];
     },
-    WBParentContext
+    TParentContext
   > {
     this.definition.startCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
   }
 
-  endCondition<CN extends string>(
-    conditionName: CN & NotExtends<WBTasks | WBConditions, CN>
+  endCondition<TEndConditionName extends string>(
+    conditionName: TEndConditionName &
+      NotExtends<TTasks | TConditions, TEndConditionName>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks,
-    WBConditions | CN,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
+    TTasks,
+    TConditions | TEndConditionName,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata,
     {
-      workflow: WBElementTypes['workflow'];
-      workItem: WBElementTypes['workItem'];
+      workflow: TElementTypes['workflow'];
+      workItem: TElementTypes['workItem'];
       condition:
-        | WBElementTypes['condition']
+        | TElementTypes['condition']
         | {
-            name: CN & ConditionName;
-            workflowName: WName;
+            name: TEndConditionName & ConditionName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             marking: number;
           };
-      task: WBElementTypes['task'];
+      task: TElementTypes['task'];
     },
-    WBParentContext
+    TParentContext
   > {
     this.definition.endCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
   }
 
   task<
-    TN extends string,
-    T extends TB.AnyTaskBuilder,
-    X extends IsXorOrOrJoinSplit<TB.TaskBuilderSplitType<T>> extends never
-      ? never
-      : TN
-  >(
-    taskName: TN & NotExtends<WBTasks | WBConditions, TN>,
-    task: T & TaskWithValidContext<WBContext, T>
-  ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | TB.TaskBuilderR<T>,
-    E | TB.TaskBuilderE<T>,
-    WBTasks | TN,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit | X,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    Simplify<
-      WBMetadata & {
-        [tn in TN]: TB.TaskBuilderMetadata<T>;
-      }
-    >,
-    {
-      workflow: WBElementTypes['workflow'];
-      workItem:
-        | WBElementTypes['workItem']
-        | WorkItemInstance<TB.TaskBuilderWIP<T>, WName, TN>;
-      condition: WBElementTypes['condition'];
-      task:
-        | WBElementTypes['task']
-        | {
-            name: TN & TaskName;
-            workflowName: WName;
-            workflowId: WorkflowId;
-            generation: number;
-            state: TaskInstanceState;
-          };
-    },
-    WBParentContext
-  >;
-  task<
-    TN extends string,
-    T extends (
-      t: () => TB.InitializedTaskBuilder<WBContext>
-    ) => TB.AnyTaskBuilder<WBContext>,
-    X extends IsXorOrOrJoinSplit<
-      TB.TaskBuilderSplitType<ReturnType<T>>
+    TTaskName extends string,
+    TTaskBuilder extends TB.AnyTaskBuilder,
+    TIsXorOrOrJoinSplit extends IsXorOrOrJoinSplit<
+      TB.TaskBuilderSplitType<TTaskBuilder>
     > extends never
       ? never
-      : TN
+      : TTaskName
   >(
-    taskName: TN & NotExtends<WBTasks | WBConditions, TN>,
-    task: T
+    taskName: TTaskName & NotExtends<TTasks | TConditions, TTaskName>,
+    task: TTaskBuilder & TaskWithValidContext<TContext, TTaskBuilder>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | TB.TaskBuilderR<ReturnType<T>>,
-    E | TB.TaskBuilderE<ReturnType<T>>,
-    WBTasks | TN,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit | X,
-    WBConnectedTasks,
-    WBConnectedConditions,
+    TWorkflowName,
+    TContext,
+    R | TB.TaskBuilderR<TTaskBuilder>,
+    E | TB.TaskBuilderE<TTaskBuilder>,
+    TTasks | TTaskName,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit | TIsXorOrOrJoinSplit,
+    TConnectedTasks,
+    TConnectedConditions,
     Simplify<
-      WBMetadata & {
-        [tn in TN]: TB.TaskBuilderMetadata<ReturnType<T>>;
+      TMetadata & {
+        [tn in TTaskName]: TB.TaskBuilderMetadata<TTaskBuilder>;
       }
     >,
     {
-      workflow: WBElementTypes['workflow'];
+      workflow: TElementTypes['workflow'];
       workItem:
-        | WBElementTypes['workItem']
-        | WorkItemInstance<TB.TaskBuilderWIP<ReturnType<T>>, WName, TN>;
-      condition: WBElementTypes['condition'];
+        | TElementTypes['workItem']
+        | WorkItemInstance<
+            TB.TaskBuilderWorkItemPayload<TTaskBuilder>,
+            TWorkflowName,
+            TTaskName
+          >;
+      condition: TElementTypes['condition'];
       task:
-        | WBElementTypes['task']
+        | TElementTypes['task']
         | {
-            name: TN & TaskName;
-            workflowName: WName;
+            name: TTaskName & TaskName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             generation: number;
             state: TaskInstanceState;
           };
     },
-    WBParentContext
+    TParentContext
   >;
-  task<TN extends string>(
-    taskName: string & NotExtends<WBTasks | WBConditions, TN>
+  task<
+    TTaskName extends string,
+    TTaskBuilderInit extends (
+      t: () => TB.InitializedTaskBuilder<TContext>
+    ) => TB.AnyTaskBuilder<TContext>,
+    X extends IsXorOrOrJoinSplit<
+      TB.TaskBuilderSplitType<ReturnType<TTaskBuilderInit>>
+    > extends never
+      ? never
+      : TTaskName
+  >(
+    taskName: TTaskName & NotExtends<TTasks | TConditions, TTaskName>,
+    task: TTaskBuilderInit
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
+    R | TB.TaskBuilderR<ReturnType<TTaskBuilderInit>>,
+    E | TB.TaskBuilderE<ReturnType<TTaskBuilderInit>>,
+    TTasks | TTaskName,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit | X,
+    TConnectedTasks,
+    TConnectedConditions,
+    Simplify<
+      TMetadata & {
+        [tn in TTaskName]: TB.TaskBuilderMetadata<ReturnType<TTaskBuilderInit>>;
+      }
+    >,
+    {
+      workflow: TElementTypes['workflow'];
+      workItem:
+        | TElementTypes['workItem']
+        | WorkItemInstance<
+            TB.TaskBuilderWorkItemPayload<ReturnType<TTaskBuilderInit>>,
+            TWorkflowName,
+            TTaskName
+          >;
+      condition: TElementTypes['condition'];
+      task:
+        | TElementTypes['task']
+        | {
+            name: TTaskName & TaskName;
+            workflowName: TWorkflowName;
+            workflowId: WorkflowId;
+            generation: number;
+            state: TaskInstanceState;
+          };
+    },
+    TParentContext
+  >;
+  task<TTaskName extends string>(
+    taskName: string & NotExtends<TTasks | TConditions, TTaskName>
+  ): WorkflowBuilder<
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks | TN,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
+    TTasks | TTaskName,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
     Simplify<
-      WBMetadata & {
-        [tn in TN]: TB.TaskBuilderMetadata<TB.AnyTaskBuilder>;
+      TMetadata & {
+        [tn in TTaskName]: TB.TaskBuilderMetadata<TB.AnyTaskBuilder>;
       }
     >,
     {
-      workflow: WBElementTypes['workflow'];
+      workflow: TElementTypes['workflow'];
       workItem:
-        | WBElementTypes['workItem']
-        | WorkItemInstance<undefined, WName, TN>;
-      condition: WBElementTypes['condition'];
+        | TElementTypes['workItem']
+        | WorkItemInstance<undefined, TWorkflowName, TTaskName>;
+      condition: TElementTypes['condition'];
       task:
-        | WBElementTypes['task']
+        | TElementTypes['task']
         | {
-            name: TN & TaskName;
-            workflowName: WName;
+            name: TTaskName & TaskName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             generation: number;
             state: TaskInstanceState;
           };
     },
-    WBParentContext
+    TParentContext
   >;
   task(
     taskName: string,
@@ -649,113 +672,124 @@ export class WorkflowBuilder<
       | ((t: () => TB.AnyTaskBuilder) => TB.AnyTaskBuilder)
   ) {
     if (!input) {
-      this.definition.tasks[taskName] = TB.task<WBContext>();
+      this.definition.tasks[taskName] = TB.task<TContext>();
     } else if (input instanceof TB.TaskBuilder) {
       this.definition.tasks[taskName] = input;
     } else {
-      this.definition.tasks[taskName] = input(() => TB.task<WBContext>());
+      this.definition.tasks[taskName] = input(() => TB.task<TContext>());
     }
 
     return this;
   }
 
   compositeTask<
-    TN extends string,
-    T extends CTB.AnyCompositeTaskBuilder<any>,
-    X extends IsXorOrOrJoinSplit<
-      CTB.CompositeTaskBuilderSplitType<T>
+    TCompositeTaskName extends string,
+    TCompositeTaskBuilder extends CTB.AnyCompositeTaskBuilder<any>,
+    TIsXorOrOrJoinSplit extends IsXorOrOrJoinSplit<
+      CTB.CompositeTaskBuilderSplitType<TCompositeTaskBuilder>
     > extends never
       ? never
-      : TN
+      : TCompositeTaskName
   >(
-    compositeTaskName: TN & NotExtends<WBTasks | WBConditions, TN>,
-    compositeTask: T & CompositeTaskWithValidContext<WBContext, T>
+    compositeTaskName: TCompositeTaskName &
+      NotExtends<TTasks | TConditions, TCompositeTaskName>,
+    compositeTask: TCompositeTaskBuilder &
+      CompositeTaskWithValidContext<TContext, TCompositeTaskBuilder>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | CTB.CompositeTaskBuilderR<T>,
-    E | CTB.CompositeTaskBuilderE<T>,
-    WBTasks | TN,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit | X,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata & {
-      [tn in TN]: CTB.CompositeTaskBuilderMetadata<T>;
+    TWorkflowName,
+    TContext,
+    R | CTB.CompositeTaskBuilderR<TCompositeTaskBuilder>,
+    E | CTB.CompositeTaskBuilderE<TCompositeTaskBuilder>,
+    TTasks | TCompositeTaskName,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit | TIsXorOrOrJoinSplit,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata & {
+      [tn in TCompositeTaskName]: CTB.CompositeTaskBuilderMetadata<TCompositeTaskBuilder>;
     },
     {
       workflow:
-        | WBElementTypes['workflow']
-        | CTB.CompositeTaskElementTypes<T>['workflow'];
+        | TElementTypes['workflow']
+        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['workflow'];
       workItem:
-        | WBElementTypes['workItem']
-        | CTB.CompositeTaskElementTypes<T>['workItem'];
+        | TElementTypes['workItem']
+        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['workItem'];
       condition:
-        | WBElementTypes['condition']
-        | CTB.CompositeTaskElementTypes<T>['condition'];
+        | TElementTypes['condition']
+        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['condition'];
       task:
-        | WBElementTypes['task']
+        | TElementTypes['task']
         | {
-            name: TN & TaskName;
-            workflowName: WName;
+            name: TCompositeTaskName & TaskName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             generation: number;
             state: TaskInstanceState;
           }
-        | CTB.CompositeTaskElementTypes<T>['task'];
+        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['task'];
     },
-    WBParentContext
+    TParentContext
   >;
   compositeTask<
-    TN extends string,
-    T extends (
-      t: () => CTB.InitialCompositeTaskFnReturnType<WBContext>
-    ) => CTB.AnyCompositeTaskBuilder<WBContext>,
+    TCompositeTaskName extends string,
+    TCompositeTaskInit extends (
+      t: () => CTB.InitialCompositeTaskFnReturnType<TContext>
+    ) => CTB.AnyCompositeTaskBuilder<TContext>,
     X extends IsXorOrOrJoinSplit<
-      CTB.CompositeTaskBuilderSplitType<ReturnType<T>>
+      CTB.CompositeTaskBuilderSplitType<ReturnType<TCompositeTaskInit>>
     > extends never
       ? never
-      : TN
+      : TCompositeTaskName
   >(
-    compositeTaskName: TN & NotExtends<WBTasks | WBConditions, TN>,
-    compositeTask: T
+    compositeTaskName: TCompositeTaskName &
+      NotExtends<TTasks | TConditions, TCompositeTaskName>,
+    compositeTask: TCompositeTaskInit
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | CTB.CompositeTaskBuilderR<ReturnType<T>>,
-    E | CTB.CompositeTaskBuilderE<ReturnType<T>>,
-    WBTasks | TN,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit | X,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata & {
-      [tn in TN]: CTB.CompositeTaskBuilderMetadata<ReturnType<T>>;
+    TWorkflowName,
+    TContext,
+    R | CTB.CompositeTaskBuilderR<ReturnType<TCompositeTaskInit>>,
+    E | CTB.CompositeTaskBuilderE<ReturnType<TCompositeTaskInit>>,
+    TTasks | TCompositeTaskName,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit | X,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata & {
+      [tn in TCompositeTaskName]: CTB.CompositeTaskBuilderMetadata<
+        ReturnType<TCompositeTaskInit>
+      >;
     },
     {
       workflow:
-        | WBElementTypes['workflow']
-        | CTB.CompositeTaskElementTypes<ReturnType<T>>['workflow'];
+        | TElementTypes['workflow']
+        | CTB.CompositeTaskElementTypes<
+            ReturnType<TCompositeTaskInit>
+          >['workflow'];
       workItem:
-        | WBElementTypes['workItem']
-        | CTB.CompositeTaskElementTypes<ReturnType<T>>['workItem'];
+        | TElementTypes['workItem']
+        | CTB.CompositeTaskElementTypes<
+            ReturnType<TCompositeTaskInit>
+          >['workItem'];
       condition:
-        | WBElementTypes['condition']
-        | CTB.CompositeTaskElementTypes<ReturnType<T>>['condition'];
+        | TElementTypes['condition']
+        | CTB.CompositeTaskElementTypes<
+            ReturnType<TCompositeTaskInit>
+          >['condition'];
       task:
-        | WBElementTypes['task']
+        | TElementTypes['task']
         | {
-            name: TN & TaskName;
-            workflowName: WName;
+            name: TCompositeTaskName & TaskName;
+            workflowName: TWorkflowName;
             workflowId: WorkflowId;
             generation: number;
             state: TaskInstanceState;
           }
-        | CTB.CompositeTaskElementTypes<ReturnType<T>>['task'];
+        | CTB.CompositeTaskElementTypes<ReturnType<TCompositeTaskInit>>['task'];
     },
-    WBParentContext
+    TParentContext
   >;
   compositeTask(
     compositeTaskName: string,
@@ -775,50 +809,53 @@ export class WorkflowBuilder<
   }
 
   cancellationRegion<
-    TN extends WBTasks,
-    TNS extends Exclude<WBTasks, TN>[],
-    CNS extends WBConditions[]
+    TTaskName extends TTasks,
+    TCancellableTaskNames extends Exclude<TTasks, TTaskName>[],
+    TConditionNames extends TConditions[]
   >(
-    taskName: TN & NotExtends<WBCancellationRegions, TN> & string,
-    toCancel: { tasks?: TNS & string[]; conditions?: CNS & string[] }
+    taskName: TTaskName & NotExtends<TCancellationRegions, TTaskName> & string,
+    toCancel: {
+      tasks?: TCancellableTaskNames & string[];
+      conditions?: TConditionNames & string[];
+    }
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks | TN,
-    WBConditions,
-    WBCancellationRegions | TN,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions,
-    WBMetadata,
-    WBElementTypes,
-    WBParentContext
+    TTasks | TTaskName,
+    TConditions,
+    TCancellationRegions | TTaskName,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions,
+    TMetadata,
+    TElementTypes,
+    TParentContext
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
     return this;
   }
 
-  connectCondition<CN extends WBConditions>(
-    conditionName: CN & NotExtends<WBConnectedConditions, CN> & string,
-    builder: (
-      to: ConditionFlowBuilder<WBTasks>
-    ) => ConditionFlowBuilder<WBTasks>
+  connectCondition<TConditionName extends TConditions>(
+    conditionName: TConditionName &
+      NotExtends<TConnectedConditions, TConditionName> &
+      string,
+    builder: (to: ConditionFlowBuilder<TTasks>) => ConditionFlowBuilder<TTasks>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks,
-    WBConnectedConditions | CN,
-    WBMetadata,
-    WBElementTypes,
-    WBParentContext
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks,
+    TConnectedConditions | TConditionName,
+    TMetadata,
+    TElementTypes,
+    TParentContext
   > {
     this.definition.flows.conditions[conditionName] = builder(
       new ConditionFlowBuilder(conditionName)
@@ -826,55 +863,67 @@ export class WorkflowBuilder<
     return this;
   }
 
-  connectTask<TN extends WBTasksWithOrXorSplit, D, R1, E1>(
-    taskName: TN & NotExtends<WBConnectedTasks, TN> & string,
+  connectTask<
+    TTaskName extends TTasksWithOrXorSplit,
+    THasDefault,
+    TOrXorTaskFlowR,
+    TOrXorTaskFlowE
+  >(
+    taskName: TTaskName & NotExtends<TConnectedTasks, TTaskName> & string,
     builder: (
       to: OrXorTaskFlowBuilder<
-        WBConditions,
-        WBTasks,
+        TConditions,
+        TTasks,
         never,
         never,
         never,
-        WBContext
+        TContext
       >
     ) => ValidOrXorTaskFlow<
-      OrXorTaskFlowBuilder<WBConditions, WBTasks, R1, E1, D, WBContext>
+      OrXorTaskFlowBuilder<
+        TConditions,
+        TTasks,
+        TOrXorTaskFlowR,
+        TOrXorTaskFlowE,
+        THasDefault,
+        TContext
+      >
     >
   ): WorkflowBuilder<
-    WName,
-    WBContext,
-    R | R1,
-    E | E1,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks | TN,
-    WBConnectedConditions,
-    WBMetadata,
-    WBElementTypes,
-    WBParentContext
+    TWorkflowName,
+    TContext,
+    R | TOrXorTaskFlowR,
+    E | TOrXorTaskFlowE,
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks | TTaskName,
+    TConnectedConditions,
+    TMetadata,
+    TElementTypes,
+    TParentContext
   >;
 
-  connectTask<TN extends WBTasks>(
-    taskName: TN & NotExtends<WBConnectedTasks, TN> & string,
+  connectTask<TTaskName extends TTasks>(
+    taskName: TTaskName & NotExtends<TConnectedTasks, TTaskName> & string,
     builder: (
-      to: TaskFlowBuilder<WBConditions, WBTasks>
-    ) => TaskFlowBuilder<WBConditions, WBTasks>
+      to: TaskFlowBuilder<TConditions, TTasks>
+    ) => TaskFlowBuilder<TConditions, TTasks>
   ): WorkflowBuilder<
-    WName,
-    WBContext,
+    TWorkflowName,
+    TContext,
     R,
     E,
-    WBTasks,
-    WBConditions,
-    WBCancellationRegions,
-    WBTasksWithOrXorSplit,
-    WBConnectedTasks | TN,
-    WBConnectedConditions,
-    WBMetadata,
-    WBElementTypes,
-    WBParentContext
+    TTasks,
+    TConditions,
+    TCancellationRegions,
+    TTasksWithOrXorSplit,
+    TConnectedTasks | TTaskName,
+    TConnectedConditions,
+    TMetadata,
+    TElementTypes,
+    TParentContext
   >;
 
   connectTask(taskName: string, builder: (...any: any[]) => any) {
@@ -882,24 +931,21 @@ export class WorkflowBuilder<
       this.definition.tasks[taskName]?.splitType === 'or' ||
       this.definition.tasks[taskName]?.splitType === 'xor'
     ) {
-      const flow = new OrXorTaskFlowBuilder<
-        WBConditions,
-        WBTasks,
-        never,
-        never
-      >(taskName);
+      const flow = new OrXorTaskFlowBuilder<TConditions, TTasks, never, never>(
+        taskName
+      );
       const result: OrXorTaskFlowBuilder<
-        WBConditions,
-        WBTasks,
+        TConditions,
+        TTasks,
         unknown,
         unknown,
         true,
-        WBContext
+        TContext
       > = builder(flow);
       this.definition.flows.tasks[taskName] = result;
     } else {
-      const flow = new TaskFlowBuilder<WBConditions, WBTasks>(taskName);
-      const result: TaskFlowBuilder<WBConditions, WBTasks> = builder(flow);
+      const flow = new TaskFlowBuilder<TConditions, TTasks>(taskName);
+      const result: TaskFlowBuilder<TConditions, TTasks> = builder(flow);
       this.definition.flows.tasks[taskName] = result;
     }
     return this;
@@ -909,13 +955,10 @@ export class WorkflowBuilder<
     const { name, definition, activities } = this;
 
     return Effect.gen(function* () {
-      const workflow = new Workflow<
-        R,
-        E,
-        WBContext,
-        WBMetadata,
-        WBElementTypes
-      >(name, activities as unknown as WorkflowActivities<any, any>);
+      const workflow = new Workflow<R, E, TContext, TMetadata, TElementTypes>(
+        name,
+        activities as unknown as WorkflowActivities<any, any>
+      );
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {
         // TaskBuilder will add Task to workflow

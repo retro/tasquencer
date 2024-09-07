@@ -21,46 +21,43 @@ import {
 import {
   AnyWorkItemActivities,
   AnyWorkItemBuilder,
-  DefaultWIM,
+  DefaultWorkItemMetadata,
   InitializedWorkItemBuilder,
   WorkItemBuilder,
   WorkItemBuilderE,
-  WorkItemBuilderP,
   WorkItemBuilderR,
-  WorkItemBuilderWIM,
+  WorkItemBuilderWorkItemMetadata,
+  WorkItemPayload,
   workItem,
 } from './WorkItemBuilder.js';
 
-export type TaskBuilderContext<T> = T extends TaskBuilder<
-  infer C,
+export type TaskBuilderContext<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
+  infer TContext,
   any,
   any,
   any
 >
-  ? C
+  ? TContext
   : never;
 
-export type TaskBuilderSplitType<T> = T extends TaskBuilder<
-  any,
-  any,
-  any,
-  infer ST
->
-  ? ST
-  : never;
+export type TaskBuilderSplitType<TTaskBuilder> =
+  TTaskBuilder extends TaskBuilder<any, any, any, infer TSplitType>
+    ? TSplitType
+    : never;
 
-export type TaskBuilderActivitiesReturnType<T> = T extends TaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer AO
->
-  ? AO
-  : never;
+export type TaskBuilderActivitiesReturnType<TTaskBuilder> =
+  TTaskBuilder extends TaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TActivitiesReturnType
+  >
+    ? TActivitiesReturnType
+    : never;
 
-export type TaskBuilderR<T> = T extends TaskBuilder<
+export type TaskBuilderR<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   any,
   any,
   any,
@@ -73,7 +70,7 @@ export type TaskBuilderR<T> = T extends TaskBuilder<
   ? R
   : never;
 
-export type TaskBuilderE<T> = T extends TaskBuilder<
+export type TaskBuilderE<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   any,
   any,
   any,
@@ -87,82 +84,84 @@ export type TaskBuilderE<T> = T extends TaskBuilder<
   ? E
   : never;
 
-export type AnyTaskBuilder<C = any> = TaskBuilder<
-  C,
-  TaskActivities<C>,
+export type AnyTaskBuilder<TContext = any> = TaskBuilder<
+  TContext,
+  TaskActivities<TContext>,
   JoinType | undefined,
   SplitType | undefined
 >;
 
-export type InitializedTaskBuilder<C> = TaskBuilder<
-  C,
-  TaskActivities<C>,
+export type InitializedTaskBuilder<TContext> = TaskBuilder<
+  TContext,
+  TaskActivities<TContext>,
   undefined,
   undefined
 >;
 
-interface TaskActivityMetadata<I, R> {
-  input: I;
-  return: R;
+interface TaskActivityMetadata<TInputType, TReturnType> {
+  input: TInputType;
+  return: TReturnType;
 }
 
-type TaskBuilderTM<T> = T extends TaskBuilder<
+type TaskBuilderTaskMetadata<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   any,
   any,
   any,
   any,
   any,
-  infer TM,
+  infer TTTaskMetadata,
   any
 >
-  ? TM
+  ? TTTaskMetadata
   : never;
 
-type TaskBuilderWIM<T> = T extends TaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer WIM
->
-  ? WIM
-  : never;
+type TaskBuilderWorkItemMetadata<TTaskBuilder> =
+  TTaskBuilder extends TaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TWorkItemMetadata
+  >
+    ? TWorkItemMetadata
+    : never;
 
-export type TaskBuilderWIP<T> = T extends TaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  infer WIP,
-  any,
-  any,
-  any,
-  any
->
-  ? WIP
-  : never;
+export type TaskBuilderWorkItemPayload<TTaskBuilder> =
+  TTaskBuilder extends TaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    infer TWorkItemPayload,
+    any,
+    any,
+    any,
+    any
+  >
+    ? TWorkItemPayload
+    : never;
 
 export type TaskBuilderMetadata<T extends AnyTaskBuilder> = Simplify<
-  TaskBuilderTM<T> & Record<string, TaskBuilderWIM<T>>
+  TaskBuilderTaskMetadata<T> & Record<string, TaskBuilderWorkItemMetadata<T>>
 >;
 
 export class TaskBuilder<
-  C,
-  TA extends TaskActivities<C>,
-  JT extends JoinType | undefined,
-  ST extends SplitType | undefined,
-  WIP = undefined,
-  TM = object,
-  WIM = DefaultWIM,
+  TContext,
+  TTaskActivities extends TaskActivities<TContext>,
+  TJoinType extends JoinType | undefined,
+  TSplitType extends SplitType | undefined,
+  TWorkItemPayload = undefined,
+  TTaskMetadata = object,
+  TWorkItemMetadata = DefaultWorkItemMetadata,
   R = never,
   E = never
 > {
   joinType: JoinType | undefined;
   splitType: SplitType | undefined;
-  private activities: TA = {} as TA;
-  private workItem: AnyWorkItemBuilder = workItem<C, undefined>();
+  private activities: TTaskActivities = {} as TTaskActivities;
+  private workItem: AnyWorkItemBuilder = workItem<TContext, undefined>();
   private shouldComplete: ShouldTaskCompleteFn<any, any> = ({ workItems }) => {
     const hasActiveWorkItems = workItems.some((w) =>
       activeWorkItemInstanceStates.has(w.state)
@@ -179,16 +178,36 @@ export class TaskBuilder<
     return Effect.succeed(hasFailedItems);
   };
 
-  withJoinType<T extends JoinType | undefined>(
-    joinType: T
-  ): TaskBuilder<C, TA, T, ST, WIP, TM, WIM, R, E> {
+  withJoinType<TNewJoinType extends JoinType | undefined>(
+    joinType: TNewJoinType
+  ): TaskBuilder<
+    TContext,
+    TTaskActivities,
+    TNewJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R,
+    E
+  > {
     this.joinType = joinType;
     return this;
   }
 
-  withSplitType<T extends SplitType | undefined>(
-    splitType: T
-  ): TaskBuilder<C, TA, JT, T, WIP, TM, WIM, R, E> {
+  withSplitType<TNewSplitType extends SplitType | undefined>(
+    splitType: TNewSplitType
+  ): TaskBuilder<
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TNewSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R,
+    E
+  > {
     this.splitType = splitType;
     return this;
   }
@@ -203,163 +222,181 @@ export class TaskBuilder<
   }
 
   onDisable<
-    F extends (payload: TaskOnDisablePayload<C>) => Effect.Effect<any, any, any>
+    TOnDisableActivity extends (
+      payload: TaskOnDisablePayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnDisableActivity
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TOnDisableActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnDisableActivity>>
   > {
     this.activities.onDisable = f;
     return this;
   }
 
   onEnable<
-    F extends (payload: TaskOnEnablePayload<C>) => Effect.Effect<any, any, any>
+    TOnEnableActivity extends (
+      payload: TaskOnEnablePayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnEnableActivity
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TOnEnableActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnEnableActivity>>
   > {
     this.activities.onEnable = f;
     return this;
   }
 
   onStart<
-    I,
-    F extends (
-      payload: TaskOnStartPayload<C, WIP, Get<WIM, ['onStart', 'input']>>,
-      input: I
+    TOnStartActivityInput,
+    TOnStartActivity extends (
+      payload: TaskOnStartPayload<
+        TContext,
+        TWorkItemPayload,
+        Get<TWorkItemMetadata, ['onStart', 'input']>
+      >,
+      input: TOnStartActivityInput
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnStartActivity
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
     Simplify<
-      Omit<TM, TaskOnStartSym> & {
+      Omit<TTaskMetadata, TaskOnStartSym> & {
         [TaskOnStartSym]: TaskActivityMetadata<
-          Parameters<F>[1],
-          Effect.Effect.Success<ReturnType<F>>
+          Parameters<TOnStartActivity>[1],
+          Effect.Effect.Success<ReturnType<TOnStartActivity>>
         >;
       }
     >,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TOnStartActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnStartActivity>>
   > {
     this.activities.onStart = f;
     return this;
   }
 
   onComplete<
-    F extends (
-      payload: TaskOnCompletePayload<C>
+    TOnCompleteActivity extends (
+      payload: TaskOnCompletePayload<TContext>
     ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCompleteActivity
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TOnCompleteActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCompleteActivity>>
   > {
     this.activities.onComplete = f;
     return this;
   }
 
   onCancel<
-    F extends (payload: TaskOnCancelPayload<C>) => Effect.Effect<any, any, any>
+    TOnCancelActivity extends (
+      payload: TaskOnCancelPayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnCancelActivity
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TOnCancelActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnCancelActivity>>
   > {
     this.activities.onCancel = f;
     return this;
   }
 
   onFail<
-    F extends (payload: TaskOnFailPayload<C>) => Effect.Effect<any, any, any>
+    TOnFailActivity extends (
+      payload: TaskOnFailPayload<TContext>
+    ) => Effect.Effect<any, any, any>
   >(
-    f: F
+    f: TOnFailActivity
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TOnFailActivity>>,
+    E | Effect.Effect.Error<ReturnType<TOnFailActivity>>
   > {
     this.activities.onFail = f;
     return this;
   }
 
-  withWorkItem<P, W extends WorkItemBuilder<C, P, any>>(
-    workItem: W
+  withWorkItem<
+    TWorkItemPayload,
+    TWorkItemBuilder extends WorkItemBuilder<TContext, TWorkItemPayload, any>
+  >(
+    workItem: TWorkItemBuilder
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WorkItemBuilderP<W>,
-    TM,
-    WorkItemBuilderWIM<W>,
-    R | WorkItemBuilderR<W>,
-    E | WorkItemBuilderE<W>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    WorkItemPayload<TWorkItemBuilder>,
+    TTaskMetadata,
+    WorkItemBuilderWorkItemMetadata<TWorkItemBuilder>,
+    R | WorkItemBuilderR<TWorkItemBuilder>,
+    E | WorkItemBuilderE<TWorkItemBuilder>
   >;
 
   withWorkItem<
-    P,
-    F extends (
-      w: <P>() => InitializedWorkItemBuilder<C, P>
-    ) => WorkItemBuilder<C, P, any>
+    TWorkItemPayload,
+    TInitWorkItemBuilder extends (
+      w: <TWorkItemPayload>() => InitializedWorkItemBuilder<
+        TContext,
+        TWorkItemPayload
+      >
+    ) => WorkItemBuilder<TContext, TWorkItemPayload, any>
   >(
-    f: F
+    f: TInitWorkItemBuilder
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WorkItemBuilderP<ReturnType<F>>,
-    TM,
-    WorkItemBuilderWIM<ReturnType<F>>,
-    R | WorkItemBuilderR<ReturnType<F>>,
-    E | WorkItemBuilderE<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    WorkItemPayload<ReturnType<TInitWorkItemBuilder>>,
+    TTaskMetadata,
+    WorkItemBuilderWorkItemMetadata<ReturnType<TInitWorkItemBuilder>>,
+    R | WorkItemBuilderR<ReturnType<TInitWorkItemBuilder>>,
+    E | WorkItemBuilderE<ReturnType<TInitWorkItemBuilder>>
   >;
 
   withWorkItem(
@@ -372,35 +409,39 @@ export class TaskBuilder<
     return this;
   }
 
-  withShouldComplete<F extends ShouldTaskCompleteFn<C, WIP>>(
-    f: F
+  withShouldComplete<
+    TShouldComplete extends ShouldTaskCompleteFn<TContext, TWorkItemPayload>
+  >(
+    f: TShouldComplete
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TShouldComplete>>,
+    E | Effect.Effect.Error<ReturnType<TShouldComplete>>
   > {
     this.shouldComplete = f;
     return this;
   }
 
-  withShouldFail<F extends ShouldTaskFailFn<C, WIP>>(
-    f: F
+  withShouldFail<
+    TShouldFail extends ShouldTaskFailFn<TContext, TWorkItemPayload>
+  >(
+    f: TShouldFail
   ): TaskBuilder<
-    C,
-    TA,
-    JT,
-    ST,
-    WIP,
-    TM,
-    WIM,
-    R | Effect.Effect.Context<ReturnType<F>>,
-    E | Effect.Effect.Error<ReturnType<F>>
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    TWorkItemPayload,
+    TTaskMetadata,
+    TWorkItemMetadata,
+    R | Effect.Effect.Context<ReturnType<TShouldFail>>,
+    E | Effect.Effect.Error<ReturnType<TShouldFail>>
   > {
     this.shouldFail = f;
     return this;
@@ -429,10 +470,15 @@ export class TaskBuilder<
   }
 }
 
-export function task<C>() {
-  return new TaskBuilder<C, TaskActivities<C>, never, never>().initialize();
+export function task<TContext>() {
+  return new TaskBuilder<
+    TContext,
+    TaskActivities<TContext>,
+    never,
+    never
+  >().initialize();
 }
 
-export function emptyTask<C>() {
-  return task<C>().withShouldComplete(() => Effect.succeed(true));
+export function emptyTask<TContext>() {
+  return task<TContext>().withShouldComplete(() => Effect.succeed(true));
 }

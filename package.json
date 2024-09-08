@@ -55,6 +55,7 @@
     "@types/prompts": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-istanbul": "^2.0.5",
     "c8": "^8.0.0",
     "cspell": "^6.31.1",
     "eslint": "^8.57.0",
@@ -69,11 +70,11 @@
     "semantic-release": "^24.1.0",
     "source-map-support": "^0.5.21",
     "tsx": "^3.12.7",
-    "type-fest": "^4.26.0",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
   "dependencies": {
+    "type-fest": "^4.26.0",
     "effect": "^3.7.2",
     "mutative": "^1.0.8",
     "nanoid": "^5.0.7"

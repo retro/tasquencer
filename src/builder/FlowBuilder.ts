@@ -139,7 +139,7 @@ export class OrXorTaskFlowBuilder<
     return this;
   }
   condition<TConditionR, TConditionE>(
-    conditionName: TTasks & string,
+    conditionName: TConditions & string,
     predicate: (payload: {
       context: TContext;
     }) => Effect.Effect<boolean, TConditionE, TConditionR>

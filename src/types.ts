@@ -67,7 +67,7 @@ export interface WorkflowBuilderDefinition {
   };
 }
 
-type UpdateWorkflowContext<TContext> = (
+export type UpdateWorkflowContext<TContext> = (
   contextOrUpdater: TContext | ((context: TContext) => TContext)
 ) => Effect.Effect<void, WorkflowDoesNotExist>;
 
@@ -129,15 +129,15 @@ export type TaskOnStartPayload<
 export type CompositeTaskOnStartPayload<
   TContext,
   TPayload = unknown,
-  TStartWorkItemInput = unknown
+  TStartWorkflowInput = unknown
 > = DefaultTaskOrWorkItemActivityPayload<TContext> & {
   startTask: () => Effect.Effect<
     {
       enqueueStartWorkflow(
         id: WorkflowId,
-        ...input: undefined extends TStartWorkItemInput
-          ? [TStartWorkItemInput?]
-          : [TStartWorkItemInput]
+        ...input: undefined extends TStartWorkflowInput
+          ? [TStartWorkflowInput?]
+          : [TStartWorkflowInput]
       ): Effect.Effect<void>;
       initializeWorkflow: (
         ...context: undefined extends TPayload ? [TPayload?] : [TPayload]
@@ -550,9 +550,9 @@ export type ShouldTaskCompleteFn<
   R = unknown,
   E = unknown
 > = (payload: {
-  getWorkflowContext: () => Effect.Effect<any, any, TContext>;
+  getWorkflowContext: () => Effect.Effect<TContext, any, any>;
   workItems: WorkItemInstance<TWorkItemPayload>[];
-}) => Effect.Effect<boolean, R, E>;
+}) => Effect.Effect<boolean, E, R>;
 
 export type ShouldTaskFailFn<
   TContext,
@@ -606,6 +606,7 @@ export interface StateChangeItem<
     TTask
   >;
 }
+
 export interface StateChangeLogger {
   log: (item: StateChangeItem) => void;
   drain: () => StateChangeItem[];
@@ -634,13 +635,13 @@ export interface DefaultWorkflowActivityPayload<
   TContext,
   TParentWorkflowContext
 > {
-  getParentWorkflowContext: TParentWorkflowContext extends never
+  getParentWorkflowContext: [TParentWorkflowContext] extends [never]
     ? never
     : () => Effect.Effect<
         TParentWorkflowContext,
         ParentWorkflowDoesNotExist | WorkflowDoesNotExist
       >;
-  updateParentWorkflowContext: TParentWorkflowContext extends never
+  updateParentWorkflowContext: [TParentWorkflowContext] extends [never]
     ? never
     : (
         context:

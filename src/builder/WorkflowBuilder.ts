@@ -60,38 +60,13 @@ export type AnyWorkflowBuilder = WorkflowBuilder<
   any,
   any,
   any,
-  any,
   any
 >;
-
-export type AnyWorkflowBuilderWithCorrectParentContext<
-  TWorkflowBuilder,
-  TParentContext
-> = TWorkflowBuilder extends WorkflowBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer TWorkflowParentContext
->
-  ? TParentContext extends TWorkflowParentContext
-    ? TWorkflowBuilder
-    : never
-  : never;
 
 export type WorkflowBuilderContext<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     infer TContext,
-    any,
     any,
     any,
     any,
@@ -119,7 +94,6 @@ export type WorkflowBuilderR<TWorkflowBuilder> =
     any,
     any,
     any,
-    any,
     any
   >
     ? R
@@ -131,7 +105,6 @@ export type WorkflowBuilderE<TWorkflowBuilder> =
     any,
     any,
     infer E,
-    any,
     any,
     any,
     any,
@@ -157,7 +130,6 @@ export type WorkflowBuilderTaskActivitiesReturnType<TWorkflowBuilder> =
     any,
     any,
     infer TTaskActivitiesReturnType,
-    any,
     any
   >
     ? TTaskActivitiesReturnType
@@ -176,7 +148,6 @@ export type WorkflowBuilderMetadata<TWorkflowBuilder> =
     any,
     any,
     infer TWorkflowBuilderMetadata,
-    any,
     any
   >
     ? TWorkflowBuilderMetadata
@@ -195,8 +166,7 @@ export type WorkflowBuilderElementTypes<TWorkflowBuilder> =
     any,
     any,
     any,
-    infer TElementTypes,
-    any
+    infer TElementTypes
   >
     ? TElementTypes
     : never;
@@ -208,7 +178,6 @@ export type WorkflowBuilderTaskNames<TWorkflowBuilder> =
     any,
     any,
     infer TTaskNames,
-    any,
     any,
     any,
     any,
@@ -243,8 +212,7 @@ export class WorkflowBuilder<
     workItem: never;
     condition: never;
     task: never;
-  },
-  TParentContext = never
+  }
 > {
   readonly name: string;
   readonly definition: WorkflowBuilderDefinition;
@@ -275,28 +243,10 @@ export class WorkflowBuilder<
       .onFail((_, _input?: undefined) => Effect.succeed(_input));
   }
 
-  withParentContext<TNewParentContext>(): WorkflowBuilder<
-    TWorkflowName,
-    TContext,
-    R,
-    E,
-    TTasks,
-    TConditions,
-    TCancellationRegions,
-    TTasksWithOrXorSplit,
-    TConnectedTasks,
-    TConnectedConditions,
-    TMetadata,
-    TElementTypes,
-    TNewParentContext
-  > {
-    return this;
-  }
-
   onStart<
     TOnStartActivityInput,
     TOnStartActivity extends (
-      payload: WorkflowOnStartPayload<TContext, TParentContext>,
+      payload: WorkflowOnStartPayload<TContext>,
       input: TOnStartActivityInput
     ) => Effect.Effect<any, any, any>
   >(
@@ -320,8 +270,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   > {
     this.activities.onStart = f;
     return this;
@@ -329,7 +278,7 @@ export class WorkflowBuilder<
   onComplete<
     TOnCompleteActivityInput,
     TOnCompleteActivity extends (
-      payload: WorkflowOnCompletePayload<TContext, TParentContext>,
+      payload: WorkflowOnCompletePayload<TContext>,
       input: TOnCompleteActivityInput
     ) => Effect.Effect<any, any, any>
   >(
@@ -353,8 +302,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   > {
     this.activities.onComplete = f;
     return this;
@@ -363,7 +311,7 @@ export class WorkflowBuilder<
   onFail<
     TOnFailActivityInput,
     TOnFailActivity extends (
-      payload: WorkflowOnFailPayload<TContext, TParentContext>,
+      payload: WorkflowOnFailPayload<TContext>,
       input?: TOnFailActivityInput
     ) => Effect.Effect<any, any, any>
   >(
@@ -387,8 +335,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   > {
     this.activities.onFail = f;
     return this;
@@ -397,7 +344,7 @@ export class WorkflowBuilder<
   onCancel<
     TOnCancelActivityInput,
     TOnCancelActivity extends (
-      payload: WorkflowOnCancelPayload<TContext, TParentContext>,
+      payload: WorkflowOnCancelPayload<TContext>,
       input?: TOnCancelActivityInput
     ) => Effect.Effect<any, any, any>
   >(
@@ -421,8 +368,7 @@ export class WorkflowBuilder<
         >;
       }
     >,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   > {
     this.activities.onCancel = f;
     return this;
@@ -455,8 +401,7 @@ export class WorkflowBuilder<
             marking: number;
           };
       task: TElementTypes['task'];
-    },
-    TParentContext
+    }
   > {
     return this.addConditionUnsafe(conditionName);
   }
@@ -488,8 +433,7 @@ export class WorkflowBuilder<
             marking: number;
           };
       task: TElementTypes['task'];
-    },
-    TParentContext
+    }
   > {
     this.definition.startCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -522,8 +466,7 @@ export class WorkflowBuilder<
             marking: number;
           };
       task: TElementTypes['task'];
-    },
-    TParentContext
+    }
   > {
     this.definition.endCondition = conditionName;
     return this.addConditionUnsafe(conditionName);
@@ -575,8 +518,7 @@ export class WorkflowBuilder<
             generation: number;
             state: TaskInstanceState;
           };
-    },
-    TParentContext
+    }
   >;
   task<
     TTaskName extends string,
@@ -626,8 +568,7 @@ export class WorkflowBuilder<
             generation: number;
             state: TaskInstanceState;
           };
-    },
-    TParentContext
+    }
   >;
   task<TTaskName extends string>(
     taskName: string & NotExtends<TTasks | TConditions, TTaskName>
@@ -662,8 +603,7 @@ export class WorkflowBuilder<
             generation: number;
             state: TaskInstanceState;
           };
-    },
-    TParentContext
+    }
   >;
   task(
     taskName: string,
@@ -684,7 +624,7 @@ export class WorkflowBuilder<
 
   compositeTask<
     TCompositeTaskName extends string,
-    TCompositeTaskBuilder extends CTB.AnyCompositeTaskBuilder<any>,
+    TCompositeTaskBuilder extends CTB.AnyCompositeTaskBuilder<any, any>,
     TIsXorOrOrJoinSplit extends IsXorOrOrJoinSplit<
       CTB.CompositeTaskBuilderSplitType<TCompositeTaskBuilder>
     > extends never
@@ -729,14 +669,13 @@ export class WorkflowBuilder<
             state: TaskInstanceState;
           }
         | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['task'];
-    },
-    TParentContext
+    }
   >;
   compositeTask<
     TCompositeTaskName extends string,
     TCompositeTaskInit extends (
       t: () => CTB.InitialCompositeTaskFnReturnType<TContext>
-    ) => CTB.AnyCompositeTaskBuilder<TContext>,
+    ) => CTB.AnyCompositeTaskBuilder<TContext, any>,
     X extends IsXorOrOrJoinSplit<
       CTB.CompositeTaskBuilderSplitType<ReturnType<TCompositeTaskInit>>
     > extends never
@@ -788,14 +727,13 @@ export class WorkflowBuilder<
             state: TaskInstanceState;
           }
         | CTB.CompositeTaskElementTypes<ReturnType<TCompositeTaskInit>>['task'];
-    },
-    TParentContext
+    }
   >;
   compositeTask(
     compositeTaskName: string,
     input:
       | CTB.AnyCompositeTaskBuilder
-      | ((t: (...args: any[]) => any) => CTB.AnyCompositeTaskBuilder<any>)
+      | ((t: (...args: any[]) => any) => CTB.AnyCompositeTaskBuilder<any, any>)
   ) {
     if (input instanceof CTB.CompositeTaskBuilder) {
       this.definition.tasks[compositeTaskName] = input;
@@ -830,8 +768,7 @@ export class WorkflowBuilder<
     TConnectedTasks,
     TConnectedConditions,
     TMetadata,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   > {
     this.definition.cancellationRegions[taskName] = toCancel;
     return this;
@@ -854,8 +791,7 @@ export class WorkflowBuilder<
     TConnectedTasks,
     TConnectedConditions | TConditionName,
     TMetadata,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   > {
     this.definition.flows.conditions[conditionName] = builder(
       new ConditionFlowBuilder(conditionName)
@@ -901,8 +837,7 @@ export class WorkflowBuilder<
     TConnectedTasks | TTaskName,
     TConnectedConditions,
     TMetadata,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   >;
 
   connectTask<TTaskName extends TTasks>(
@@ -922,8 +857,7 @@ export class WorkflowBuilder<
     TConnectedTasks | TTaskName,
     TConnectedConditions,
     TMetadata,
-    TElementTypes,
-    TParentContext
+    TElementTypes
   >;
 
   connectTask(taskName: string, builder: (...any: any[]) => any) {
@@ -957,7 +891,7 @@ export class WorkflowBuilder<
     return Effect.gen(function* () {
       const workflow = new Workflow<R, E, TContext, TMetadata, TElementTypes>(
         name,
-        activities as unknown as WorkflowActivities<any, any>
+        activities as unknown as WorkflowActivities<any>
       );
 
       for (const [taskName, taskBuilder] of Object.entries(definition.tasks)) {

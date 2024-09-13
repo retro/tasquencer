@@ -1,9 +1,9 @@
-import { Effect } from 'effect';
-
-import { State } from '../State.js';
 import { ConditionName, ConditionNode, WorkflowId } from '../types.js';
-import { BaseTask } from './BaseTask.js';
 import { ConditionToTaskFlow, TaskToConditionFlow } from './Flow.js';
+
+import { BaseTask } from './BaseTask.js';
+import { Effect } from 'effect';
+import { State } from '../State.js';
 import { Workflow } from './Workflow.js';
 
 export class Condition {
@@ -66,10 +66,8 @@ export class Condition {
     const tasks = Object.values(this.postSet);
     return Effect.gen(function* () {
       // Here we are not checking the marking because in case of an "or" join
-      // a task might be enabled by positive marking in some other condition
-      yield* // Some will potentially fail because they are in the wrong state, but this
-      // is fine because we are just trying to disable all that are enabled.
-      Effect.allSuccesses(
+      // a task might be enabled by a positive marking in some other condition
+      yield* Effect.allSuccesses(
         tasks.map((task) => task.enable(workflowId)),
         { batching: 'inherit', concurrency: 'inherit' }
       );
@@ -87,9 +85,9 @@ export class Condition {
       );
 
       if (marking === 0) {
-        yield* // Some will potentially fail because they are in the wrong state, but this
+        // Some will potentially fail because they are in the wrong state, but this
         // is fine because we are just trying to disable all that are enabled.
-        Effect.allSuccesses(
+        yield* Effect.allSuccesses(
           tasks.map((task) => task.disable(workflowId)),
           { batching: 'inherit', concurrency: 'inherit' }
         );

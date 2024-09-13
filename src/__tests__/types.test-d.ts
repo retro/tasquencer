@@ -5,6 +5,8 @@ import * as E from '../errors.js';
 import * as T from '../types.js';
 
 type Context = { context: boolean };
+type ChildContext = { childContext: boolean };
+type WorkItemPayload = { payload: boolean };
 
 describe('types', () => {
   describe('UpdateWorkflowContext', () => {
@@ -16,9 +18,7 @@ describe('types', () => {
   });
 
   describe('DefaultTaskOrWorkItemActivityPayload', () => {
-    expectTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context>
-    >().toEqualTypeOf<{
+    expectTypeOf<T.DefaultTaskActivityPayload<Context>>().toEqualTypeOf<{
       getWorkflowContext: () => Effect.Effect<Context, E.WorkflowDoesNotExist>;
       updateWorkflowContext: T.UpdateWorkflowContext<Context>;
     }>();
@@ -26,7 +26,7 @@ describe('types', () => {
 
   describe('TaskOnStartPayload', () => {
     expectTypeOf<T.TaskOnDisablePayload<Context>>().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+      T.DefaultTaskActivityPayload<Context> & {
         disableTask: () => Effect.Effect<
           void,
           | E.TaskDoesNotExist
@@ -39,7 +39,7 @@ describe('types', () => {
 
   describe('TaskOnEnablePayload', () => {
     expectTypeOf<T.TaskOnEnablePayload<Context>>().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+      T.DefaultTaskActivityPayload<Context> & {
         enableTask: () => Effect.Effect<
           {
             enqueueStartTask: (input?: unknown) => Effect.Effect<void>;
@@ -59,21 +59,21 @@ describe('types', () => {
       expectTypeOf<
         T.TaskOnStartPayload<
           Context,
-          { payload: true },
+          WorkItemPayload,
           { startWorkItemInput: true }
         >
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkItem(
                 id: T.WorkItemId,
                 input: { startWorkItemInput: true }
               ): Effect.Effect<void>;
-              initializeWorkItem: (payload: {
-                payload: true;
-              }) => Effect.Effect<
-                T.WorkItemInstance<{ payload: true }>,
+              initializeWorkItem: (
+                payload: WorkItemPayload
+              ) => Effect.Effect<
+                T.WorkItemInstance<WorkItemPayload>,
                 E.TaskDoesNotExistInStore | E.InvalidTaskState
               >;
             },
@@ -91,7 +91,7 @@ describe('types', () => {
       expectTypeOf<
         T.TaskOnStartPayload<Context, undefined, { startWorkItemInput: true }>
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkItem(
@@ -117,19 +117,19 @@ describe('types', () => {
 
     describe('TPayload !== undefined, TStartWorkItemInput === undefined', () => {
       expectTypeOf<
-        T.TaskOnStartPayload<Context, { payload: true }, undefined>
+        T.TaskOnStartPayload<Context, WorkItemPayload, undefined>
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkItem(
                 id: T.WorkItemId,
                 input?: undefined
               ): Effect.Effect<void>;
-              initializeWorkItem: (payload: {
-                payload: true;
-              }) => Effect.Effect<
-                T.WorkItemInstance<{ payload: true }>,
+              initializeWorkItem: (
+                payload: WorkItemPayload
+              ) => Effect.Effect<
+                T.WorkItemInstance<WorkItemPayload>,
                 E.TaskDoesNotExistInStore | E.InvalidTaskState
               >;
             },
@@ -147,7 +147,7 @@ describe('types', () => {
       expectTypeOf<
         T.TaskOnStartPayload<Context, undefined, undefined>
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkItem(
@@ -177,21 +177,21 @@ describe('types', () => {
       expectTypeOf<
         T.CompositeTaskOnStartPayload<
           Context,
-          { payload: true },
-          { startWorkflowInput: true }
+          WorkItemPayload,
+          { startWorkflowInput: boolean }
         >
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkflow(
                 id: T.WorkflowId,
-                input: { startWorkflowInput: true }
+                input: { startWorkflowInput: boolean }
               ): Effect.Effect<void>;
-              initializeWorkflow: (context: {
-                payload: true;
-              }) => Effect.Effect<
-                T.WorkflowInstance<{ payload: true }>,
+              initializeWorkflow: (
+                context: WorkItemPayload
+              ) => Effect.Effect<
+                T.WorkflowInstance<WorkItemPayload>,
                 E.TaskDoesNotExistInStore
               >;
             },
@@ -206,19 +206,19 @@ describe('types', () => {
     });
     describe('TPayload !== undefined, TStartWorkflowInput === undefined', () => {
       expectTypeOf<
-        T.CompositeTaskOnStartPayload<Context, { payload: true }, undefined>
+        T.CompositeTaskOnStartPayload<Context, WorkItemPayload, undefined>
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkflow(
                 id: T.WorkflowId,
                 input?: undefined
               ): Effect.Effect<void>;
-              initializeWorkflow: (context: {
-                payload: true;
-              }) => Effect.Effect<
-                T.WorkflowInstance<{ payload: true }>,
+              initializeWorkflow: (
+                context: WorkItemPayload
+              ) => Effect.Effect<
+                T.WorkflowInstance<WorkItemPayload>,
                 E.TaskDoesNotExistInStore
               >;
             },
@@ -236,15 +236,15 @@ describe('types', () => {
         T.CompositeTaskOnStartPayload<
           Context,
           undefined,
-          { startWorkflowInput: true }
+          { startWorkflowInput: boolean }
         >
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkflow(
                 id: T.WorkflowId,
-                input: { startWorkflowInput: true }
+                input: { startWorkflowInput: boolean }
               ): Effect.Effect<void>;
               initializeWorkflow: (
                 context?: undefined
@@ -266,7 +266,7 @@ describe('types', () => {
       expectTypeOf<
         T.CompositeTaskOnStartPayload<Context, undefined, undefined>
       >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+        T.DefaultTaskActivityPayload<Context> & {
           startTask: () => Effect.Effect<
             {
               enqueueStartWorkflow(
@@ -292,8 +292,41 @@ describe('types', () => {
   });
 
   describe('TaskOnCompletePayload', () => {
-    expectTypeOf<T.TaskOnCompletePayload<Context>>().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+    expectTypeOf<
+      T.TaskOnCompletePayload<Context, WorkItemPayload>
+    >().toEqualTypeOf<
+      T.DefaultTaskActivityPayload<Context> & {
+        getWorkItems: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>[],
+          E.TaskDoesNotExistInStore
+        >;
+        completeTask: () => Effect.Effect<
+          void,
+          | E.TaskDoesNotExist
+          | E.TaskDoesNotExistInStore
+          | E.ConditionDoesNotExist
+          | E.ConditionDoesNotExistInStore
+          | E.InvalidTaskState
+          | E.WorkflowDoesNotExist
+          | E.WorkItemDoesNotExist
+          | E.EndConditionDoesNotExist
+          | E.InvalidTaskStateTransition
+          | E.InvalidWorkflowStateTransition
+          | E.InvalidWorkItemTransition
+        >;
+      }
+    >();
+  });
+
+  describe('CompositeTaskOnCompletePayload', () => {
+    expectTypeOf<
+      T.CompositeTaskOnCompletePayload<Context, ChildContext>
+    >().toEqualTypeOf<
+      T.DefaultTaskActivityPayload<Context> & {
+        getWorkflows: () => Effect.Effect<
+          T.WorkflowInstance<ChildContext>[],
+          E.TaskDoesNotExistInStore
+        >;
         completeTask: () => Effect.Effect<
           void,
           | E.TaskDoesNotExist
@@ -313,8 +346,14 @@ describe('types', () => {
   });
 
   describe('TaskOnCancelPayload', () => {
-    expectTypeOf<T.TaskOnCancelPayload<Context>>().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+    expectTypeOf<
+      T.TaskOnCancelPayload<Context, WorkItemPayload>
+    >().toEqualTypeOf<
+      T.DefaultTaskActivityPayload<Context> & {
+        getWorkItems: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>[],
+          E.TaskDoesNotExistInStore
+        >;
         cancelTask: () => Effect.Effect<
           void,
           | E.TaskDoesNotExist
@@ -333,9 +372,40 @@ describe('types', () => {
     >();
   });
 
+  describe('CompositeTaskOnCancelPayload', () => {
+    expectTypeOf<
+      T.CompositeTaskOnCancelPayload<Context, ChildContext>
+    >().toEqualTypeOf<
+      T.DefaultTaskActivityPayload<Context> & {
+        getWorkflows: () => Effect.Effect<
+          T.WorkflowInstance<ChildContext>[],
+          E.TaskDoesNotExistInStore
+        >;
+        cancelTask: () => Effect.Effect<
+          void,
+          | E.ConditionDoesNotExist
+          | E.ConditionDoesNotExistInStore
+          | E.EndConditionDoesNotExist
+          | E.InvalidTaskState
+          | E.InvalidTaskStateTransition
+          | E.InvalidWorkflowStateTransition
+          | E.InvalidWorkItemTransition
+          | E.TaskDoesNotExist
+          | E.TaskDoesNotExistInStore
+          | E.WorkflowDoesNotExist
+          | E.WorkItemDoesNotExist
+        >;
+      }
+    >();
+  });
+
   describe('TaskOnFailPayload', () => {
-    expectTypeOf<T.TaskOnFailPayload<Context>>().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
+    expectTypeOf<T.TaskOnFailPayload<Context, WorkItemPayload>>().toEqualTypeOf<
+      T.DefaultTaskActivityPayload<Context> & {
+        getWorkItems: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>[],
+          E.TaskDoesNotExistInStore
+        >;
         failTask: () => Effect.Effect<
           void,
           | E.TaskDoesNotExist
@@ -354,8 +424,37 @@ describe('types', () => {
     >();
   });
 
+  describe('CompositeTaskOnFailPayload', () => {
+    expectTypeOf<
+      T.CompositeTaskOnFailPayload<Context, ChildContext>
+    >().toEqualTypeOf<
+      T.DefaultTaskActivityPayload<Context> & {
+        getWorkflows: () => Effect.Effect<
+          T.WorkflowInstance<ChildContext>[],
+          E.TaskDoesNotExistInStore
+        >;
+        failTask: () => Effect.Effect<
+          void,
+          | E.ConditionDoesNotExist
+          | E.ConditionDoesNotExistInStore
+          | E.EndConditionDoesNotExist
+          | E.InvalidTaskState
+          | E.InvalidTaskStateTransition
+          | E.InvalidWorkflowStateTransition
+          | E.InvalidWorkItemTransition
+          | E.TaskDoesNotExist
+          | E.TaskDoesNotExistInStore
+          | E.WorkflowDoesNotExist
+          | E.WorkItemDoesNotExist
+        >;
+      }
+    >();
+  });
+
   describe('TaskActivities', () => {
-    expectTypeOf<T.TaskActivities<Context>>().toEqualTypeOf<{
+    expectTypeOf<
+      T.TaskActivities<Context, WorkItemPayload>
+    >().branded.toEqualTypeOf<{
       onDisable: (payload: T.TaskOnDisablePayload<Context>) => T.UnknownEffect;
       onEnable: (payload: T.TaskOnEnablePayload<Context>) => T.UnknownEffect;
       onStart: (
@@ -363,15 +462,21 @@ describe('types', () => {
         input?: any
       ) => T.UnknownEffect;
       onComplete: (
-        payload: T.TaskOnCompletePayload<Context>
+        payload: T.TaskOnCompletePayload<Context, WorkItemPayload>
       ) => T.UnknownEffect;
-      onCancel: (payload: T.TaskOnCancelPayload<Context>) => T.UnknownEffect;
-      onFail: (payload: T.TaskOnFailPayload<Context>) => T.UnknownEffect;
+      onCancel: (
+        payload: T.TaskOnCancelPayload<Context, WorkItemPayload>
+      ) => T.UnknownEffect;
+      onFail: (
+        payload: T.TaskOnFailPayload<Context, WorkItemPayload>
+      ) => T.UnknownEffect;
     }>();
   });
 
   describe('CompositeTaskActivities', () => {
-    expectTypeOf<T.CompositeTaskActivities<Context>>().branded.toEqualTypeOf<{
+    expectTypeOf<
+      T.CompositeTaskActivities<Context, ChildContext>
+    >().branded.toEqualTypeOf<{
       onDisable: (payload: T.TaskOnDisablePayload<Context>) => T.UnknownEffect;
       onEnable: (payload: T.TaskOnEnablePayload<Context>) => T.UnknownEffect;
       onStart: (
@@ -379,10 +484,14 @@ describe('types', () => {
         input?: any
       ) => T.UnknownEffect;
       onComplete: (
-        payload: T.TaskOnCompletePayload<Context>
+        payload: T.CompositeTaskOnCompletePayload<Context, ChildContext>
       ) => T.UnknownEffect;
-      onCancel: (payload: T.TaskOnCancelPayload<Context>) => T.UnknownEffect;
-      onFail: (payload: T.TaskOnFailPayload<Context>) => T.UnknownEffect;
+      onCancel: (
+        payload: T.CompositeTaskOnCancelPayload<Context, ChildContext>
+      ) => T.UnknownEffect;
+      onFail: (
+        payload: T.CompositeTaskOnFailPayload<Context, ChildContext>
+      ) => T.UnknownEffect;
     }>();
   });
 
@@ -390,256 +499,221 @@ describe('types', () => {
     describe('TOnCompleteInput !== undefined, T.OnCancelInput !== undefined, TOnFailInput !== undefined', () => {
       expectTypeOf<
         T.WorkItemOnStartPayload<
-          Context,
-          { payload: true },
-          { onCompleteInput: true },
-          { onCancelInput: true },
-          { onFailInput: true }
+          WorkItemPayload,
+          { onCompleteInput: boolean },
+          { onCancelInput: boolean },
+          { onFailInput: boolean }
         >
-      >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-          getWorkItem: () => Effect.Effect<
-            T.WorkItemInstance<{ payload: true }>,
-            E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-          >;
-          updateWorkItemPayload: (payload: {
-            payload: true;
-          }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-          startWorkItem: () => Effect.Effect<
-            {
-              enqueueCompleteWorkItem(input: {
-                onCompleteInput: true;
-              }): Effect.Effect<void>;
-              enqueueCancelWorkItem(input: {
-                onCancelInput: true;
-              }): Effect.Effect<void>;
-              enqueueFailWorkItem(input: {
-                onFailInput: true;
-              }): Effect.Effect<void>;
-            },
-            E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-          >;
-        }
-      >();
+      >().toEqualTypeOf<{
+        getWorkItem: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>,
+          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+        >;
+        updateWorkItemPayload: (
+          payload: WorkItemPayload
+        ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+        startWorkItem: () => Effect.Effect<
+          {
+            enqueueCompleteWorkItem(input: {
+              onCompleteInput: boolean;
+            }): Effect.Effect<void>;
+            enqueueCancelWorkItem(input: {
+              onCancelInput: boolean;
+            }): Effect.Effect<void>;
+            enqueueFailWorkItem(input: {
+              onFailInput: boolean;
+            }): Effect.Effect<void>;
+          },
+          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+        >;
+      }>();
     });
 
     describe('TOnCompleteInput === undefined, T.OnCancelInput !== undefined, TOnFailInput !== undefined', () => {
       expectTypeOf<
         T.WorkItemOnStartPayload<
-          Context,
-          { payload: true },
+          WorkItemPayload,
           undefined,
-          { onCancelInput: true },
-          { onFailInput: true }
+          { onCancelInput: boolean },
+          { onFailInput: boolean }
         >
-      >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-          getWorkItem: () => Effect.Effect<
-            T.WorkItemInstance<{ payload: true }>,
-            E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-          >;
-          updateWorkItemPayload: (payload: {
-            payload: true;
-          }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-          startWorkItem: () => Effect.Effect<
-            {
-              enqueueCompleteWorkItem(input?: undefined): Effect.Effect<void>;
-              enqueueCancelWorkItem(input: {
-                onCancelInput: true;
-              }): Effect.Effect<void>;
-              enqueueFailWorkItem(input: {
-                onFailInput: true;
-              }): Effect.Effect<void>;
-            },
-            E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-          >;
-        }
-      >();
+      >().toEqualTypeOf<{
+        getWorkItem: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>,
+          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+        >;
+        updateWorkItemPayload: (
+          payload: WorkItemPayload
+        ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+        startWorkItem: () => Effect.Effect<
+          {
+            enqueueCompleteWorkItem(input?: undefined): Effect.Effect<void>;
+            enqueueCancelWorkItem(input: {
+              onCancelInput: boolean;
+            }): Effect.Effect<void>;
+            enqueueFailWorkItem(input: {
+              onFailInput: boolean;
+            }): Effect.Effect<void>;
+          },
+          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+        >;
+      }>();
     });
 
     describe('TOnCompleteInput !== undefined, T.OnCancelInput === undefined, TOnFailInput !== undefined', () => {
       expectTypeOf<
         T.WorkItemOnStartPayload<
-          Context,
-          { payload: true },
-          { onCompleteInput: true },
+          WorkItemPayload,
+          { onCompleteInput: boolean },
           undefined,
-          { onFailInput: true }
+          { onFailInput: boolean }
         >
-      >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-          getWorkItem: () => Effect.Effect<
-            T.WorkItemInstance<{ payload: true }>,
-            E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-          >;
-          updateWorkItemPayload: (payload: {
-            payload: true;
-          }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-          startWorkItem: () => Effect.Effect<
-            {
-              enqueueCompleteWorkItem(input: {
-                onCompleteInput: true;
-              }): Effect.Effect<void>;
-              enqueueCancelWorkItem(input?: undefined): Effect.Effect<void>;
-              enqueueFailWorkItem(input: {
-                onFailInput: true;
-              }): Effect.Effect<void>;
-            },
-            E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-          >;
-        }
-      >();
+      >().toEqualTypeOf<{
+        getWorkItem: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>,
+          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+        >;
+        updateWorkItemPayload: (
+          payload: WorkItemPayload
+        ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+        startWorkItem: () => Effect.Effect<
+          {
+            enqueueCompleteWorkItem(input: {
+              onCompleteInput: boolean;
+            }): Effect.Effect<void>;
+            enqueueCancelWorkItem(input?: undefined): Effect.Effect<void>;
+            enqueueFailWorkItem(input: {
+              onFailInput: boolean;
+            }): Effect.Effect<void>;
+          },
+          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+        >;
+      }>();
     });
 
     describe('TOnCompleteInput !== undefined, T.OnCancelInput !== undefined, TOnFailInput === undefined', () => {
       expectTypeOf<
         T.WorkItemOnStartPayload<
-          Context,
-          { payload: true },
-          { onCompleteInput: true },
-          { onCancelInput: true },
+          WorkItemPayload,
+          { onCompleteInput: boolean },
+          { onCancelInput: boolean },
           undefined
         >
-      >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-          getWorkItem: () => Effect.Effect<
-            T.WorkItemInstance<{ payload: true }>,
-            E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-          >;
-          updateWorkItemPayload: (payload: {
-            payload: true;
-          }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-          startWorkItem: () => Effect.Effect<
-            {
-              enqueueCompleteWorkItem(input: {
-                onCompleteInput: true;
-              }): Effect.Effect<void>;
-              enqueueCancelWorkItem(input: {
-                onCancelInput: true;
-              }): Effect.Effect<void>;
-              enqueueFailWorkItem(input?: undefined): Effect.Effect<void>;
-            },
-            E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-          >;
-        }
-      >();
+      >().toEqualTypeOf<{
+        getWorkItem: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>,
+          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+        >;
+        updateWorkItemPayload: (
+          payload: WorkItemPayload
+        ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+        startWorkItem: () => Effect.Effect<
+          {
+            enqueueCompleteWorkItem(input: {
+              onCompleteInput: boolean;
+            }): Effect.Effect<void>;
+            enqueueCancelWorkItem(input: {
+              onCancelInput: boolean;
+            }): Effect.Effect<void>;
+            enqueueFailWorkItem(input?: undefined): Effect.Effect<void>;
+          },
+          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+        >;
+      }>();
     });
 
     describe('TOnCompleteInput === undefined, T.OnCancelInput === undefined, TOnFailInput === undefined', () => {
       expectTypeOf<
         T.WorkItemOnStartPayload<
-          Context,
-          { payload: true },
+          WorkItemPayload,
           undefined,
           undefined,
           undefined
         >
-      >().toEqualTypeOf<
-        T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-          getWorkItem: () => Effect.Effect<
-            T.WorkItemInstance<{ payload: true }>,
-            E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-          >;
-          updateWorkItemPayload: (payload: {
-            payload: true;
-          }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-          startWorkItem: () => Effect.Effect<
-            {
-              enqueueCompleteWorkItem(input?: undefined): Effect.Effect<void>;
-              enqueueCancelWorkItem(input?: undefined): Effect.Effect<void>;
-              enqueueFailWorkItem(input?: undefined): Effect.Effect<void>;
-            },
-            E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-          >;
-        }
-      >();
+      >().toEqualTypeOf<{
+        getWorkItem: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>,
+          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+        >;
+        updateWorkItemPayload: (
+          payload: WorkItemPayload
+        ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+        startWorkItem: () => Effect.Effect<
+          {
+            enqueueCompleteWorkItem(input?: undefined): Effect.Effect<void>;
+            enqueueCancelWorkItem(input?: undefined): Effect.Effect<void>;
+            enqueueFailWorkItem(input?: undefined): Effect.Effect<void>;
+          },
+          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+        >;
+      }>();
     });
   });
 
   describe('WorkItemOnCompletePayload', () => {
-    expectTypeOf<
-      T.WorkItemOnCompletePayload<Context, { payload: true }>
-    >().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-        getWorkItem(): Effect.Effect<
-          T.WorkItemInstance<{ payload: true }>,
-          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-        >;
-        updateWorkItemPayload: (workItemPayload: {
-          payload: true;
-        }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-        completeWorkItem: () => Effect.Effect<
-          void,
-          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-        >;
-      }
-    >();
+    expectTypeOf<T.WorkItemOnCompletePayload<WorkItemPayload>>().toEqualTypeOf<{
+      getWorkItem(): Effect.Effect<
+        T.WorkItemInstance<WorkItemPayload>,
+        E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+      >;
+      updateWorkItemPayload: (
+        workItemPayload: WorkItemPayload
+      ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+      completeWorkItem: () => Effect.Effect<
+        void,
+        E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+      >;
+    }>();
   });
 
   describe('WorkItemOnCancelPayload', () => {
-    expectTypeOf<
-      T.WorkItemOnCancelPayload<Context, { payload: true }>
-    >().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-        getWorkItem(): Effect.Effect<
-          T.WorkItemInstance<{ payload: true }>,
-          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-        >;
-        updateWorkItemPayload: (workItemPayload: {
-          payload: true;
-        }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-        cancelWorkItem: () => Effect.Effect<
-          void,
-          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-        >;
-      }
-    >();
+    expectTypeOf<T.WorkItemOnCancelPayload<WorkItemPayload>>().toEqualTypeOf<{
+      getWorkItem(): Effect.Effect<
+        T.WorkItemInstance<WorkItemPayload>,
+        E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+      >;
+      updateWorkItemPayload: (
+        workItemPayload: WorkItemPayload
+      ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+      cancelWorkItem: () => Effect.Effect<
+        void,
+        E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+      >;
+    }>();
   });
 
   describe('WorkItemOnFailPayload', () => {
-    expectTypeOf<
-      T.WorkItemOnFailPayload<Context, { payload: true }>
-    >().toEqualTypeOf<
-      T.DefaultTaskOrWorkItemActivityPayload<Context> & {
-        getWorkItem(): Effect.Effect<
-          T.WorkItemInstance<{ payload: true }>,
-          E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
-        >;
-        updateWorkItemPayload: (workItemPayload: {
-          payload: true;
-        }) => Effect.Effect<void, E.WorkItemDoesNotExist>;
-        failWorkItem: () => Effect.Effect<
-          void,
-          E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
-        >;
-      }
-    >();
+    expectTypeOf<T.WorkItemOnFailPayload<WorkItemPayload>>().toEqualTypeOf<{
+      getWorkItem(): Effect.Effect<
+        T.WorkItemInstance<WorkItemPayload>,
+        E.WorkItemDoesNotExist | E.TaskDoesNotExistInStore
+      >;
+      updateWorkItemPayload: (
+        workItemPayload: WorkItemPayload
+      ) => Effect.Effect<void, E.WorkItemDoesNotExist>;
+      failWorkItem: () => Effect.Effect<
+        void,
+        E.WorkItemDoesNotExist | E.InvalidWorkItemTransition
+      >;
+    }>();
   });
 
   describe('WorkItemActivities', () => {
-    expectTypeOf<
-      T.WorkItemActivities<Context, { payload: true }>
-    >().toEqualTypeOf<{
+    expectTypeOf<T.WorkItemActivities<WorkItemPayload>>().toEqualTypeOf<{
       onStart: (
-        payload: T.WorkItemOnStartPayload<
-          Context,
-          { payload: true },
-          any,
-          any,
-          any
-        >,
+        payload: T.WorkItemOnStartPayload<WorkItemPayload, any, any, any>,
         input?: any
       ) => T.UnknownEffect;
       onComplete: (
-        payload: T.WorkItemOnCompletePayload<Context, { payload: true }>,
+        payload: T.WorkItemOnCompletePayload<WorkItemPayload>,
         input?: any
       ) => T.UnknownEffect;
       onCancel: (
-        payload: T.WorkItemOnCancelPayload<Context, { payload: true }>,
+        payload: T.WorkItemOnCancelPayload<WorkItemPayload>,
         input?: any
       ) => T.UnknownEffect;
       onFail: (
-        payload: T.WorkItemOnFailPayload<Context, { payload: true }>,
+        payload: T.WorkItemOnFailPayload<WorkItemPayload>,
         input?: any
       ) => T.UnknownEffect;
     }>();
@@ -647,32 +721,28 @@ describe('types', () => {
 
   describe('ShouldTaskCompleteFn', () => {
     expectTypeOf<
-      T.ShouldTaskCompleteFn<
-        Context,
-        { workItemPayload: true },
-        { R: true },
-        { E: true }
-      >
+      T.ShouldTaskCompleteFn<Context, WorkItemPayload, { R: true }, { E: true }>
     >().toEqualTypeOf<
       (payload: {
         getWorkflowContext: () => Effect.Effect<Context, any, any>;
-        workItems: T.WorkItemInstance<{ workItemPayload: true }>[];
+        getWorkItems: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>[],
+          E.TaskDoesNotExistInStore
+        >;
       }) => Effect.Effect<boolean, { E: true }, { R: true }>
     >();
   });
 
   describe('ShouldTaskFailFn', () => {
     expectTypeOf<
-      T.ShouldTaskFailFn<
-        Context,
-        { workItemPayload: true },
-        { R: true },
-        { E: true }
-      >
+      T.ShouldTaskFailFn<Context, WorkItemPayload, { R: true }, { E: true }>
     >().toEqualTypeOf<
       (payload: {
         getWorkflowContext: () => Effect.Effect<Context, any, any>;
-        workItems: T.WorkItemInstance<{ workItemPayload: true }>[];
+        getWorkItems: () => Effect.Effect<
+          T.WorkItemInstance<WorkItemPayload>[],
+          E.TaskDoesNotExistInStore
+        >;
       }) => Effect.Effect<boolean, { E: true }, { R: true }>
     >();
   });
@@ -688,7 +758,10 @@ describe('types', () => {
     >().toEqualTypeOf<
       (payload: {
         getWorkflowContext: () => Effect.Effect<Context, any, any>;
-        workflows: T.WorkflowInstance<{ childWorkflowContext: true }>[];
+        getWorkflows: () => Effect.Effect<
+          T.WorkflowInstance<{ childWorkflowContext: true }>[],
+          E.TaskDoesNotExistInStore
+        >;
       }) => Effect.Effect<boolean, { E: true }, { R: true }>
     >();
   });
@@ -704,64 +777,24 @@ describe('types', () => {
     >().toEqualTypeOf<
       (payload: {
         getWorkflowContext: () => Effect.Effect<Context, any, any>;
-        workflows: T.WorkflowInstance<{ childWorkflowContext: true }>[];
+        getWorkflows: () => Effect.Effect<
+          T.WorkflowInstance<{ childWorkflowContext: true }>[],
+          E.TaskDoesNotExistInStore
+        >;
       }) => Effect.Effect<boolean, { E: true }, { R: true }>
     >();
   });
 
   describe('DefaultWorkflowActivityPayload', () => {
-    describe('TParentWorkflowContext !== never', () => {
-      expectTypeOf<
-        T.DefaultWorkflowActivityPayload<
-          Context,
-          { parentWorkflowContext: true }
-        >
-      >().toEqualTypeOf<{
-        getParentWorkflowContext: () => Effect.Effect<
-          { parentWorkflowContext: true },
-          E.ParentWorkflowDoesNotExist | E.WorkflowDoesNotExist
-        >;
-        updateParentWorkflowContext: (
-          context:
-            | { parentWorkflowContext: true }
-            | ((context: { parentWorkflowContext: true }) => {
-                parentWorkflowContext: true;
-              })
-        ) => Effect.Effect<
-          void,
-          E.ParentWorkflowDoesNotExist | E.WorkflowDoesNotExist
-        >;
-        getWorkflowContext: () => Effect.Effect<
-          Context,
-          E.WorkflowDoesNotExist
-        >;
-        updateWorkflowContext: T.UpdateWorkflowContext<Context>;
-      }>();
-    });
-
-    describe('TParentWorkflowContext === never', () => {
-      expectTypeOf<
-        T.DefaultWorkflowActivityPayload<Context, never>
-      >().toEqualTypeOf<{
-        getParentWorkflowContext: never;
-        updateParentWorkflowContext: never;
-        getWorkflowContext: () => Effect.Effect<
-          Context,
-          E.WorkflowDoesNotExist
-        >;
-        updateWorkflowContext: T.UpdateWorkflowContext<Context>;
-      }>();
-    });
+    expectTypeOf<T.DefaultWorkflowActivityPayload<Context>>().toEqualTypeOf<{
+      getWorkflowContext: () => Effect.Effect<Context, E.WorkflowDoesNotExist>;
+      updateWorkflowContext: T.UpdateWorkflowContext<Context>;
+    }>();
   });
 
   describe('WorkflowOnStartPayload', () => {
-    expectTypeOf<
-      T.WorkflowOnStartPayload<Context, { parentWorkflowContext: true }>
-    >().toEqualTypeOf<
-      T.DefaultWorkflowActivityPayload<
-        Context,
-        { parentWorkflowContext: true }
-      > & {
+    expectTypeOf<T.WorkflowOnStartPayload<Context>>().toEqualTypeOf<
+      T.DefaultWorkflowActivityPayload<Context> & {
         startWorkflow: () => Effect.Effect<
           void,
           | E.ConditionDoesNotExist
@@ -778,13 +811,8 @@ describe('types', () => {
   });
 
   describe('WorkflowOnCompletePayload', () => {
-    expectTypeOf<
-      T.WorkflowOnCompletePayload<Context, { parentWorkflowContext: true }>
-    >().toEqualTypeOf<
-      T.DefaultWorkflowActivityPayload<
-        Context,
-        { parentWorkflowContext: true }
-      > & {
+    expectTypeOf<T.WorkflowOnCompletePayload<Context>>().toEqualTypeOf<
+      T.DefaultWorkflowActivityPayload<Context> & {
         completeWorkflow: () => Effect.Effect<
           void,
           | E.ConditionDoesNotExist
@@ -804,13 +832,8 @@ describe('types', () => {
   });
 
   describe('WorkflowOnCancelPayload', () => {
-    expectTypeOf<
-      T.WorkflowOnCancelPayload<Context, { parentWorkflowContext: true }>
-    >().toEqualTypeOf<
-      T.DefaultWorkflowActivityPayload<
-        Context,
-        { parentWorkflowContext: true }
-      > & {
+    expectTypeOf<T.WorkflowOnCancelPayload<Context>>().toEqualTypeOf<
+      T.DefaultWorkflowActivityPayload<Context> & {
         cancelWorkflow: () => Effect.Effect<
           void,
           | E.ConditionDoesNotExist
@@ -830,13 +853,8 @@ describe('types', () => {
   });
 
   describe('WorkflowOnFailPayload', () => {
-    expectTypeOf<
-      T.WorkflowOnFailPayload<Context, { parentWorkflowContext: true }>
-    >().toEqualTypeOf<
-      T.DefaultWorkflowActivityPayload<
-        Context,
-        { parentWorkflowContext: true }
-      > & {
+    expectTypeOf<T.WorkflowOnFailPayload<Context>>().toEqualTypeOf<
+      T.DefaultWorkflowActivityPayload<Context> & {
         failWorkflow: () => Effect.Effect<
           void,
           | E.ConditionDoesNotExist
@@ -856,35 +874,21 @@ describe('types', () => {
   });
 
   describe('WorkflowActivities', () => {
-    expectTypeOf<
-      T.WorkflowActivities<Context, { parentWorkflowContext: true }>
-    >().toEqualTypeOf<{
+    expectTypeOf<T.WorkflowActivities<Context>>().toEqualTypeOf<{
       onStart: (
-        payload: T.WorkflowOnStartPayload<
-          Context,
-          { parentWorkflowContext: true }
-        >,
+        payload: T.WorkflowOnStartPayload<Context>,
         input?: any
       ) => T.UnknownEffect;
       onComplete: (
-        payload: T.WorkflowOnCompletePayload<
-          Context,
-          { parentWorkflowContext: true }
-        >,
+        payload: T.WorkflowOnCompletePayload<Context>,
         input?: any
       ) => T.UnknownEffect;
       onCancel: (
-        payload: T.WorkflowOnCancelPayload<
-          Context,
-          { parentWorkflowContext: true }
-        >,
+        payload: T.WorkflowOnCancelPayload<Context>,
         input?: any
       ) => T.UnknownEffect;
       onFail: (
-        payload: T.WorkflowOnFailPayload<
-          Context,
-          { parentWorkflowContext: true }
-        >,
+        payload: T.WorkflowOnFailPayload<Context>,
         input?: any
       ) => T.UnknownEffect;
     }>();

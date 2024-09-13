@@ -6,7 +6,6 @@ import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
 
 const subWorkflowDefinition = Builder.workflow()
   .withName('sub')
-  .withParentContext()
   .startCondition('start')
   .task('subT1')
   .endCondition('end')

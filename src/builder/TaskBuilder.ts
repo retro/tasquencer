@@ -84,16 +84,16 @@ export type TaskBuilderE<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   ? E
   : never;
 
-export type AnyTaskBuilder<TContext = any> = TaskBuilder<
+export type AnyTaskBuilder<TContext = any, TPayload = any> = TaskBuilder<
   TContext,
-  TaskActivities<TContext>,
+  TaskActivities<TContext, TPayload>,
   JoinType | undefined,
   SplitType | undefined
 >;
 
 export type InitializedTaskBuilder<TContext> = TaskBuilder<
   TContext,
-  TaskActivities<TContext>,
+  TaskActivities<TContext, any>,
   undefined,
   undefined
 >;
@@ -149,7 +149,7 @@ export type TaskBuilderMetadata<T extends AnyTaskBuilder> = Simplify<
 
 export class TaskBuilder<
   TContext,
-  TTaskActivities extends TaskActivities<TContext>,
+  TTaskActivities extends TaskActivities<TContext, any>,
   TJoinType extends JoinType | undefined,
   TSplitType extends SplitType | undefined,
   TWorkItemPayload = undefined,
@@ -161,22 +161,27 @@ export class TaskBuilder<
   joinType: JoinType | undefined;
   splitType: SplitType | undefined;
   private activities: TTaskActivities = {} as TTaskActivities;
-  private workItem: AnyWorkItemBuilder = workItem<TContext, undefined>();
-  private shouldComplete: ShouldTaskCompleteFn<any, any> = ({ workItems }) => {
-    const hasActiveWorkItems = workItems.some((w) =>
-      activeWorkItemInstanceStates.has(w.state)
-    );
-    const hasCompletedWorkItems = workItems.some(
-      (w) => w.state === 'completed'
-    );
-    return Effect.succeed(
-      workItems.length > 0 && !hasActiveWorkItems && hasCompletedWorkItems
-    );
-  };
-  private shouldFail: ShouldTaskCompleteFn<any, any> = ({ workItems }) => {
-    const hasFailedItems = workItems.some((w) => w.state === 'failed');
-    return Effect.succeed(hasFailedItems);
-  };
+  private workItem: AnyWorkItemBuilder = workItem<undefined>();
+  private shouldComplete: ShouldTaskCompleteFn<any, any> = ({ getWorkItems }) =>
+    Effect.gen(function* () {
+      const workItems = yield* getWorkItems();
+      const hasActiveWorkItems = workItems.some((w) =>
+        activeWorkItemInstanceStates.has(w.state)
+      );
+      const hasCompletedWorkItems = workItems.some(
+        (w) => w.state === 'completed'
+      );
+      return (
+        workItems.length > 0 && !hasActiveWorkItems && hasCompletedWorkItems
+      );
+    });
+
+  private shouldFail: ShouldTaskCompleteFn<any, any> = ({ getWorkItems }) =>
+    Effect.gen(function* () {
+      const workItems = yield* getWorkItems();
+      const hasFailedItems = workItems.some((w) => w.state === 'failed');
+      return hasFailedItems;
+    });
 
   withJoinType<TNewJoinType extends JoinType | undefined>(
     joinType: TNewJoinType
@@ -209,6 +214,52 @@ export class TaskBuilder<
     E
   > {
     this.splitType = splitType;
+    return this;
+  }
+
+  withWorkItem<
+    TWorkItemPayload,
+    TWorkItemBuilder extends WorkItemBuilder<TWorkItemPayload, any>
+  >(
+    workItem: TWorkItemBuilder
+  ): TaskBuilder<
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    WorkItemPayload<TWorkItemBuilder>,
+    TTaskMetadata,
+    WorkItemBuilderWorkItemMetadata<TWorkItemBuilder>,
+    R | WorkItemBuilderR<TWorkItemBuilder>,
+    E | WorkItemBuilderE<TWorkItemBuilder>
+  >;
+
+  withWorkItem<
+    TWorkItemPayload,
+    TInitWorkItemBuilder extends (
+      w: <TWorkItemPayload>() => InitializedWorkItemBuilder<TWorkItemPayload>
+    ) => WorkItemBuilder<TWorkItemPayload, any>
+  >(
+    f: TInitWorkItemBuilder
+  ): TaskBuilder<
+    TContext,
+    TTaskActivities,
+    TJoinType,
+    TSplitType,
+    WorkItemPayload<ReturnType<TInitWorkItemBuilder>>,
+    TTaskMetadata,
+    WorkItemBuilderWorkItemMetadata<ReturnType<TInitWorkItemBuilder>>,
+    R | WorkItemBuilderR<ReturnType<TInitWorkItemBuilder>>,
+    E | WorkItemBuilderE<ReturnType<TInitWorkItemBuilder>>
+  >;
+
+  withWorkItem(
+    input:
+      | AnyWorkItemBuilder
+      | ((w: () => AnyWorkItemBuilder) => AnyWorkItemBuilder)
+  ) {
+    this.workItem =
+      input instanceof WorkItemBuilder ? input : input(() => workItem());
     return this;
   }
 
@@ -299,7 +350,7 @@ export class TaskBuilder<
 
   onComplete<
     TOnCompleteActivity extends (
-      payload: TaskOnCompletePayload<TContext>
+      payload: TaskOnCompletePayload<TContext, TWorkItemPayload>
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnCompleteActivity
@@ -320,7 +371,7 @@ export class TaskBuilder<
 
   onCancel<
     TOnCancelActivity extends (
-      payload: TaskOnCancelPayload<TContext>
+      payload: TaskOnCancelPayload<TContext, TWorkItemPayload>
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnCancelActivity
@@ -341,7 +392,7 @@ export class TaskBuilder<
 
   onFail<
     TOnFailActivity extends (
-      payload: TaskOnFailPayload<TContext>
+      payload: TaskOnFailPayload<TContext, TWorkItemPayload>
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnFailActivity
@@ -357,55 +408,6 @@ export class TaskBuilder<
     E | Effect.Effect.Error<ReturnType<TOnFailActivity>>
   > {
     this.activities.onFail = f;
-    return this;
-  }
-
-  withWorkItem<
-    TWorkItemPayload,
-    TWorkItemBuilder extends WorkItemBuilder<TContext, TWorkItemPayload, any>
-  >(
-    workItem: TWorkItemBuilder
-  ): TaskBuilder<
-    TContext,
-    TTaskActivities,
-    TJoinType,
-    TSplitType,
-    WorkItemPayload<TWorkItemBuilder>,
-    TTaskMetadata,
-    WorkItemBuilderWorkItemMetadata<TWorkItemBuilder>,
-    R | WorkItemBuilderR<TWorkItemBuilder>,
-    E | WorkItemBuilderE<TWorkItemBuilder>
-  >;
-
-  withWorkItem<
-    TWorkItemPayload,
-    TInitWorkItemBuilder extends (
-      w: <TWorkItemPayload>() => InitializedWorkItemBuilder<
-        TContext,
-        TWorkItemPayload
-      >
-    ) => WorkItemBuilder<TContext, TWorkItemPayload, any>
-  >(
-    f: TInitWorkItemBuilder
-  ): TaskBuilder<
-    TContext,
-    TTaskActivities,
-    TJoinType,
-    TSplitType,
-    WorkItemPayload<ReturnType<TInitWorkItemBuilder>>,
-    TTaskMetadata,
-    WorkItemBuilderWorkItemMetadata<ReturnType<TInitWorkItemBuilder>>,
-    R | WorkItemBuilderR<ReturnType<TInitWorkItemBuilder>>,
-    E | WorkItemBuilderE<ReturnType<TInitWorkItemBuilder>>
-  >;
-
-  withWorkItem(
-    input:
-      | AnyWorkItemBuilder
-      | ((w: () => AnyWorkItemBuilder) => AnyWorkItemBuilder)
-  ) {
-    this.workItem =
-      input instanceof WorkItemBuilder ? input : input(() => workItem());
     return this;
   }
 
@@ -455,7 +457,7 @@ export class TaskBuilder<
       name,
       workflow,
 
-      activities as unknown as TaskActivities<any>,
+      activities as unknown as TaskActivities<any, any>,
       this.workItem.build() as AnyWorkItemActivities,
       shouldComplete as ShouldTaskCompleteFn<any, any, never, never>,
       shouldFail as ShouldTaskFailFn<any, any, never, never>,
@@ -473,7 +475,7 @@ export class TaskBuilder<
 export function task<TContext>() {
   return new TaskBuilder<
     TContext,
-    TaskActivities<TContext>,
+    TaskActivities<TContext, undefined>,
     never,
     never
   >().initialize();

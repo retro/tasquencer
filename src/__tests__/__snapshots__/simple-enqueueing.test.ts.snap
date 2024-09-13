@@ -28,7 +28,7 @@ exports[`handles simple enqueueing (1) 1`] = `
   "workItems": [
     {
       "id": "workItem-1",
-      "payload": null,
+      "payload": "complete",
       "state": "completed",
       "taskGeneration": 1,
       "taskName": "t1",
@@ -76,7 +76,7 @@ exports[`handles simple enqueueing (2) 1`] = `
   "workItems": [
     {
       "id": "workItem-1",
-      "payload": null,
+      "payload": "cancel",
       "state": "canceled",
       "taskGeneration": 1,
       "taskName": "t1",
@@ -124,7 +124,7 @@ exports[`handles simple enqueueing (3) 1`] = `
   "workItems": [
     {
       "id": "workItem-1",
-      "payload": null,
+      "payload": "fail",
       "state": "failed",
       "taskGeneration": 1,
       "taskName": "t1",

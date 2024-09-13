@@ -28,7 +28,7 @@ import { BaseTask } from './BaseTask.js';
 import { Workflow } from './Workflow.js';
 
 export class CompositeTask extends BaseTask {
-  readonly activities: CompositeTaskActivities<any>;
+  readonly activities: CompositeTaskActivities<any, any>;
   readonly subWorkflow: Workflow;
   readonly shouldComplete: ShouldCompositeTaskCompleteFn<
     any,
@@ -42,7 +42,7 @@ export class CompositeTask extends BaseTask {
     name: string,
     workflow: Workflow,
     subWorkflow: Workflow,
-    activities: CompositeTaskActivities<any>,
+    activities: CompositeTaskActivities<any, any>,
     shouldComplete: ShouldCompositeTaskCompleteFn<any, any, never, never>,
     shouldFail: ShouldCompositeTaskFailFn<any, any, never, never>,
     props?: { splitType?: SplitType; joinType?: JoinType }
@@ -80,13 +80,12 @@ export class CompositeTask extends BaseTask {
 
           const result = yield* self.activities.onEnable({
             ...executionContext.defaultActivityPayload,
-            enableTask() {
-              return pipe(
+            enableTask: () =>
+              pipe(
                 perform,
                 Effect.tap(() => executionContext.emitStateChanges()),
                 Effect.map(() => ({ enqueueStartTask }))
-              );
-            },
+              ),
           }) as Effect.Effect<unknown>;
 
           yield* perform;
@@ -121,12 +120,11 @@ export class CompositeTask extends BaseTask {
 
         const result = yield* self.activities.onDisable({
           ...executionContext.defaultActivityPayload,
-          disableTask() {
-            return pipe(
+          disableTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -198,16 +196,15 @@ export class CompositeTask extends BaseTask {
         const result = yield* self.activities.onStart(
           {
             ...executionContext.defaultActivityPayload,
-            startTask() {
-              return pipe(
+            startTask: () =>
+              pipe(
                 perform,
                 Effect.tap(() => executionContext.emitStateChanges()),
                 Effect.map(() => ({
                   initializeWorkflow,
                   enqueueStartWorkflow,
                 }))
-              );
-            },
+              ),
           },
           input
         ) as Effect.Effect<unknown>;
@@ -285,14 +282,14 @@ export class CompositeTask extends BaseTask {
 
         const result = yield* self.activities.onComplete({
           ...executionContext.defaultActivityPayload,
-          completeTask() {
-            return pipe(
+          getWorkflows: () => stateManager.getWorkflows(workflowId, self.name),
+          completeTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges()),
               Effect.provideService(State, stateManager),
               Effect.provideService(ExecutionContext, executionContext)
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -343,12 +340,12 @@ export class CompositeTask extends BaseTask {
 
         const result = yield* self.activities.onCancel({
           ...executionContext.defaultActivityPayload,
-          cancelTask() {
-            return pipe(
+          getWorkflows: () => stateManager.getWorkflows(workflowId, self.name),
+          cancelTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -399,12 +396,12 @@ export class CompositeTask extends BaseTask {
 
         const result = yield* self.activities.onFail({
           ...executionContext.defaultActivityPayload,
-          failTask() {
-            return pipe(
+          getWorkflows: () => stateManager.getWorkflows(workflowId, self.name),
+          failTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -427,11 +424,10 @@ export class CompositeTask extends BaseTask {
     const self = this;
     return Effect.gen(function* () {
       const stateManager = yield* State;
-      const workflows = yield* stateManager.getWorkflows(workflowId, self.name);
 
       const result = yield* self.shouldComplete({
-        workflows,
-        getWorkflowContext() {
+        getWorkflows: () => stateManager.getWorkflows(workflowId, self.name),
+        getWorkflowContext: () => {
           return stateManager.getWorkflowContext(workflowId);
         },
       });
@@ -446,11 +442,10 @@ export class CompositeTask extends BaseTask {
     const self = this;
     return Effect.gen(function* () {
       const stateManager = yield* State;
-      const workflows = yield* stateManager.getWorkflows(workflowId, self.name);
 
       const result = yield* self.shouldFail({
-        workflows,
-        getWorkflowContext() {
+        getWorkflows: () => stateManager.getWorkflows(workflowId, self.name),
+        getWorkflowContext: () => {
           return stateManager.getWorkflowContext(workflowId);
         },
       });

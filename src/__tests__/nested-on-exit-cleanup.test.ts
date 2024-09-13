@@ -6,7 +6,6 @@ import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
 
 const subWorkflowDefinition = Builder.workflow()
   .withName('sub')
-  .withParentContext()
   .startCondition('start')
   .task('subT1')
   .endCondition('end')
@@ -21,8 +20,11 @@ const workflowDefinition = Builder.workflow()
   .compositeTask('t3', (ct) =>
     ct()
       .withSubWorkflow(subWorkflowDefinition)
-      .withShouldComplete(({ workflows }) =>
-        Effect.succeed(workflows.some((w) => w.state === 'completed'))
+      .withShouldComplete(({ getWorkflows }) =>
+        Effect.gen(function* () {
+          const workflows = yield* getWorkflows();
+          return workflows.some((w) => w.state === 'completed');
+        })
       )
   )
   .task('t4', Builder.emptyTask().withJoinType('and'))

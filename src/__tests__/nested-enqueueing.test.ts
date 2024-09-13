@@ -5,25 +5,25 @@ import { Builder, IdGenerator, Service } from '../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
 
 type WorkflowContext = 'complete' | 'fail' | 'cancel';
+type WorkItemPayload = WorkflowContext;
 
 const subWorkflowDefinition = Builder.workflow<WorkflowContext>()
   .withName('sub')
-  .withParentContext<WorkflowContext>()
   .startCondition('start')
   .task('subT1', (t) =>
     t()
       .withWorkItem((w) =>
-        w().onStart(({ startWorkItem, getWorkflowContext }) =>
+        w<WorkItemPayload>().onStart(({ startWorkItem, getWorkItem }) =>
           Effect.gen(function* () {
-            const context = yield* getWorkflowContext();
+            const { payload } = yield* getWorkItem();
             const {
               enqueueCancelWorkItem,
               enqueueCompleteWorkItem,
               enqueueFailWorkItem,
             } = yield* startWorkItem();
-            if (context === 'cancel') {
+            if (payload === 'cancel') {
               yield* enqueueCancelWorkItem();
-            } else if (context === 'fail') {
+            } else if (payload === 'fail') {
               yield* enqueueFailWorkItem();
             } else {
               yield* enqueueCompleteWorkItem();
@@ -37,11 +37,12 @@ const subWorkflowDefinition = Builder.workflow<WorkflowContext>()
           yield* enqueueStartTask();
         })
       )
-      .onStart(({ startTask }) =>
+      .onStart(({ startTask, getWorkflowContext }) =>
         Effect.gen(function* () {
+          const workflowContext = yield* getWorkflowContext();
           const { initializeWorkItem, enqueueStartWorkItem } =
             yield* startTask();
-          const { id } = yield* initializeWorkItem();
+          const { id } = yield* initializeWorkItem(workflowContext);
           yield* enqueueStartWorkItem(id);
         })
       )

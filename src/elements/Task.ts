@@ -31,7 +31,7 @@ import { BaseTask } from './BaseTask.js';
 import { Workflow } from './Workflow.js';
 
 export class Task extends BaseTask {
-  readonly activities: TaskActivities<any>;
+  readonly activities: TaskActivities<any, any>;
   readonly workItemActivities: AnyWorkItemActivities;
   readonly shouldComplete: ShouldTaskCompleteFn<any, any, never, never>;
   readonly shouldFail: ShouldTaskFailFn<any, any, never, never>;
@@ -39,7 +39,7 @@ export class Task extends BaseTask {
   constructor(
     name: string,
     workflow: Workflow,
-    activities: TaskActivities<any>,
+    activities: TaskActivities<any, any>,
     workItemActivities: AnyWorkItemActivities,
     shouldComplete: ShouldTaskCompleteFn<any, any, never, never>,
     shouldFail: ShouldTaskFailFn<any, any, never, never>,
@@ -86,13 +86,12 @@ export class Task extends BaseTask {
 
           const result = yield* self.activities.onEnable({
             ...executionContext.defaultActivityPayload,
-            enableTask() {
-              return pipe(
+            enableTask: () =>
+              pipe(
                 perform,
                 Effect.tap(() => executionContext.emitStateChanges()),
                 Effect.map(() => ({ enqueueStartTask }))
-              );
-            },
+              ),
           }) as Effect.Effect<unknown>;
 
           yield* perform;
@@ -127,12 +126,11 @@ export class Task extends BaseTask {
 
         const result = yield* self.activities.onDisable({
           ...executionContext.defaultActivityPayload,
-          disableTask() {
-            return pipe(
+          disableTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -200,16 +198,15 @@ export class Task extends BaseTask {
         const result = yield* self.activities.onStart(
           {
             ...executionContext.defaultActivityPayload,
-            startTask() {
-              return pipe(
+            startTask: () =>
+              pipe(
                 perform,
                 Effect.tap(() => executionContext.emitStateChanges()),
                 Effect.map(() => ({
                   initializeWorkItem,
                   enqueueStartWorkItem,
                 }))
-              );
-            },
+              ),
           },
           input
         ) as Effect.Effect<unknown>;
@@ -291,12 +288,12 @@ export class Task extends BaseTask {
 
         const result = yield* self.activities.onComplete({
           ...executionContext.defaultActivityPayload,
-          completeTask() {
-            return pipe(
+          getWorkItems: () => stateManager.getWorkItems(workflowId, self.name),
+          completeTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -348,12 +345,12 @@ export class Task extends BaseTask {
 
         const result = yield* self.activities.onCancel({
           ...executionContext.defaultActivityPayload,
-          cancelTask() {
-            return pipe(
+          getWorkItems: () => stateManager.getWorkItems(workflowId, self.name),
+          cancelTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -406,12 +403,12 @@ export class Task extends BaseTask {
 
         const result = yield* self.activities.onFail({
           ...executionContext.defaultActivityPayload,
-          failTask() {
-            return pipe(
+          getWorkItems: () => stateManager.getWorkItems(workflowId, self.name),
+          failTask: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         }) as Effect.Effect<unknown>;
 
         yield* perform;
@@ -434,13 +431,10 @@ export class Task extends BaseTask {
     const self = this;
     return Effect.gen(function* () {
       const stateManager = yield* State;
-      const workItems = yield* stateManager.getWorkItems(workflowId, self.name);
 
       const result = yield* self.shouldComplete({
-        workItems,
-        getWorkflowContext() {
-          return stateManager.getWorkflowContext(workflowId);
-        },
+        getWorkItems: () => stateManager.getWorkItems(workflowId, self.name),
+        getWorkflowContext: () => stateManager.getWorkflowContext(workflowId),
       });
 
       if (result) {
@@ -453,13 +447,10 @@ export class Task extends BaseTask {
     const self = this;
     return Effect.gen(function* () {
       const stateManager = yield* State;
-      const workItems = yield* stateManager.getWorkItems(workflowId, self.name);
 
       const result = yield* self.shouldFail({
-        workItems,
-        getWorkflowContext() {
-          return stateManager.getWorkflowContext(workflowId);
-        },
+        getWorkItems: () => stateManager.getWorkItems(workflowId, self.name),
+        getWorkflowContext: () => stateManager.getWorkflowContext(workflowId),
       });
 
       if (result) {
@@ -478,18 +469,15 @@ export class Task extends BaseTask {
       const executionContext = yield* ExecutionContext;
 
       return {
-        ...executionContext.defaultActivityPayload,
-        getWorkItem() {
-          return self
+        getWorkItem: () =>
+          self
             .getWorkItem(workflowId, workItemId)
-            .pipe(Effect.provideService(State, stateManager));
-        },
-        updateWorkItemPayload(payload: unknown) {
-          return self.updateWorkItem(workflowId, workItemId, payload).pipe(
+            .pipe(Effect.provideService(State, stateManager)),
+        updateWorkItemPayload: (payload: unknown) =>
+          self.updateWorkItem(workflowId, workItemId, payload).pipe(
             Effect.tap(() => executionContext.emitStateChanges()),
             Effect.provideService(State, stateManager)
-          );
-        },
+          ),
       };
     });
   }
@@ -542,8 +530,8 @@ export class Task extends BaseTask {
       const result = yield* self.workItemActivities.onStart(
         {
           ...workItemActivityPayload,
-          startWorkItem() {
-            return Effect.gen(function* () {
+          startWorkItem: () =>
+            Effect.gen(function* () {
               yield* perform.pipe(
                 Effect.tap(() => executionContext.emitStateChanges())
               );
@@ -570,8 +558,7 @@ export class Task extends BaseTask {
                   });
                 },
               };
-            });
-          },
+            }),
         },
         input
       ) as Effect.Effect<unknown>;
@@ -614,12 +601,11 @@ export class Task extends BaseTask {
       const result = yield* self.workItemActivities.onComplete(
         {
           ...workItemActivityPayload,
-          completeWorkItem() {
-            return pipe(
+          completeWorkItem: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         },
         input
       ) as Effect.Effect<unknown>;
@@ -663,12 +649,11 @@ export class Task extends BaseTask {
       const result = yield* self.workItemActivities.onCancel(
         {
           ...workItemActivityPayload,
-          cancelWorkItem() {
-            return pipe(
+          cancelWorkItem: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         },
         input
       ) as Effect.Effect<unknown>;
@@ -714,12 +699,11 @@ export class Task extends BaseTask {
       const result = yield* self.workItemActivities.onFail(
         {
           ...workItemActivityPayload,
-          failWorkItem() {
-            return pipe(
+          failWorkItem: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         },
         input
       ) as Effect.Effect<unknown>;

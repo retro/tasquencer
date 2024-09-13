@@ -681,13 +681,12 @@ export class Service<
       ...input,
       emitStateChanges: () => self.emitStateChanges(),
       defaultActivityPayload: {
-        getWorkflowContext() {
-          return self.state
+        getWorkflowContext: () =>
+          self.state
             .getWorkflow(input.workflowId)
-            .pipe(Effect.map((w) => w.context));
-        },
-        updateWorkflowContext(contextOrUpdater: unknown) {
-          return Effect.gen(function* () {
+            .pipe(Effect.map((w) => w.context)),
+        updateWorkflowContext: (contextOrUpdater: unknown) =>
+          Effect.gen(function* () {
             if (typeof contextOrUpdater === 'function') {
               const workflow = yield* self.state.getWorkflow(input.workflowId);
               return yield* self.state
@@ -700,13 +699,10 @@ export class Service<
             return yield* self.state
               .updateWorkflowContext(input.workflowId, contextOrUpdater)
               .pipe(Effect.tap(() => self.emitStateChanges()));
-          });
-        },
+          }),
       },
       queue: {
-        offer(item: ExecutionContextQueueItem) {
-          return self.queue.offer(item);
-        },
+        offer: (item: ExecutionContextQueueItem) => self.queue.offer(item),
       },
     };
   }

@@ -11,6 +11,9 @@ import {
 } from '../errors.js';
 import {
   CompositeTaskActivities,
+  CompositeTaskOnCancelPayload,
+  CompositeTaskOnCompletePayload,
+  CompositeTaskOnFailPayload,
   CompositeTaskOnStartPayload,
   ConditionInstance,
   ElementTypes,
@@ -19,11 +22,8 @@ import {
   ShouldCompositeTaskFailFn,
   SplitType,
   TaskInstance,
-  TaskOnCancelPayload,
-  TaskOnCompletePayload,
   TaskOnDisablePayload,
   TaskOnEnablePayload,
-  TaskOnFailPayload,
   TaskOnStartSym,
   WorkItemInstance,
   WorkflowInstance,
@@ -31,7 +31,6 @@ import {
 } from '../types.js';
 import {
   AnyWorkflowBuilder,
-  AnyWorkflowBuilderWithCorrectParentContext,
   WorkflowBuilderContext,
   WorkflowBuilderE,
   WorkflowBuilderElementTypes,
@@ -109,21 +108,25 @@ export type CompositeTaskBuilderE<TCompositeTaskBuilder> =
     ? E
     : never;
 
-export type AnyCompositeTaskBuilder<TContext = unknown> = CompositeTaskBuilder<
+export type AnyCompositeTaskBuilder<
+  TContext = unknown,
+  TChildWorkflowContext = unknown
+> = CompositeTaskBuilder<
   TContext,
   any,
-  CompositeTaskActivities<TContext>,
+  CompositeTaskActivities<TContext, TChildWorkflowContext>,
   JoinType | undefined,
   SplitType | undefined
 >;
 
-export type InitializedCompositeTaskBuilder<TContext> = CompositeTaskBuilder<
-  TContext,
-  object,
-  CompositeTaskActivities<TContext>,
-  undefined,
-  undefined
->;
+export type InitializedCompositeTaskBuilder<TContext, TChildWorkflowContext> =
+  CompositeTaskBuilder<
+    TContext,
+    TChildWorkflowContext,
+    CompositeTaskActivities<TContext, TChildWorkflowContext>,
+    undefined,
+    undefined
+  >;
 
 type CompositeTaskBuilderCompositeTaskMetadata<TCompositeTaskBuilder> =
   TCompositeTaskBuilder extends CompositeTaskBuilder<
@@ -193,7 +196,10 @@ export type CompositeTaskElementTypes<TCompositeTaskBuilder> =
 export class CompositeTaskBuilder<
   TContext,
   TChildWorkflowContext,
-  TCompositeTaskActivities extends CompositeTaskActivities<TContext>,
+  TCompositeTaskActivities extends CompositeTaskActivities<
+    TContext,
+    TChildWorkflowContext
+  >,
   TJoinType extends JoinType | undefined,
   TSplitType extends SplitType | undefined,
   TCompositeTaskMetadata = object,
@@ -212,22 +218,29 @@ export class CompositeTaskBuilder<
   private activities: TCompositeTaskActivities = {} as TCompositeTaskActivities;
   private workflowBuilder: AnyWorkflowBuilder;
   private shouldComplete: ShouldCompositeTaskCompleteFn<any, any> = ({
-    workflows,
-  }) => {
-    const hasActiveWorkflows = workflows.some((w) =>
-      activeWorkflowInstanceStates.has(w.state)
-    );
-    const hasCompletedWorkflows = workflows.some(
-      (w) => w.state === 'completed'
-    );
-    return Effect.succeed(
-      workflows.length > 0 && !hasActiveWorkflows && hasCompletedWorkflows
-    );
-  };
-  private shouldFail: ShouldCompositeTaskFailFn<any, any> = ({ workflows }) => {
-    const hasFailedItems = workflows.some((w) => w.state === 'failed');
-    return Effect.succeed(hasFailedItems);
-  };
+    getWorkflows,
+  }) =>
+    Effect.gen(function* () {
+      const workflows = yield* getWorkflows();
+      const hasActiveWorkflows = workflows.some((w) =>
+        activeWorkflowInstanceStates.has(w.state)
+      );
+      const hasCompletedWorkflows = workflows.some(
+        (w) => w.state === 'completed'
+      );
+      return (
+        workflows.length > 0 && !hasActiveWorkflows && hasCompletedWorkflows
+      );
+    });
+
+  private shouldFail: ShouldCompositeTaskFailFn<any, any> = ({
+    getWorkflows,
+  }) =>
+    Effect.gen(function* () {
+      const workflows = yield* getWorkflows();
+      const hasFailedItems = workflows.some((w) => w.state === 'failed');
+      return hasFailedItems;
+    });
 
   constructor(workflowBuilder: AnyWorkflowBuilder) {
     this.workflowBuilder = workflowBuilder;
@@ -359,7 +372,7 @@ export class CompositeTaskBuilder<
 
   onComplete<
     TOnCompleteActivity extends (
-      payload: TaskOnCompletePayload<TContext>
+      payload: CompositeTaskOnCompletePayload<TContext, TChildWorkflowContext>
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnCompleteActivity
@@ -381,7 +394,7 @@ export class CompositeTaskBuilder<
 
   onCancel<
     TOnCancelActivity extends (
-      payload: TaskOnCancelPayload<TContext>
+      payload: CompositeTaskOnCancelPayload<TContext, TChildWorkflowContext>
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnCancelActivity
@@ -403,7 +416,7 @@ export class CompositeTaskBuilder<
 
   onFail<
     TOnFailActivity extends (
-      payload: TaskOnFailPayload<TContext>
+      payload: CompositeTaskOnFailPayload<TContext, TChildWorkflowContext>
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnFailActivity
@@ -493,7 +506,10 @@ export class CompositeTaskBuilder<
         name,
         workflow,
         subWorkflow,
-        activities as unknown as CompositeTaskActivities<TContext>,
+        activities as unknown as CompositeTaskActivities<
+          TContext,
+          TChildWorkflowContext
+        >,
         shouldComplete as ShouldCompositeTaskCompleteFn<any, any, never, never>,
         shouldFail as ShouldCompositeTaskFailFn<any, any, never, never>,
         { joinType, splitType }
@@ -506,12 +522,11 @@ export class CompositeTaskBuilder<
 
 export interface InitialCompositeTaskFnReturnType<TContext> {
   withSubWorkflow: <TWorkflowBuilder extends AnyWorkflowBuilder>(
-    workflow: TWorkflowBuilder &
-      AnyWorkflowBuilderWithCorrectParentContext<TWorkflowBuilder, TContext>
+    workflow: TWorkflowBuilder
   ) => CompositeTaskBuilder<
     TContext,
     WorkflowBuilderContext<TWorkflowBuilder>,
-    any,
+    CompositeTaskActivities<TContext, WorkflowBuilderContext<TWorkflowBuilder>>,
     undefined,
     undefined,
     object,
@@ -525,13 +540,15 @@ export interface InitialCompositeTaskFnReturnType<TContext> {
 export function compositeTask<TContext>() {
   return {
     withSubWorkflow<TWorkflowBuilder extends AnyWorkflowBuilder>(
-      workflow: TWorkflowBuilder &
-        AnyWorkflowBuilderWithCorrectParentContext<TWorkflowBuilder, TContext>
+      workflow: TWorkflowBuilder
     ) {
       return new CompositeTaskBuilder<
         TContext,
         WorkflowBuilderContext<TWorkflowBuilder>,
-        CompositeTaskActivities<TContext>,
+        CompositeTaskActivities<
+          TContext,
+          WorkflowBuilderContext<TWorkflowBuilder>
+        >,
         undefined,
         undefined,
         object,

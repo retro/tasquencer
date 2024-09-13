@@ -10,8 +10,11 @@ const workflowDefinition = Builder.workflow()
   .task('t1', Builder.emptyTask().withSplitType('and'))
   .task('t2', (t) =>
     // complete task as soon as one work item is completed
-    t().withShouldComplete(({ workItems }) =>
-      Effect.succeed(workItems.some((wi) => wi.state === 'completed'))
+    t().withShouldComplete(({ getWorkItems }) =>
+      Effect.gen(function* () {
+        const workItems = yield* getWorkItems();
+        return workItems.some((wi) => wi.state === 'completed');
+      })
     )
   )
   .task('t3', Builder.emptyTask().withJoinType('and'))

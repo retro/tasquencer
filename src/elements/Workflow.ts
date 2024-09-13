@@ -50,13 +50,13 @@ export class Workflow<
 > {
   readonly tasks: Record<string, BaseTask> = {};
   readonly conditions: Record<string, Condition> = {};
+  readonly name: string;
+  readonly activities: WorkflowActivities<any>;
+  private parentTask?: CompositeTask;
   private startCondition?: Condition;
   private endCondition?: Condition;
-  readonly name: string;
-  readonly activities: WorkflowActivities<any, any>;
-  private parentTask?: CompositeTask;
 
-  constructor(name: string, activities: WorkflowActivities<any, any>) {
+  constructor(name: string, activities: WorkflowActivities<any>) {
     this.name = name;
     this.activities = activities;
   }
@@ -132,12 +132,11 @@ export class Workflow<
       const result = yield* self.activities.onStart(
         {
           ...defaultActivityPayload,
-          startWorkflow() {
-            return pipe(
+          startWorkflow: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         },
         input
       ) as Effect.Effect<unknown>;
@@ -191,12 +190,11 @@ export class Workflow<
 
       yield* self.activities.onComplete({
         ...defaultActivityPayload,
-        completeWorkflow() {
-          return pipe(
+        completeWorkflow: () =>
+          pipe(
             perform,
             Effect.tap(() => executionContext.emitStateChanges())
-          );
-        },
+          ),
       }) as Effect.Effect<unknown>;
 
       yield* perform;
@@ -256,12 +254,11 @@ export class Workflow<
       yield* self.activities.onCancel(
         {
           ...defaultActivityPayload,
-          cancelWorkflow() {
-            return pipe(
+          cancelWorkflow: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         },
         input
       ) as Effect.Effect<unknown>;
@@ -323,12 +320,11 @@ export class Workflow<
       yield* self.activities.onFail(
         {
           ...defaultActivityPayload,
-          failWorkflow() {
-            return pipe(
+          failWorkflow: () =>
+            pipe(
               perform,
               Effect.tap(() => executionContext.emitStateChanges())
-            );
-          },
+            ),
         },
         input
       ) as Effect.Effect<unknown>;
@@ -344,8 +340,8 @@ export class Workflow<
       const workflow = yield* stateManager.getWorkflow(id);
 
       return {
-        getParentWorkflowContext() {
-          return Effect.gen(function* () {
+        getParentWorkflowContext: () =>
+          Effect.gen(function* () {
             const parent = workflow.parent;
             if (!parent) {
               return yield* Effect.fail(
@@ -356,10 +352,9 @@ export class Workflow<
               );
             }
             return yield* stateManager.getWorkflowContext(parent.workflowId);
-          });
-        },
-        updateParentWorkflowContext(contextOrUpdater: unknown) {
-          return Effect.gen(function* () {
+          }),
+        updateParentWorkflowContext: (contextOrUpdater: unknown) =>
+          Effect.gen(function* () {
             const parent = workflow.parent;
             if (!parent) {
               return yield* Effect.fail(
@@ -382,15 +377,13 @@ export class Workflow<
               parent.workflowId,
               contextOrUpdater
             );
-          });
-        },
-        getWorkflowContext() {
-          return Effect.gen(function* () {
+          }),
+        getWorkflowContext: () =>
+          Effect.gen(function* () {
             return (yield* stateManager.getWorkflowContext(id)) as Context;
-          });
-        },
-        updateWorkflowContext(contextOrUpdater: unknown) {
-          return Effect.gen(function* () {
+          }),
+        updateWorkflowContext: (contextOrUpdater: unknown) =>
+          Effect.gen(function* () {
             if (typeof contextOrUpdater === 'function') {
               const context = yield* stateManager.getWorkflowContext(id);
               return yield* stateManager
@@ -400,8 +393,7 @@ export class Workflow<
             return yield* stateManager
               .updateWorkflowContext(id, contextOrUpdater)
               .pipe(Effect.tap(() => executionContext.emitStateChanges()));
-          });
-        },
+          }),
       };
     });
   }

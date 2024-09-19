@@ -39,12 +39,12 @@ it('runs a net with "xor" split and "xor" join', ({ expect }) => {
     expect(state1_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_1)).toEqual(new Set(['A']));
 
-    yield* service1.startTask('A');
+    yield* service1.startTask('A', {});
     const state1_2 = yield* service1.getState();
     expect(state1_2).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_2)).toEqual(new Set(['B']));
 
-    yield* service1.startTask('B');
+    yield* service1.startTask('B', {});
     const state1_3 = yield* service1.getState();
     expect(state1_3).toMatchSnapshot();
     expect(state1_3.workflows[0]?.state).toBe('completed');
@@ -61,12 +61,12 @@ it('runs a net with "xor" split and "xor" join', ({ expect }) => {
     expect(state2_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_1)).toEqual(new Set(['A']));
 
-    yield* service2.startTask('A');
+    yield* service2.startTask('A', {});
     const state2_2 = yield* service2.getState();
     expect(state2_2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_2)).toEqual(new Set(['C']));
 
-    yield* service2.startTask('C');
+    yield* service2.startTask('C', {});
     const state2_3 = yield* service2.getState();
     expect(state2_3).toMatchSnapshot();
     expect(state2_3.workflows[0]?.state).toBe('completed');
@@ -85,12 +85,12 @@ it('runs a net with "xor" split and "xor" join', ({ expect }) => {
     expect(state3_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state3_1)).toEqual(new Set(['A']));
 
-    yield* service3.startTask('A');
+    yield* service3.startTask('A', {});
     const state3_2 = yield* service3.getState();
     expect(state3_2).toMatchSnapshot();
     expect(getEnabledTaskNames(state3_2)).toEqual(new Set(['D']));
 
-    yield* service3.startTask('D');
+    yield* service3.startTask('D', {});
     const state3_3 = yield* service3.getState();
     expect(state3_3).toMatchSnapshot();
     expect(state3_3.workflows[0]?.state).toBe('completed');

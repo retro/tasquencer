@@ -34,12 +34,12 @@ it('supports the deferred choice pattern', ({ expect }) => {
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['task_1', 'task_2']));
 
-    yield* service.startTask('task_1');
+    yield* service.startTask('task_1', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['task_1a']));
 
-    yield* service.startTask('task_1a');
+    yield* service.startTask('task_1a', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(state3.workflows[0]?.state).toBe('completed');

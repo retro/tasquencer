@@ -45,42 +45,42 @@ it('runs a net with an "or" join and a cancellation region', ({ expect }) => {
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['A']));
 
-    yield* service.startTask('A');
+    yield* service.startTask('A', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['B', 'C']));
 
-    yield* service.startTask('C');
+    yield* service.startTask('C', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['B']));
 
-    yield* service.startTask('B');
+    yield* service.startTask('B', {});
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set(['B', 'D', 'E']));
 
-    yield* service.startTask('E');
+    yield* service.startTask('E', {});
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state5)).toEqual(new Set(['B']));
 
-    yield* service.startTask('B');
+    yield* service.startTask('B', {});
     const state6 = yield* service.getState();
     expect(state6).toMatchSnapshot();
     expect(getEnabledTaskNames(state6)).toEqual(new Set(['B', 'D', 'E']));
 
-    yield* service.startTask('D');
+    yield* service.startTask('D', {});
     const state7 = yield* service.getState();
     expect(state7).toMatchSnapshot();
     expect(getEnabledTaskNames(state7)).toEqual(new Set(['F']));
 
-    yield* service.startTask('F');
+    yield* service.startTask('F', {});
     const state8 = yield* service.getState();
     expect(state8).toMatchSnapshot();
     expect(getEnabledTaskNames(state8)).toEqual(new Set(['G']));
 
-    yield* service.startTask('G');
+    yield* service.startTask('G', {});
     const state9 = yield* service.getState();
     expect(state9).toMatchSnapshot();
     expect(state9.workflows[0]?.state).toBe('completed');

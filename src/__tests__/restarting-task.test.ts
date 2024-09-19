@@ -34,16 +34,20 @@ it('restarts the task if its input conditions have positive markings on task com
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['t2', 't3']));
 
-    yield* service.startTask('t3');
-    yield* service.startTask('t2');
-    const { id } = yield* service.initializeWorkItem('t3');
-    yield* service.startWorkItem(`t3.${id}`);
-    yield* service.completeWorkItem(`t3.${id}`);
+    yield* service.startTask('t3', {});
+    yield* service.startTask('t2', {});
+    const { id: t3WorkItemId } = yield* service.initializeWorkItem('t3', {});
+    yield* service.startWorkItem('t3.$t3WorkItemId', {
+      params: { t3WorkItemId },
+    });
+    yield* service.completeWorkItem('t3.$t3WorkItemId', {
+      params: { t3WorkItemId },
+    });
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['t3', 't4']));

@@ -1,5 +1,4 @@
 import { Effect } from 'effect';
-import { Simplify } from 'type-fest';
 
 import { Condition } from '../elements/Condition.js';
 import { Workflow } from '../elements/Workflow.js';
@@ -12,12 +11,15 @@ import {
   ConditionNode,
   ElementTypes,
   NotExtends,
+  ReplaceProp,
+  TaggedMetadata,
   TaskInstanceState,
   TaskName,
+  UnknownAsUndefined,
   WorkItemInstance,
   WorkflowActivities,
   WorkflowBuilderDefinition,
-  WorkflowContextSym,
+  WorkflowBuilderMetadata,
   WorkflowId,
   WorkflowInstance,
   WorkflowOnCancelPayload,
@@ -35,10 +37,12 @@ import {
 import * as TB from './TaskBuilder.js';
 
 type TaskWithValidContext<TContext, TTaskBuilder> =
-  TContext extends TB.TaskBuilderContext<TTaskBuilder> ? TTaskBuilder : never;
+  TContext extends TB.GetTaskBuilderContext<TTaskBuilder>
+    ? TTaskBuilder
+    : never;
 
 type CompositeTaskWithValidContext<TContext, TCompositeTaskBuilder> =
-  TContext extends CTB.CompositeTaskBuilderContext<TCompositeTaskBuilder>
+  TContext extends CTB.GetCompositeTaskBuilderContext<TCompositeTaskBuilder>
     ? TCompositeTaskBuilder
     : never;
 
@@ -63,7 +67,7 @@ export type AnyWorkflowBuilder = WorkflowBuilder<
   any
 >;
 
-export type WorkflowBuilderContext<TWorkflowBuilder> =
+export type GetWorkflowBuilderContext<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     infer TContext,
@@ -81,7 +85,7 @@ export type WorkflowBuilderContext<TWorkflowBuilder> =
     ? TContext
     : never;
 
-export type WorkflowBuilderR<TWorkflowBuilder> =
+export type GetWorkflowBuilderR<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     any,
@@ -99,7 +103,7 @@ export type WorkflowBuilderR<TWorkflowBuilder> =
     ? R
     : never;
 
-export type WorkflowBuilderE<TWorkflowBuilder> =
+export type GetWorkflowBuilderE<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     any,
@@ -117,25 +121,7 @@ export type WorkflowBuilderE<TWorkflowBuilder> =
     ? E
     : never;
 
-export type WorkflowBuilderTaskActivitiesReturnType<TWorkflowBuilder> =
-  TWorkflowBuilder extends WorkflowBuilder<
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer TTaskActivitiesReturnType,
-    any
-  >
-    ? TTaskActivitiesReturnType
-    : never;
-
-export type WorkflowBuilderMetadata<TWorkflowBuilder> =
+export type GetWorkflowBuilderMetadata<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     any,
@@ -153,7 +139,7 @@ export type WorkflowBuilderMetadata<TWorkflowBuilder> =
     ? TWorkflowBuilderMetadata
     : never;
 
-export type WorkflowBuilderElementTypes<TWorkflowBuilder> =
+export type GetWorkflowBuilderElementTypes<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     any,
@@ -171,7 +157,7 @@ export type WorkflowBuilderElementTypes<TWorkflowBuilder> =
     ? TElementTypes
     : never;
 
-export type WorkflowBuilderTaskNames<TWorkflowBuilder> =
+export type GetWorkflowBuilderTaskNames<TWorkflowBuilder> =
   TWorkflowBuilder extends WorkflowBuilder<
     any,
     any,
@@ -206,7 +192,16 @@ export class WorkflowBuilder<
   TTasksWithOrXorSplit = never,
   TConnectedTasks = never,
   TConnectedConditions = never,
-  TMetadata = { [WorkflowContextSym]: TContext },
+  TMetadata extends WorkflowBuilderMetadata = {
+    name: TWorkflowName;
+    context: TContext;
+    tasks: Record<never, never>;
+    compositeTasks: Record<never, never>;
+    onStart: { input: undefined; return: undefined };
+    onCancel: { input: undefined; return: undefined };
+    onComplete: { input: undefined; return: undefined };
+    onFail: { input: undefined; return: undefined };
+  },
   TElementTypes extends ElementTypes = {
     workflow: WorkflowInstance<TContext, TWorkflowName>;
     workItem: never;
@@ -262,13 +257,13 @@ export class WorkflowBuilder<
     TTasksWithOrXorSplit,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      Omit<TMetadata, 'onStart'> & {
-        onStart: WorkflowActivityMetadata<
-          Parameters<TOnStartActivity>[1],
-          Effect.Effect.Success<ReturnType<TOnStartActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onStart',
+      TMetadata,
+      WorkflowActivityMetadata<
+        Parameters<TOnStartActivity>[1],
+        Effect.Effect.Success<ReturnType<TOnStartActivity>>
+      >
     >,
     TElementTypes
   > {
@@ -294,13 +289,13 @@ export class WorkflowBuilder<
     TTasksWithOrXorSplit,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      Omit<TMetadata, 'onComplete'> & {
-        onComplete: WorkflowActivityMetadata<
-          Parameters<TOnCompleteActivity>[1],
-          Effect.Effect.Success<ReturnType<TOnCompleteActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onComplete',
+      TMetadata,
+      WorkflowActivityMetadata<
+        Parameters<TOnCompleteActivity>[1],
+        Effect.Effect.Success<ReturnType<TOnCompleteActivity>>
+      >
     >,
     TElementTypes
   > {
@@ -312,7 +307,7 @@ export class WorkflowBuilder<
     TOnFailActivityInput,
     TOnFailActivity extends (
       payload: WorkflowOnFailPayload<TContext>,
-      input?: TOnFailActivityInput
+      input: TOnFailActivityInput
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnFailActivity
@@ -327,13 +322,13 @@ export class WorkflowBuilder<
     TTasksWithOrXorSplit,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      Omit<TMetadata, 'onFail'> & {
-        onFail: WorkflowActivityMetadata<
-          Parameters<TOnFailActivity>[1],
-          Effect.Effect.Success<ReturnType<TOnFailActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onFail',
+      TMetadata,
+      WorkflowActivityMetadata<
+        Parameters<TOnFailActivity>[1],
+        Effect.Effect.Success<ReturnType<TOnFailActivity>>
+      >
     >,
     TElementTypes
   > {
@@ -345,7 +340,7 @@ export class WorkflowBuilder<
     TOnCancelActivityInput,
     TOnCancelActivity extends (
       payload: WorkflowOnCancelPayload<TContext>,
-      input?: TOnCancelActivityInput
+      input: TOnCancelActivityInput
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnCancelActivity
@@ -360,13 +355,13 @@ export class WorkflowBuilder<
     TTasksWithOrXorSplit,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      Omit<TMetadata, 'onCancel'> & {
-        onCancel: WorkflowActivityMetadata<
-          Parameters<TOnCancelActivity>[1],
-          Effect.Effect.Success<ReturnType<TOnCancelActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onCancel',
+      TMetadata,
+      WorkflowActivityMetadata<
+        Parameters<TOnCancelActivity>[1],
+        Effect.Effect.Success<ReturnType<TOnCancelActivity>>
+      >
     >,
     TElementTypes
   > {
@@ -476,7 +471,7 @@ export class WorkflowBuilder<
     TTaskName extends string,
     TTaskBuilder extends TB.AnyTaskBuilder,
     TIsXorOrOrJoinSplit extends IsXorOrOrJoinSplit<
-      TB.TaskBuilderSplitType<TTaskBuilder>
+      TB.GetTaskBuilderSplitType<TTaskBuilder>
     > extends never
       ? never
       : TTaskName
@@ -486,25 +481,36 @@ export class WorkflowBuilder<
   ): WorkflowBuilder<
     TWorkflowName,
     TContext,
-    R | TB.TaskBuilderR<TTaskBuilder>,
-    E | TB.TaskBuilderE<TTaskBuilder>,
+    R | TB.GetTaskBuilderR<TTaskBuilder>,
+    E | TB.GetTaskBuilderE<TTaskBuilder>,
     TTasks | TTaskName,
     TConditions,
     TCancellationRegions,
     TTasksWithOrXorSplit | TIsXorOrOrJoinSplit,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      TMetadata & {
-        [tn in TTaskName]: TB.TaskBuilderMetadata<TTaskBuilder>;
-      }
-    >,
+    TMetadata & {
+      tasks: {
+        [TName in TTaskName]: {
+          type: 'task';
+          name: TName;
+          metadata: TaggedMetadata<
+            TB.GetTaskBuilderTaskMetadata<TTaskBuilder>,
+            TName
+          >;
+          workItemMetadata: TaggedMetadata<
+            TB.GetTaskBuilderWorkItemMetadata<TTaskBuilder>,
+            TName
+          >;
+        };
+      };
+    },
     {
       workflow: TElementTypes['workflow'];
       workItem:
         | TElementTypes['workItem']
         | WorkItemInstance<
-            TB.TaskBuilderWorkItemPayload<TTaskBuilder>,
+            TB.GetTaskBuilderWorkItemPayload<TTaskBuilder>,
             TWorkflowName,
             TTaskName
           >;
@@ -526,7 +532,7 @@ export class WorkflowBuilder<
       t: () => TB.InitializedTaskBuilder<TContext>
     ) => TB.AnyTaskBuilder<TContext>,
     X extends IsXorOrOrJoinSplit<
-      TB.TaskBuilderSplitType<ReturnType<TTaskBuilderInit>>
+      TB.GetTaskBuilderSplitType<ReturnType<TTaskBuilderInit>>
     > extends never
       ? never
       : TTaskName
@@ -536,25 +542,36 @@ export class WorkflowBuilder<
   ): WorkflowBuilder<
     TWorkflowName,
     TContext,
-    R | TB.TaskBuilderR<ReturnType<TTaskBuilderInit>>,
-    E | TB.TaskBuilderE<ReturnType<TTaskBuilderInit>>,
+    R | TB.GetTaskBuilderR<ReturnType<TTaskBuilderInit>>,
+    E | TB.GetTaskBuilderE<ReturnType<TTaskBuilderInit>>,
     TTasks | TTaskName,
     TConditions,
     TCancellationRegions,
     TTasksWithOrXorSplit | X,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      TMetadata & {
-        [tn in TTaskName]: TB.TaskBuilderMetadata<ReturnType<TTaskBuilderInit>>;
-      }
-    >,
+    TMetadata & {
+      tasks: {
+        [TName in TTaskName]: {
+          type: 'task';
+          name: TName;
+          metadata: TaggedMetadata<
+            TB.GetTaskBuilderTaskMetadata<ReturnType<TTaskBuilderInit>>,
+            TName
+          >;
+          workItemMetadata: TaggedMetadata<
+            TB.GetTaskBuilderWorkItemMetadata<ReturnType<TTaskBuilderInit>>,
+            TName
+          >;
+        };
+      };
+    },
     {
       workflow: TElementTypes['workflow'];
       workItem:
         | TElementTypes['workItem']
         | WorkItemInstance<
-            TB.TaskBuilderWorkItemPayload<ReturnType<TTaskBuilderInit>>,
+            TB.GetTaskBuilderWorkItemPayload<ReturnType<TTaskBuilderInit>>,
             TWorkflowName,
             TTaskName
           >;
@@ -583,11 +600,22 @@ export class WorkflowBuilder<
     TTasksWithOrXorSplit,
     TConnectedTasks,
     TConnectedConditions,
-    Simplify<
-      TMetadata & {
-        [tn in TTaskName]: TB.TaskBuilderMetadata<TB.AnyTaskBuilder>;
-      }
-    >,
+    TMetadata & {
+      tasks: {
+        [TName in TTaskName]: {
+          type: 'task';
+          name: TName;
+          metadata: TaggedMetadata<
+            TB.GetTaskBuilderTaskMetadata<TB.AnyTaskBuilder>,
+            TName
+          >;
+          workItemMetadata: TaggedMetadata<
+            TB.GetTaskBuilderWorkItemMetadata<TB.AnyTaskBuilder>,
+            TName
+          >;
+        };
+      };
+    },
     {
       workflow: TElementTypes['workflow'];
       workItem:
@@ -626,7 +654,7 @@ export class WorkflowBuilder<
     TCompositeTaskName extends string,
     TCompositeTaskBuilder extends CTB.AnyCompositeTaskBuilder<any, any>,
     TIsXorOrOrJoinSplit extends IsXorOrOrJoinSplit<
-      CTB.CompositeTaskBuilderSplitType<TCompositeTaskBuilder>
+      CTB.GetCompositeTaskBuilderSplitType<TCompositeTaskBuilder>
     > extends never
       ? never
       : TCompositeTaskName
@@ -638,8 +666,8 @@ export class WorkflowBuilder<
   ): WorkflowBuilder<
     TWorkflowName,
     TContext,
-    R | CTB.CompositeTaskBuilderR<TCompositeTaskBuilder>,
-    E | CTB.CompositeTaskBuilderE<TCompositeTaskBuilder>,
+    R | CTB.GetCompositeTaskBuilderR<TCompositeTaskBuilder>,
+    E | CTB.GetCompositeTaskBuilderE<TCompositeTaskBuilder>,
     TTasks | TCompositeTaskName,
     TConditions,
     TCancellationRegions,
@@ -647,18 +675,31 @@ export class WorkflowBuilder<
     TConnectedTasks,
     TConnectedConditions,
     TMetadata & {
-      [tn in TCompositeTaskName]: CTB.CompositeTaskBuilderMetadata<TCompositeTaskBuilder>;
+      compositeTasks: {
+        [TName in TCompositeTaskName]: {
+          type: 'compositeTask';
+          name: TName;
+          metadata: TaggedMetadata<
+            CTB.GetCompositeTaskBuilderCompositeTaskMetadata<TCompositeTaskBuilder>,
+            TName
+          >;
+          workflowMetadata: TaggedMetadata<
+            CTB.GetCompositeTaskBuilderWorkflowMetadata<TCompositeTaskBuilder>,
+            TName
+          >;
+        };
+      };
     },
     {
       workflow:
         | TElementTypes['workflow']
-        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['workflow'];
+        | CTB.GetCompositeTaskElementTypes<TCompositeTaskBuilder>['workflow'];
       workItem:
         | TElementTypes['workItem']
-        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['workItem'];
+        | CTB.GetCompositeTaskElementTypes<TCompositeTaskBuilder>['workItem'];
       condition:
         | TElementTypes['condition']
-        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['condition'];
+        | CTB.GetCompositeTaskElementTypes<TCompositeTaskBuilder>['condition'];
       task:
         | TElementTypes['task']
         | {
@@ -668,28 +709,30 @@ export class WorkflowBuilder<
             generation: number;
             state: TaskInstanceState;
           }
-        | CTB.CompositeTaskElementTypes<TCompositeTaskBuilder>['task'];
+        | CTB.GetCompositeTaskElementTypes<TCompositeTaskBuilder>['task'];
     }
   >;
   compositeTask<
     TCompositeTaskName extends string,
-    TCompositeTaskInit extends (
+    TCompositeTaskBuilderInit extends (
       t: () => CTB.InitialCompositeTaskFnReturnType<TContext>
     ) => CTB.AnyCompositeTaskBuilder<TContext, any>,
     X extends IsXorOrOrJoinSplit<
-      CTB.CompositeTaskBuilderSplitType<ReturnType<TCompositeTaskInit>>
+      CTB.GetCompositeTaskBuilderSplitType<
+        ReturnType<TCompositeTaskBuilderInit>
+      >
     > extends never
       ? never
       : TCompositeTaskName
   >(
     compositeTaskName: TCompositeTaskName &
       NotExtends<TTasks | TConditions, TCompositeTaskName>,
-    compositeTask: TCompositeTaskInit
+    compositeTask: TCompositeTaskBuilderInit
   ): WorkflowBuilder<
     TWorkflowName,
     TContext,
-    R | CTB.CompositeTaskBuilderR<ReturnType<TCompositeTaskInit>>,
-    E | CTB.CompositeTaskBuilderE<ReturnType<TCompositeTaskInit>>,
+    R | CTB.GetCompositeTaskBuilderR<ReturnType<TCompositeTaskBuilderInit>>,
+    E | CTB.GetCompositeTaskBuilderE<ReturnType<TCompositeTaskBuilderInit>>,
     TTasks | TCompositeTaskName,
     TConditions,
     TCancellationRegions,
@@ -697,25 +740,40 @@ export class WorkflowBuilder<
     TConnectedTasks,
     TConnectedConditions,
     TMetadata & {
-      [tn in TCompositeTaskName]: CTB.CompositeTaskBuilderMetadata<
-        ReturnType<TCompositeTaskInit>
-      >;
+      compositeTasks: {
+        [TName in TCompositeTaskName]: {
+          type: 'compositeTask';
+          name: TName;
+          metadata: TaggedMetadata<
+            CTB.GetCompositeTaskBuilderCompositeTaskMetadata<
+              ReturnType<TCompositeTaskBuilderInit>
+            >,
+            TName
+          >;
+          workflowMetadata: TaggedMetadata<
+            CTB.GetCompositeTaskBuilderWorkflowMetadata<
+              ReturnType<TCompositeTaskBuilderInit>
+            >,
+            TName
+          >;
+        };
+      };
     },
     {
       workflow:
         | TElementTypes['workflow']
-        | CTB.CompositeTaskElementTypes<
-            ReturnType<TCompositeTaskInit>
+        | CTB.GetCompositeTaskElementTypes<
+            ReturnType<TCompositeTaskBuilderInit>
           >['workflow'];
       workItem:
         | TElementTypes['workItem']
-        | CTB.CompositeTaskElementTypes<
-            ReturnType<TCompositeTaskInit>
+        | CTB.GetCompositeTaskElementTypes<
+            ReturnType<TCompositeTaskBuilderInit>
           >['workItem'];
       condition:
         | TElementTypes['condition']
-        | CTB.CompositeTaskElementTypes<
-            ReturnType<TCompositeTaskInit>
+        | CTB.GetCompositeTaskElementTypes<
+            ReturnType<TCompositeTaskBuilderInit>
           >['condition'];
       task:
         | TElementTypes['task']
@@ -726,7 +784,9 @@ export class WorkflowBuilder<
             generation: number;
             state: TaskInstanceState;
           }
-        | CTB.CompositeTaskElementTypes<ReturnType<TCompositeTaskInit>>['task'];
+        | CTB.GetCompositeTaskElementTypes<
+            ReturnType<TCompositeTaskBuilderInit>
+          >['task'];
     }
   >;
   compositeTask(
@@ -972,7 +1032,9 @@ export class WorkflowBuilder<
 export function workflow<C>() {
   return {
     withName<N extends string>(name: N) {
-      return new WorkflowBuilder<N, C, never, never>(name).initialize();
+      return new WorkflowBuilder<N, UnknownAsUndefined<C>, never, never>(
+        name
+      ).initialize();
     },
   };
 }

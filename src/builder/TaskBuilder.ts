@@ -1,10 +1,18 @@
-import { Effect } from 'effect';
-import { Get, Simplify } from 'type-fest';
-
-import { Task } from '../elements/Task.js';
-import { Workflow } from '../elements/Workflow.js';
+import {
+  AnyWorkItemActivities,
+  AnyWorkItemBuilder,
+  DefaultWorkItemMetadata,
+  GetWorkItemBuilderE,
+  GetWorkItemBuilderR,
+  GetWorkItemBuilderWorkItemMetadata,
+  GetWorkItemPayload,
+  InitializedWorkItemBuilder,
+  WorkItemBuilder,
+  workItem,
+} from './WorkItemBuilder.js';
 import {
   JoinType,
+  ReplaceProp,
   ShouldTaskCompleteFn,
   ShouldTaskFailFn,
   SplitType,
@@ -15,37 +23,26 @@ import {
   TaskOnEnablePayload,
   TaskOnFailPayload,
   TaskOnStartPayload,
-  TaskOnStartSym,
+  UnknownAsUndefined,
   activeWorkItemInstanceStates,
 } from '../types.js';
-import {
-  AnyWorkItemActivities,
-  AnyWorkItemBuilder,
-  DefaultWorkItemMetadata,
-  InitializedWorkItemBuilder,
-  WorkItemBuilder,
-  WorkItemBuilderE,
-  WorkItemBuilderR,
-  WorkItemBuilderWorkItemMetadata,
-  WorkItemPayload,
-  workItem,
-} from './WorkItemBuilder.js';
 
-export type TaskBuilderContext<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
-  infer TContext,
-  any,
-  any,
-  any
->
-  ? TContext
-  : never;
+import { Effect } from 'effect';
+import { Get } from 'type-fest';
+import { Task } from '../elements/Task.js';
+import { Workflow } from '../elements/Workflow.js';
 
-export type TaskBuilderSplitType<TTaskBuilder> =
+export type GetTaskBuilderContext<TTaskBuilder> =
+  TTaskBuilder extends TaskBuilder<infer TContext, any, any, any>
+    ? TContext
+    : never;
+
+export type GetTaskBuilderSplitType<TTaskBuilder> =
   TTaskBuilder extends TaskBuilder<any, any, any, infer TSplitType>
     ? TSplitType
     : never;
 
-export type TaskBuilderActivitiesReturnType<TTaskBuilder> =
+export type GetTaskBuilderActivitiesReturnType<TTaskBuilder> =
   TTaskBuilder extends TaskBuilder<
     any,
     any,
@@ -57,7 +54,7 @@ export type TaskBuilderActivitiesReturnType<TTaskBuilder> =
     ? TActivitiesReturnType
     : never;
 
-export type TaskBuilderR<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
+export type GetTaskBuilderR<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   any,
   any,
   any,
@@ -70,7 +67,7 @@ export type TaskBuilderR<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   ? R
   : never;
 
-export type TaskBuilderE<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
+export type GetTaskBuilderE<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
   any,
   any,
   any,
@@ -103,19 +100,20 @@ interface TaskActivityMetadata<TInputType, TReturnType> {
   return: TReturnType;
 }
 
-type TaskBuilderTaskMetadata<TTaskBuilder> = TTaskBuilder extends TaskBuilder<
-  any,
-  any,
-  any,
-  any,
-  any,
-  infer TTTaskMetadata,
-  any
->
-  ? TTTaskMetadata
-  : never;
+export type GetTaskBuilderTaskMetadata<TTaskBuilder> =
+  TTaskBuilder extends TaskBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer TTTaskMetadata,
+    any
+  >
+    ? TTTaskMetadata
+    : never;
 
-type TaskBuilderWorkItemMetadata<TTaskBuilder> =
+export type GetTaskBuilderWorkItemMetadata<TTaskBuilder> =
   TTaskBuilder extends TaskBuilder<
     any,
     any,
@@ -128,7 +126,7 @@ type TaskBuilderWorkItemMetadata<TTaskBuilder> =
     ? TWorkItemMetadata
     : never;
 
-export type TaskBuilderWorkItemPayload<TTaskBuilder> =
+export type GetTaskBuilderWorkItemPayload<TTaskBuilder> =
   TTaskBuilder extends TaskBuilder<
     any,
     any,
@@ -143,9 +141,12 @@ export type TaskBuilderWorkItemPayload<TTaskBuilder> =
     ? TWorkItemPayload
     : never;
 
-export type TaskBuilderMetadata<T extends AnyTaskBuilder> = Simplify<
-  TaskBuilderTaskMetadata<T> & Record<string, TaskBuilderWorkItemMetadata<T>>
->;
+export interface TaskMetadata {
+  onStart: {
+    input: unknown;
+    return: unknown;
+  };
+}
 
 export class TaskBuilder<
   TContext,
@@ -153,7 +154,9 @@ export class TaskBuilder<
   TJoinType extends JoinType | undefined,
   TSplitType extends SplitType | undefined,
   TWorkItemPayload = undefined,
-  TTaskMetadata = object,
+  TTaskMetadata extends TaskMetadata = {
+    onStart: { input: undefined; return: undefined };
+  },
   TWorkItemMetadata = DefaultWorkItemMetadata,
   R = never,
   E = never
@@ -219,7 +222,10 @@ export class TaskBuilder<
 
   withWorkItem<
     TWorkItemPayload,
-    TWorkItemBuilder extends WorkItemBuilder<TWorkItemPayload, any>
+    TWorkItemBuilder extends WorkItemBuilder<
+      UnknownAsUndefined<TWorkItemPayload>,
+      any
+    >
   >(
     workItem: TWorkItemBuilder
   ): TaskBuilder<
@@ -227,18 +233,18 @@ export class TaskBuilder<
     TTaskActivities,
     TJoinType,
     TSplitType,
-    WorkItemPayload<TWorkItemBuilder>,
+    GetWorkItemPayload<TWorkItemBuilder>,
     TTaskMetadata,
-    WorkItemBuilderWorkItemMetadata<TWorkItemBuilder>,
-    R | WorkItemBuilderR<TWorkItemBuilder>,
-    E | WorkItemBuilderE<TWorkItemBuilder>
+    GetWorkItemBuilderWorkItemMetadata<TWorkItemBuilder>,
+    R | GetWorkItemBuilderR<TWorkItemBuilder>,
+    E | GetWorkItemBuilderE<TWorkItemBuilder>
   >;
 
   withWorkItem<
     TWorkItemPayload,
     TInitWorkItemBuilder extends (
       w: <TWorkItemPayload>() => InitializedWorkItemBuilder<TWorkItemPayload>
-    ) => WorkItemBuilder<TWorkItemPayload, any>
+    ) => WorkItemBuilder<UnknownAsUndefined<TWorkItemPayload>, any>
   >(
     f: TInitWorkItemBuilder
   ): TaskBuilder<
@@ -246,11 +252,11 @@ export class TaskBuilder<
     TTaskActivities,
     TJoinType,
     TSplitType,
-    WorkItemPayload<ReturnType<TInitWorkItemBuilder>>,
+    GetWorkItemPayload<ReturnType<TInitWorkItemBuilder>>,
     TTaskMetadata,
-    WorkItemBuilderWorkItemMetadata<ReturnType<TInitWorkItemBuilder>>,
-    R | WorkItemBuilderR<ReturnType<TInitWorkItemBuilder>>,
-    E | WorkItemBuilderE<ReturnType<TInitWorkItemBuilder>>
+    GetWorkItemBuilderWorkItemMetadata<ReturnType<TInitWorkItemBuilder>>,
+    R | GetWorkItemBuilderR<ReturnType<TInitWorkItemBuilder>>,
+    E | GetWorkItemBuilderE<ReturnType<TInitWorkItemBuilder>>
   >;
 
   withWorkItem(
@@ -266,7 +272,7 @@ export class TaskBuilder<
   initialize() {
     return this.onDisable(() => Effect.void)
       .onEnable(() => Effect.void)
-      .onStart((_, input) => Effect.succeed(input))
+      .onStart((_, input: undefined) => Effect.succeed(input))
       .onComplete(() => Effect.void)
       .onCancel(() => Effect.void)
       .onFail(() => Effect.void);
@@ -332,13 +338,13 @@ export class TaskBuilder<
     TJoinType,
     TSplitType,
     TWorkItemPayload,
-    Simplify<
-      Omit<TTaskMetadata, TaskOnStartSym> & {
-        [TaskOnStartSym]: TaskActivityMetadata<
-          Parameters<TOnStartActivity>[1],
-          Effect.Effect.Success<ReturnType<TOnStartActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onStart',
+      TTaskMetadata,
+      TaskActivityMetadata<
+        Parameters<TOnStartActivity>[1],
+        Effect.Effect.Success<ReturnType<TOnStartActivity>>
+      >
     >,
     TWorkItemMetadata,
     R | Effect.Effect.Context<ReturnType<TOnStartActivity>>,

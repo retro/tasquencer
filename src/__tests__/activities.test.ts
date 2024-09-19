@@ -153,12 +153,16 @@ it('runs activities (1)', ({ expect }) => {
 
     yield* service.start();
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
 
-    const { id } = yield* service.initializeWorkItem('t1');
+    const { id } = yield* service.initializeWorkItem('t1', {});
 
-    yield* service.startWorkItem(`t1.${id}`);
-    yield* service.completeWorkItem(`t1.${id}`);
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id },
+    });
+    yield* service.completeWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id },
+    });
 
     expect(log).toEqual([
       'WORKFLOW ON START',
@@ -188,15 +192,25 @@ it('runs activities (2)', ({ expect }) => {
 
     yield* service.start();
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
 
-    const { id: id1 } = yield* service.initializeWorkItem('t1');
-    const { id: id2 } = yield* service.initializeWorkItem('t1');
+    const { id: id1 } = yield* service.initializeWorkItem('t1', {});
+    const { id: id2 } = yield* service.initializeWorkItem('t1', {});
 
-    yield* service.startWorkItem(`t1.${id1}`);
-    yield* service.startWorkItem(`t1.${id2}`);
-    yield* service.cancelWorkItem(`t1.${id1}`);
-    yield* service.completeWorkItem(`t1.${id2}`);
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id1 },
+    });
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id2 },
+    });
+    yield* service.cancelWorkItem('t1.$t1WorkItemId', {
+      params: {
+        t1WorkItemId: id1,
+      },
+    });
+    yield* service.completeWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id2 },
+    });
 
     expect(log).toEqual([
       'WORKFLOW ON START',
@@ -228,13 +242,17 @@ it('runs activities (3)', ({ expect }) => {
 
     yield* service.start();
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
 
-    const { id: id1 } = yield* service.initializeWorkItem('t1');
-    const { id: id2 } = yield* service.initializeWorkItem('t1');
+    const { id: id1 } = yield* service.initializeWorkItem('t1', {});
+    const { id: id2 } = yield* service.initializeWorkItem('t1', {});
 
-    yield* service.startWorkItem(`t1.${id1}`);
-    yield* service.startWorkItem(`t1.${id2}`);
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id1 },
+    });
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id2 },
+    });
 
     yield* service.cancel();
 
@@ -268,15 +286,23 @@ it('runs activities (4)', ({ expect }) => {
 
     yield* service.start();
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
 
-    const { id: id1 } = yield* service.initializeWorkItem('t1');
-    const { id: id2 } = yield* service.initializeWorkItem('t1');
+    const { id: id1 } = yield* service.initializeWorkItem('t1', {});
+    const { id: id2 } = yield* service.initializeWorkItem('t1', {});
 
-    yield* service.startWorkItem(`t1.${id1}`);
-    yield* service.startWorkItem(`t1.${id2}`);
-    yield* service.cancelWorkItem(`t1.${id1}`);
-    yield* service.completeWorkItem(`t1.${id2}`);
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id1 },
+    });
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id2 },
+    });
+    yield* service.cancelWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id1 },
+    });
+    yield* service.completeWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id2 },
+    });
 
     expect(log).toEqual([
       'WORKFLOW ON START',
@@ -308,15 +334,21 @@ it('runs activities (5)', ({ expect }) => {
 
     yield* service.start();
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
 
-    const { id: id1 } = yield* service.initializeWorkItem('t1');
-    const { id: id2 } = yield* service.initializeWorkItem('t1');
+    const { id: id1 } = yield* service.initializeWorkItem('t1', {});
+    const { id: id2 } = yield* service.initializeWorkItem('t1', {});
 
-    yield* service.startWorkItem(`t1.${id1}`);
-    yield* service.startWorkItem(`t1.${id2}`);
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id1 },
+    });
+    yield* service.startWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id2 },
+    });
 
-    yield* service.failWorkItem(`t1.${id1}`);
+    yield* service.failWorkItem('t1.$t1WorkItemId', {
+      params: { t1WorkItemId: id1 },
+    });
 
     expect(log).toEqual([
       'WORKFLOW ON START',

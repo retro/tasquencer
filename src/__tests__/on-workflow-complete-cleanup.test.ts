@@ -34,17 +34,17 @@ it('cancels or disables started or enabled tasks on workflow end', ({
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['t2', 't3', 't4']));
 
-    yield* service.startTask('t2');
+    yield* service.startTask('t2', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['t3', 't4']));
 
-    yield* service.startTask('t4');
+    yield* service.startTask('t4', {});
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set());

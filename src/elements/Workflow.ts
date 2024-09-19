@@ -32,7 +32,7 @@ import { CompositeTask } from './CompositeTask.js';
 import { Condition } from './Condition.js';
 import { Marking } from './Marking.js';
 
-export type WorkflowMetadata<T> = T extends Workflow<
+export type GetWorkflowMetadata<T> = T extends Workflow<
   any,
   any,
   any,
@@ -44,9 +44,9 @@ export type WorkflowMetadata<T> = T extends Workflow<
 export class Workflow<
   _R = never,
   _E = never,
-  Context = unknown,
-  _WorkflowMetadata = object,
-  _WorkflowAndWorkItemInstances = ElementTypes
+  TContext = unknown,
+  _TWorkflowMetadata = object,
+  _TWorkflowElementTypes = ElementTypes
 > {
   readonly tasks: Record<string, BaseTask> = {};
   readonly conditions: Record<string, Condition> = {};
@@ -380,7 +380,7 @@ export class Workflow<
           }),
         getWorkflowContext: () =>
           Effect.gen(function* () {
-            return (yield* stateManager.getWorkflowContext(id)) as Context;
+            return (yield* stateManager.getWorkflowContext(id)) as TContext;
           }),
         updateWorkflowContext: (contextOrUpdater: unknown) =>
           Effect.gen(function* () {

@@ -38,22 +38,26 @@ it('cleans up work items on exit', ({ expect }) => {
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['t2']));
 
-    yield* service.startTask('t2');
+    yield* service.startTask('t2', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set());
 
-    const { id } = yield* service.initializeWorkItem('t2');
-    yield* service.initializeWorkItem('t2');
-    yield* service.initializeWorkItem('t2');
-    yield* service.startWorkItem(`t2.${id}`);
-    yield* service.completeWorkItem(`t2.${id}`);
-    yield* service.startTask('t3');
+    const { id: t2WorkItemId } = yield* service.initializeWorkItem('t2', {});
+    yield* service.initializeWorkItem('t2', {});
+    yield* service.initializeWorkItem('t2', {});
+    yield* service.startWorkItem('t2.$t2WorkItemId', {
+      params: { t2WorkItemId },
+    });
+    yield* service.completeWorkItem('t2.$t2WorkItemId', {
+      params: { t2WorkItemId },
+    });
+    yield* service.startTask('t3', {});
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set());

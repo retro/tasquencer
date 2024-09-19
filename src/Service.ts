@@ -1,11 +1,11 @@
 import { Chunk, Context, Effect, Match, Option, Queue, pipe } from 'effect';
-import { Get } from 'type-fest';
+import { Get, PartialOnUndefinedDeep } from 'type-fest';
 
 import { State } from './State.js';
 import { BaseTask } from './elements/BaseTask.js';
 import { CompositeTask } from './elements/CompositeTask.js';
 import { Task } from './elements/Task.js';
-import { Workflow, WorkflowMetadata } from './elements/Workflow.js';
+import { GetWorkflowMetadata, Workflow } from './elements/Workflow.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -27,29 +27,45 @@ import {
   ElementTypes,
   ExecutionContext,
   ExecutionContextQueueItem,
-  GetSym,
   IdGenerator,
+  NeverAsUndefined,
   OnStateChangeFn,
   StateChangeItem,
   StateChangeLogger,
   StorePersistableState,
   TaskName,
-  TaskOnStartSym,
   WorkItemId,
   WorkItemInstance,
-  WorkItemPayloadSym,
-  WorkflowContextSym,
+  WorkflowBuilderMetadata,
+  WorkflowBuilderMetadataCompositeTaskPayloads,
+  WorkflowBuilderMetadataTaskPayloads,
+  WorkflowBuilderMetadataWorkItemPayloads,
+  WorkflowBuilderMetadataWorkflowPayloads,
   WorkflowId,
   WorkflowInstance,
 } from './types.js';
 import { nanoidIdGenerator } from './util.js';
+
+function resolvePath(path: string, params: Record<string, string>) {
+  const pathArray = path.split('.');
+  const result: string[] = [];
+  for (const part of pathArray) {
+    if (part.startsWith('$')) {
+      const paramName = part.slice(1);
+      result.push(params[paramName] ?? '');
+    } else {
+      result.push(part);
+    }
+  }
+  return result;
+}
 
 function pathAsArray(path: string | string[] | readonly string[]) {
   return typeof path === 'string' ? path.split('.') : path;
 }
 
 export class Service<
-  TWorkflowMetadata,
+  TWorkflowMetadata extends WorkflowBuilderMetadata,
   TElementTypes extends ElementTypes = ElementTypes,
   R = never,
   E = never
@@ -76,6 +92,47 @@ export class Service<
     if (changeLog.length) {
       fn(changeLog);
     }
+  }
+
+  initializeWorkflow<
+    TPath extends keyof WorkflowBuilderMetadataCompositeTaskPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataCompositeTaskPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
+  >(
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: NeverAsUndefined<Get<TPayload, ['params']>>;
+      context: NeverAsUndefined<Get<TPayload, ['workflowContext']>>;
+    }>
+  ) {
+    const { params, context } = payload;
+    const resolvedPath = resolvePath(path, params ?? {});
+    const self = this;
+
+    return Effect.gen(function* () {
+      const executionPlan = yield* self.taskPathToExecutionPlan(resolvedPath);
+      if (executionPlan.task instanceof CompositeTask) {
+        const result = yield* executionPlan.task.subWorkflow.initialize(
+          context,
+          {
+            workflowId: executionPlan.workflow.id,
+            workflowName: executionPlan.workflow.workflow.name,
+            taskName: executionPlan.taskName,
+            taskGeneration: executionPlan.taskData.generation,
+          }
+        );
+
+        yield* self.executePostActions();
+
+        return result as WorkflowInstance<Get<TPayload, ['workflowContext']>>;
+      }
+      return yield* Effect.fail(
+        new InvalidPath({ path: resolvedPath, pathType: 'workflow' })
+      );
+    }).pipe(Effect.provideService(State, this.state));
   }
 
   unsafeStartWorkflow(
@@ -112,16 +169,25 @@ export class Service<
   }
 
   startWorkflow<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
+    TPath extends keyof WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends Get<M, ['onStart', 'input']>
-      ? [T] | [T, Get<M, ['onStart', 'input']>]
-      : [T, Get<M, ['onStart', 'input']>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      input: Get<TPayload, ['metadata', 'onStart', 'input']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    return this.unsafeStartWorkflow(pathOrArray, input).pipe(
-      Effect.map((r) => r as Get<M, ['onStart', 'return']>)
+    const { params, input } = payload;
+    return this.unsafeStartWorkflow(
+      resolvePath(path, params ?? {}),
+      input
+    ).pipe(
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onStart', 'return']>)
     );
   }
 
@@ -167,16 +233,25 @@ export class Service<
   }
 
   cancelWorkflow<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
+    TPath extends keyof WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends Get<M, ['onCancel', 'input']>
-      ? [T] | [T, Get<M, ['onCancel', 'input']>]
-      : [T, Get<M, ['onCancel', 'input']>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      input: Get<TPayload, ['metadata', 'onCancel', 'input']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    return this.unsafeCancelWorkflow(pathOrArray, input).pipe(
-      Effect.map((r) => r as Get<M, ['onCancel', 'return']>)
+    const { params, input } = payload;
+    return this.unsafeCancelWorkflow(
+      resolvePath(path, params ?? {}),
+      input
+    ).pipe(
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onCancel', 'return']>)
     );
   }
 
@@ -186,36 +261,6 @@ export class Service<
     return this.unsafeCancelWorkflow([], input).pipe(
       Effect.map((r) => r as Get<TWorkflowMetadata, ['onCancel', 'return']>)
     );
-  }
-
-  initializeWorkflow<
-    T extends string | readonly string[],
-    M = NonNullable<Get<Get<TWorkflowMetadata, T>, string>>
-  >(
-    ...args: undefined extends GetSym<M, WorkflowContextSym>
-      ? [T] | [T, GetSym<M, WorkflowContextSym>]
-      : [T, GetSym<M, WorkflowContextSym>]
-  ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
-    const self = this;
-
-    return Effect.gen(function* () {
-      const executionPlan = yield* self.taskPathToExecutionPlan(path);
-      if (executionPlan.task instanceof CompositeTask) {
-        const result = yield* executionPlan.task.subWorkflow.initialize(input, {
-          workflowId: executionPlan.workflow.id,
-          workflowName: executionPlan.workflow.workflow.name,
-          taskName: executionPlan.taskName,
-          taskGeneration: executionPlan.taskData.generation,
-        });
-
-        yield* self.executePostActions();
-
-        return result as WorkflowInstance<GetSym<M, WorkflowContextSym>>;
-      }
-      return yield* Effect.fail(new InvalidPath({ path, pathType: 'task' }));
-    }).pipe(Effect.provideService(State, this.state));
   }
 
   unsafeUpdateWorkflowContext(path: readonly string[], context: unknown) {
@@ -232,16 +277,24 @@ export class Service<
   }
 
   updateWorkflowContext<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
+    TPath extends keyof WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends GetSym<M, WorkflowContextSym>
-      ? [T] | [T, GetSym<M, WorkflowContextSym>]
-      : [T, GetSym<M, WorkflowContextSym>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      context: Get<TPayload, ['metadata', 'context']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
-    return this.unsafeUpdateWorkflowContext(path, input);
+    const { params, context } = payload;
+    return this.unsafeUpdateWorkflowContext(
+      resolvePath(path, params ?? {}),
+      context
+    );
   }
 
   unsafeStartTask(
@@ -276,19 +329,38 @@ export class Service<
   }
 
   startTask<
-    T extends string | readonly string[],
-    M = GetSym<NonNullable<Get<TWorkflowMetadata, T>>, TaskOnStartSym>
+    TPath extends keyof WorkflowBuilderMetadataTaskPayloads<TWorkflowMetadata>,
+    TPayload = WorkflowBuilderMetadataTaskPayloads<TWorkflowMetadata>[TPath]
   >(
-    ...args: undefined extends Get<M, 'input'>
-      ? [T] | [T, Get<M, 'input'>]
-      : [T, Get<M, 'input'>]
+    path: TPath & string,
+    payload: PartialOnUndefinedDeep<{
+      params: NeverAsUndefined<Get<TPayload, ['params']>>;
+      input: Get<TPayload, ['metadata', 'onStart', 'input']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
+    const { input, params } = payload;
 
     return pipe(
-      this.unsafeStartTask(path, input, true),
-      Effect.map((r) => r as Get<M, 'return'>)
+      this.unsafeStartTask(resolvePath(path, params ?? {}), input, true),
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onStart', 'return']>)
+    );
+  }
+
+  startCompositeTask<
+    TPath extends keyof WorkflowBuilderMetadataCompositeTaskPayloads<TWorkflowMetadata>,
+    TPayload = WorkflowBuilderMetadataCompositeTaskPayloads<TWorkflowMetadata>[TPath]
+  >(
+    path: TPath & string,
+    payload: PartialOnUndefinedDeep<{
+      params: NeverAsUndefined<Get<TPayload, ['params']>>;
+      input: Get<TPayload, ['metadata', 'onStart', 'input']>;
+    }>
+  ) {
+    const { input, params } = payload;
+
+    return pipe(
+      this.unsafeStartTask(resolvePath(path, params ?? {}), input, true),
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onStart', 'return']>)
     );
   }
 
@@ -328,123 +400,33 @@ export class Service<
   }
 
   initializeWorkItem<
-    T extends string | readonly string[],
-    M = NonNullable<Get<Get<TWorkflowMetadata, T>, string>>
+    TPath extends keyof WorkflowBuilderMetadataTaskPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataTaskPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends GetSym<M, WorkItemPayloadSym>
-      ? [T] | [T, GetSym<M, WorkItemPayloadSym>]
-      : [T, GetSym<M, WorkItemPayloadSym>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: NeverAsUndefined<Get<TPayload, ['params']>>;
+      payload: NeverAsUndefined<Get<TPayload, ['workItemPayload']>>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
+    const { params, payload: workItemPayload } = payload;
 
     return pipe(
-      this.unsafeInitializeWorkItem(path, input, true),
-      Effect.map((r) => r as WorkItemInstance<GetSym<M, WorkItemPayloadSym>>)
-    );
-  }
-
-  unsafeCompleteWorkItem(
-    path: readonly string[],
-    input: unknown,
-    executePostActions: boolean
-  ) {
-    const self = this;
-    return Effect.gen(function* () {
-      const executionPlan = yield* self.workItemPathToExecutionPlan(path);
-
-      const result = yield* executionPlan.task
-        .completeWorkItem(
-          executionPlan.workflow.id,
-          executionPlan.workItemId,
-          input
-        )
-        .pipe(
-          self.decorateReturnType,
-          Effect.provideService(State, self.state),
-          Effect.provideService(
-            ExecutionContext,
-            self.makeExecutionContext({
-              path,
-              workflowId: executionPlan.workflow.id,
-            })
-          )
-        );
-
-      if (executePostActions) {
-        yield* self.executePostActions();
-      }
-
-      return result;
-    });
-  }
-
-  completeWorkItem<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
-  >(
-    ...args: undefined extends Get<M, ['onComplete', 'input']>
-      ? [T] | [T, Get<M, ['onComplete', 'input']>]
-      : [T, Get<M, ['onComplete', 'input']>]
-  ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
-
-    return pipe(
-      this.unsafeCompleteWorkItem(path, input, true),
-      Effect.map((r) => r as Get<M, ['onComplete', 'return']>)
-    );
-  }
-
-  unsafeCancelWorkItem(
-    path: readonly string[],
-    input: unknown,
-    executePostActions: boolean
-  ) {
-    const self = this;
-    return Effect.gen(function* () {
-      const executionPlan = yield* self.workItemPathToExecutionPlan(path);
-
-      const result = yield* executionPlan.task
-        .cancelWorkItem(
-          executionPlan.workflow.id,
-          executionPlan.workItemId,
-          input
-        )
-        .pipe(
-          self.decorateReturnType,
-          Effect.provideService(State, self.state),
-          Effect.provideService(
-            ExecutionContext,
-            self.makeExecutionContext({
-              path,
-              workflowId: executionPlan.workflow.id,
-            })
-          )
-        );
-
-      if (executePostActions) {
-        yield* self.executePostActions();
-      }
-
-      return result;
-    });
-  }
-
-  cancelWorkItem<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
-  >(
-    ...args: undefined extends Get<M, ['onCancel', 'input']>
-      ? [T] | [T, Get<M, ['onCancel', 'input']>]
-      : [T, Get<M, ['onCancel', 'input']>]
-  ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
-
-    return pipe(
-      this.unsafeCancelWorkItem(path, input, true),
-      Effect.map((r) => r as Get<M, ['onCancel', 'return']>)
+      this.unsafeInitializeWorkItem(
+        resolvePath(path, params ?? {}),
+        workItemPayload,
+        true
+      ),
+      Effect.map(
+        (r) =>
+          r as WorkItemInstance<
+            NeverAsUndefined<Get<TPayload, ['workItemPayload']>>
+          >
+      )
     );
   }
 
@@ -484,19 +466,140 @@ export class Service<
   }
 
   startWorkItem<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
+    TPath extends keyof WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends Get<M, ['onStart', 'input']>
-      ? [T] | [T, Get<M, ['onStart', 'input']>]
-      : [T, Get<M, ['onStart', 'input']>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      input: Get<TPayload, ['metadata', 'onStart', 'input']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
+    const { params, input } = payload;
 
     return pipe(
-      this.unsafeStartWorkItem(path, input, true),
-      Effect.map((r) => r as Get<M, ['onStart', 'return']>)
+      this.unsafeStartWorkItem(resolvePath(path, params ?? {}), input, true),
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onStart', 'return']>)
+    );
+  }
+
+  unsafeCompleteWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
+    const self = this;
+    return Effect.gen(function* () {
+      const executionPlan = yield* self.workItemPathToExecutionPlan(path);
+
+      const result = yield* executionPlan.task
+        .completeWorkItem(
+          executionPlan.workflow.id,
+          executionPlan.workItemId,
+          input
+        )
+        .pipe(
+          self.decorateReturnType,
+          Effect.provideService(State, self.state),
+          Effect.provideService(
+            ExecutionContext,
+            self.makeExecutionContext({
+              path,
+              workflowId: executionPlan.workflow.id,
+            })
+          )
+        );
+
+      if (executePostActions) {
+        yield* self.executePostActions();
+      }
+
+      return result;
+    });
+  }
+
+  completeWorkItem<
+    TPath extends keyof WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
+  >(
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      input: Get<TPayload, ['metadata', 'onComplete', 'input']>;
+    }>
+  ) {
+    const { params, input } = payload;
+
+    return pipe(
+      this.unsafeCompleteWorkItem(resolvePath(path, params ?? {}), input, true),
+      Effect.map(
+        (r) => r as Get<TPayload, ['metadata', 'onComplete', 'return']>
+      )
+    );
+  }
+
+  unsafeCancelWorkItem(
+    path: readonly string[],
+    input: unknown,
+    executePostActions: boolean
+  ) {
+    const self = this;
+    return Effect.gen(function* () {
+      const executionPlan = yield* self.workItemPathToExecutionPlan(path);
+
+      const result = yield* executionPlan.task
+        .cancelWorkItem(
+          executionPlan.workflow.id,
+          executionPlan.workItemId,
+          input
+        )
+        .pipe(
+          self.decorateReturnType,
+          Effect.provideService(State, self.state),
+          Effect.provideService(
+            ExecutionContext,
+            self.makeExecutionContext({
+              path,
+              workflowId: executionPlan.workflow.id,
+            })
+          )
+        );
+
+      if (executePostActions) {
+        yield* self.executePostActions();
+      }
+
+      return result;
+    });
+  }
+
+  cancelWorkItem<
+    TPath extends keyof WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
+  >(
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      input: Get<TPayload, ['metadata', 'onCancel', 'input']>;
+    }>
+  ) {
+    const { params, input } = payload;
+
+    return pipe(
+      this.unsafeCancelWorkItem(resolvePath(path, params ?? {}), input, true),
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onCancel', 'return']>)
     );
   }
 
@@ -536,19 +639,24 @@ export class Service<
   }
 
   failWorkItem<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
+    TPath extends keyof WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends Get<M, ['onFail', 'input']>
-      ? [T] | [T, Get<M, ['onFail', 'input']>]
-      : [T, Get<M, ['onFail', 'input']>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      input: Get<TPayload, ['metadata', 'onCancel', 'input']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
+    const { params, input } = payload;
 
     return pipe(
-      this.unsafeFailWorkItem(path, input, true),
-      Effect.map((r) => r as Get<M, ['onFail', 'return']>)
+      this.unsafeFailWorkItem(resolvePath(path, params ?? {}), input, true),
+      Effect.map((r) => r as Get<TPayload, ['metadata', 'onCancel', 'input']>)
     );
   }
 
@@ -568,16 +676,24 @@ export class Service<
   }
 
   updateWorkItemPayload<
-    T extends string | readonly string[],
-    M = NonNullable<Get<TWorkflowMetadata, T>>
+    TPath extends keyof WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
   >(
-    ...args: undefined extends GetSym<M, WorkItemPayloadSym>
-      ? [T] | [T, GetSym<M, WorkItemPayloadSym>]
-      : [T, GetSym<M, WorkItemPayloadSym>]
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+      payload: Get<TPayload, ['metadata', 'payload']>;
+    }>
   ) {
-    const [pathOrArray, input] = args;
-    const path = pathAsArray(pathOrArray);
-    return this.unsafeUpdateWorkItemPayload(path, input);
+    const { params, payload: workItemPayload } = payload;
+    return this.unsafeUpdateWorkItemPayload(
+      resolvePath(path, params ?? {}),
+      workItemPayload
+    );
   }
 
   getState() {
@@ -1060,10 +1176,16 @@ function makeStateChangeLogger(): StateChangeLogger {
   };
 }
 
-type WorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
-type WorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
-type WorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
-type WorkflowElementTypes<T> = T extends Workflow<any, any, any, any, infer ET>
+type GetWorkflowR<T> = T extends Workflow<infer R, any, any> ? R : never;
+type GetWorkflowE<T> = T extends Workflow<any, infer E, any> ? E : never;
+type GetWorkflowContext<T> = T extends Workflow<any, any, infer C> ? C : never;
+type GetWorkflowElementTypes<T> = T extends Workflow<
+  any,
+  any,
+  any,
+  any,
+  infer ET
+>
   ? ET
   : never;
 
@@ -1074,11 +1196,16 @@ type IsOptional<T> = T extends never
   : false;
 
 export function initialize<
-  W extends Workflow<any, any, any, any, any>,
-  R extends WorkflowR<W> = WorkflowR<W>,
-  E extends WorkflowE<W> = WorkflowE<W>,
-  C extends WorkflowContext<W> = WorkflowContext<W>
->(...args: IsOptional<C> extends true ? [W] | [W, C?] : [W, C]) {
+  TWorkflow extends Workflow<any, any, any, any, any>,
+  TWorkflowR extends GetWorkflowR<TWorkflow> = GetWorkflowR<TWorkflow>,
+  TWorkflowE extends GetWorkflowE<TWorkflow> = GetWorkflowE<TWorkflow>,
+  TWorkflowContext extends GetWorkflowContext<TWorkflow> = GetWorkflowContext<TWorkflow>,
+  TWorkflowMetadata extends WorkflowBuilderMetadata = GetWorkflowMetadata<TWorkflow>
+>(
+  ...args: IsOptional<TWorkflowContext> extends true
+    ? [TWorkflow] | [TWorkflow, TWorkflowContext?]
+    : [TWorkflow, TWorkflowContext]
+) {
   const [workflow, context] = args;
   return Effect.gen(function* () {
     const queue = yield* Queue.unbounded<ExecutionContextQueueItem>();
@@ -1096,10 +1223,10 @@ export function initialize<
       .pipe(Effect.provideService(State, state));
 
     const interpreter = new Service<
-      WorkflowMetadata<W>,
-      WorkflowElementTypes<W>,
-      R,
-      E
+      TWorkflowMetadata,
+      GetWorkflowElementTypes<TWorkflow>,
+      TWorkflowR,
+      TWorkflowE
     >(id, workflow, state, queue, stateChangeLogger);
 
     return interpreter;
@@ -1107,16 +1234,17 @@ export function initialize<
 }
 
 export function resume<
-  W extends Workflow<any, any, any, any, any>,
-  R extends WorkflowR<W> = WorkflowR<W>,
-  E extends WorkflowE<W> = WorkflowE<W>,
-  ET extends WorkflowElementTypes<W> = WorkflowElementTypes<W>
+  TWorkflow extends Workflow<any, any, any, any, any>,
+  TWorkflowR extends GetWorkflowR<TWorkflow> = GetWorkflowR<TWorkflow>,
+  TWorkflowE extends GetWorkflowE<TWorkflow> = GetWorkflowE<TWorkflow>,
+  TWorkflowElementTypes extends GetWorkflowElementTypes<TWorkflow> = GetWorkflowElementTypes<TWorkflow>,
+  TWorkflowMetadata extends WorkflowBuilderMetadata = GetWorkflowMetadata<TWorkflow>
 >(
-  workflow: W,
+  workflow: TWorkflow,
   resumableState: StorePersistableState<
-    ET['workflow'],
-    ET['workItem'],
-    ET['task']
+    TWorkflowElementTypes['workflow'],
+    TWorkflowElementTypes['workItem'],
+    TWorkflowElementTypes['task']
   >
 ) {
   return Effect.gen(function* () {
@@ -1141,13 +1269,12 @@ export function resume<
       return yield* Effect.fail(new InvalidResumableState({}));
     }
 
-    const interpreter = new Service<WorkflowMetadata<W>, ET, R, E>(
-      rootWorkflow.id,
-      workflow,
-      state,
-      queue,
-      stateChangeLogger
-    );
+    const interpreter = new Service<
+      TWorkflowMetadata,
+      TWorkflowElementTypes,
+      TWorkflowR,
+      TWorkflowE
+    >(rootWorkflow.id, workflow, state, queue, stateChangeLogger);
 
     return interpreter;
   });

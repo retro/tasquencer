@@ -40,30 +40,45 @@ it('handles workflow failure in nested workflows (1)', ({ expect }) => {
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['t2', 't3']));
 
-    yield* service.startTask('t2');
+    yield* service.startTask('t2', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['t3']));
 
-    yield* service.startTask('t3');
+    yield* service.startCompositeTask('t3', {});
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set());
 
-    yield* service.initializeWorkItem('t2');
-    const { id: subWorkflowId } = yield* service.initializeWorkflow('t3');
-    yield* service.startWorkflow(`t3.${subWorkflowId}`);
-    yield* service.startTask(`t3.${subWorkflowId}.subT1`);
-    const { id: workItemId } = yield* service.initializeWorkItem(
-      `t3.${subWorkflowId}.subT1`
+    yield* service.initializeWorkItem('t2', {});
+    const { id: subWorkflowId } = yield* service.initializeWorkflow('t3', {});
+    yield* service.startWorkflow('t3.$subWorkflowId', {
+      params: { subWorkflowId },
+    });
+    yield* service.startTask('t3.$subWorkflowId.subT1', {
+      params: { subWorkflowId },
+    });
+    const { id: subT1WorkItemId } = yield* service.initializeWorkItem(
+      't3.$subWorkflowId.subT1',
+      { params: { subWorkflowId } }
     );
-    yield* service.startWorkItem(`t3.${subWorkflowId}.subT1.${workItemId}`);
-    yield* service.failWorkItem(`t3.${subWorkflowId}.subT1.${workItemId}`);
+    yield* service.startWorkItem('t3.$subWorkflowId.subT1.$subT1WorkItemId', {
+      params: {
+        subT1WorkItemId,
+        subWorkflowId,
+      },
+    });
+    yield* service.failWorkItem('t3.$subWorkflowId.subT1.$subT1WorkItemId', {
+      params: {
+        subT1WorkItemId,
+        subWorkflowId,
+      },
+    });
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state5)).toEqual(new Set());
@@ -86,32 +101,43 @@ it('handles workflow failure in nested workflows (2)', ({ expect }) => {
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
 
-    yield* service.startTask('t1');
+    yield* service.startTask('t1', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['t2', 't3']));
 
-    yield* service.startTask('t2');
+    yield* service.startTask('t2', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(new Set(['t3']));
 
-    yield* service.startTask('t3');
+    yield* service.startCompositeTask('t3', {});
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set());
 
-    const { id: parentWorkItemId } = yield* service.initializeWorkItem('t2');
-    const { id: subWorkflowId } = yield* service.initializeWorkflow('t3');
-    yield* service.startWorkflow(`t3.${subWorkflowId}`);
-    yield* service.startTask(`t3.${subWorkflowId}.subT1`);
-    const { id: workItemId } = yield* service.initializeWorkItem(
-      `t3.${subWorkflowId}.subT1`
+    const { id: t2WorkItemId } = yield* service.initializeWorkItem('t2', {});
+    const { id: subWorkflowId } = yield* service.initializeWorkflow('t3', {});
+    yield* service.startWorkflow('t3.$subWorkflowId', {
+      params: { subWorkflowId },
+    });
+    yield* service.startTask('t3.$subWorkflowId.subT1', {
+      params: { subWorkflowId },
+    });
+    const { id: subT1WorkItemId } = yield* service.initializeWorkItem(
+      't3.$subWorkflowId.subT1',
+      { params: { subWorkflowId } }
     );
-    yield* service.startWorkItem(`t3.${subWorkflowId}.subT1.${workItemId}`);
-    yield* service.startWorkItem(`t2.${parentWorkItemId}`);
+    yield* service.startWorkItem('t3.$subWorkflowId.subT1.$subT1WorkItemId', {
+      params: { subT1WorkItemId, subWorkflowId },
+    });
+    yield* service.startWorkItem('t2.$t2WorkItemId', {
+      params: { t2WorkItemId },
+    });
 
-    yield* service.failWorkItem(`t2.${parentWorkItemId}`);
+    yield* service.failWorkItem('t2.$t2WorkItemId', {
+      params: { t2WorkItemId },
+    });
 
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();

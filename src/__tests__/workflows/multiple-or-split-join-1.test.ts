@@ -46,32 +46,32 @@ it('runs a net with multiple "or" splits and "or" joins (1)', ({ expect }) => {
     expect(state1_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_1)).toEqual(new Set(['A']));
 
-    yield* service1.startTask('A');
+    yield* service1.startTask('A', {});
     const state1_2 = yield* service1.getState();
     expect(state1_2).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_2)).toEqual(new Set(['B', 'C']));
 
-    yield* service1.startTask('B');
+    yield* service1.startTask('B', {});
     const state1_3 = yield* service1.getState();
     expect(state1_3).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_3)).toEqual(new Set(['C']));
 
-    yield* service1.startTask('C');
+    yield* service1.startTask('C', {});
     const state1_4 = yield* service1.getState();
     expect(state1_4).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_4)).toEqual(new Set(['D']));
 
-    yield* service1.startTask('D');
+    yield* service1.startTask('D', {});
     const state1_5 = yield* service1.getState();
     expect(state1_5).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_5)).toEqual(new Set(['E']));
 
-    yield* service1.startTask('E');
+    yield* service1.startTask('E', {});
     const state1_6 = yield* service1.getState();
     expect(state1_6).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_6)).toEqual(new Set(['F']));
 
-    yield* service1.startTask('F');
+    yield* service1.startTask('F', {});
     const state1_7 = yield* service1.getState();
     expect(state1_7).toMatchSnapshot();
     expect(state1_7.workflows[0]?.state).toBe('completed');
@@ -92,27 +92,27 @@ it('runs a net with multiple "or" splits and "or" joins (1)', ({ expect }) => {
     expect(state2_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_1)).toEqual(new Set(['A']));
 
-    yield* service2.startTask('A');
+    yield* service2.startTask('A', {});
     const state2_2 = yield* service2.getState();
     expect(state2_2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_2)).toEqual(new Set(['B', 'C']));
 
-    yield* service2.startTask('B');
+    yield* service2.startTask('B', {});
     const state2_3 = yield* service2.getState();
     expect(state2_3).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_3)).toEqual(new Set(['C']));
 
-    yield* service2.startTask('C');
+    yield* service2.startTask('C', {});
     const state2_4 = yield* service2.getState();
     expect(state2_4).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_4)).toEqual(new Set(['E']));
 
-    yield* service2.startTask('E');
+    yield* service2.startTask('E', {});
     const state2_5 = yield* service2.getState();
     expect(state2_5).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_5)).toEqual(new Set(['F']));
 
-    yield* service2.startTask('F');
+    yield* service2.startTask('F', {});
     const state2_6 = yield* service2.getState();
     expect(state2_6).toMatchSnapshot();
     expect(state2_6.workflows[0]?.state).toBe('completed');

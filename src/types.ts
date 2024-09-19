@@ -1,12 +1,17 @@
 import { Brand, Context, Effect } from 'effect';
+import { UnionToIntersection } from 'type-fest';
 
-import { AnyCompositeTaskBuilder } from './builder/CompositeTaskBuilder.js';
+import {
+  AnyCompositeTaskBuilder,
+  CompositeTaskMetadata,
+} from './builder/CompositeTaskBuilder.js';
 import {
   ConditionFlowBuilder,
   OrXorTaskFlowBuilder,
   TaskFlowBuilder,
 } from './builder/FlowBuilder.js';
-import { AnyTaskBuilder } from './builder/TaskBuilder.js';
+import { AnyTaskBuilder, TaskMetadata } from './builder/TaskBuilder.js';
+import { WorkItemMetadata } from './builder/WorkItemBuilder.js';
 import {
   ConditionDoesNotExist,
   ConditionDoesNotExistInStore,
@@ -27,6 +32,14 @@ export type UnknownEffect = Effect.Effect<unknown, unknown, unknown>;
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & object;
+
+export type ReplaceProp<
+  TProp extends string,
+  TPayload extends { [K in TProp]: unknown },
+  TReplacement
+> = {
+  [K in keyof TPayload]: K extends TProp ? TReplacement : TPayload[K];
+};
 
 export type NotExtends<NS, N> = N extends NS ? never : N;
 
@@ -817,3 +830,230 @@ export interface WorkflowActivities<TContext = unknown> {
     input?: any
   ) => UnknownEffect;
 }
+
+export type UnknownAsUndefined<T> = unknown extends T ? undefined : T;
+export type NeverAsUndefined<T> = [T] extends [never] ? undefined : T;
+
+type SafeIntersect<T, U> = [T] extends [never]
+  ? U
+  : [U] extends [never]
+  ? T
+  : T & U;
+
+type WorkflowBuilderMetadataTask = {
+  type: 'task';
+  name: string;
+  metadata: TaskMetadata;
+  workItemMetadata: WorkItemMetadata;
+};
+type WorkflowBuilderMetadataCompositeTask = {
+  type: 'compositeTask';
+  name: string;
+  metadata: CompositeTaskMetadata;
+  workflowMetadata: WorkflowBuilderMetadata;
+};
+
+export type WorkflowBuilderMetadata = {
+  name: string;
+  context: unknown;
+
+  tasks: Record<string, WorkflowBuilderMetadataTask>;
+  compositeTasks: Record<string, WorkflowBuilderMetadataCompositeTask>;
+
+  onStart: { input: unknown; return: unknown };
+  onCancel: { input: unknown; return: unknown };
+  onComplete: { input: unknown; return: unknown };
+  onFail: { input: unknown; return: unknown };
+};
+
+export type TaggedMetadata<T, TTag extends string> = T extends any
+  ? T & { _tag: TTag }
+  : never;
+
+export type WorkflowBuilderMetadataCompositeTasksChildCompositeTasksPayloads<
+  TCompositeTasks extends Record<string, WorkflowBuilderMetadataCompositeTask>,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = [TCompositeTasks] extends [never]
+  ? never
+  : UnionToIntersection<
+      {
+        [K in keyof TCompositeTasks]: WorkflowBuilderMetadataCompositeTaskPayloads<
+          TCompositeTasks[K]['workflowMetadata'],
+          `${[TParentPath] extends [never] ? '' : `${TParentPath}.`}${K &
+            string}.$${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`,
+          | TParentParams
+          | `${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`
+        >;
+      }[keyof TCompositeTasks]
+    >;
+
+export type WorkflowBuilderMetadataCompositeTaskPayloads<
+  TWorkflowBuilderMetadata extends WorkflowBuilderMetadata = WorkflowBuilderMetadata,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = SafeIntersect<
+  {
+    [K in keyof TWorkflowBuilderMetadata['compositeTasks'] as [
+      TParentPath
+    ] extends [never]
+      ? K
+      : `${TParentPath}.${K & string}`]: {
+      type: TWorkflowBuilderMetadata['compositeTasks'][K]['type'];
+      path: [TParentPath] extends [never]
+        ? K & string
+        : `${TParentPath}.${K & string}`;
+      params: [TParentParams] extends [never]
+        ? never
+        : { [PK in TParentParams]: string };
+      metadata: TWorkflowBuilderMetadata['compositeTasks'][K]['metadata'];
+      workflowContext: TWorkflowBuilderMetadata['compositeTasks'][K]['workflowMetadata']['context'];
+    };
+  },
+  WorkflowBuilderMetadataCompositeTasksChildCompositeTasksPayloads<
+    TWorkflowBuilderMetadata['compositeTasks'],
+    TParentPath,
+    TParentParams
+  >
+>;
+
+export type WorkflowBuilderMetadataCompositeTasksChildTasksPayloads<
+  TCompositeTasks extends Record<string, WorkflowBuilderMetadataCompositeTask>,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = [TCompositeTasks] extends [never]
+  ? never
+  : UnionToIntersection<
+      {
+        [K in keyof TCompositeTasks]: WorkflowBuilderMetadataTaskPayloads<
+          TCompositeTasks[K]['workflowMetadata'],
+          `${[TParentPath] extends [never] ? '' : `${TParentPath}.`}${K &
+            string}.$${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`,
+          | TParentParams
+          | `${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`
+        >;
+      }[keyof TCompositeTasks]
+    >;
+
+export type WorkflowBuilderMetadataTaskPayloads<
+  TWorkflowBuilderMetadata extends WorkflowBuilderMetadata = WorkflowBuilderMetadata,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = SafeIntersect<
+  {
+    [K in keyof TWorkflowBuilderMetadata['tasks'] as [TParentPath] extends [
+      never
+    ]
+      ? K
+      : `${TParentPath}.${K & string}`]: {
+      type: TWorkflowBuilderMetadata['tasks'][K]['type'];
+      path: [TParentPath] extends [never]
+        ? K & string
+        : `${TParentPath}.${K & string}`;
+      params: [TParentParams] extends [never]
+        ? never
+        : { [PK in TParentParams]: string };
+      metadata: TWorkflowBuilderMetadata['tasks'][K]['metadata'];
+      workItemPayload: TWorkflowBuilderMetadata['tasks'][K]['workItemMetadata']['payload'];
+    };
+  },
+  WorkflowBuilderMetadataCompositeTasksChildTasksPayloads<
+    TWorkflowBuilderMetadata['compositeTasks'],
+    TParentPath,
+    TParentParams
+  >
+>;
+
+export type WorkflowBuilderMetadataCompositeTasksChildTasksWorkItemPayloads<
+  TCompositeTasks extends Record<string, WorkflowBuilderMetadataCompositeTask>,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = [TCompositeTasks] extends [never]
+  ? never
+  : UnionToIntersection<
+      {
+        [K in keyof TCompositeTasks]: WorkflowBuilderMetadataWorkItemPayloads<
+          TCompositeTasks[K]['workflowMetadata'],
+          `${[TParentPath] extends [never] ? '' : `${TParentPath}.`}${K &
+            string}.$${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`,
+          | TParentParams
+          | `${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`
+        >;
+      }[keyof TCompositeTasks]
+    >;
+
+export type WorkflowBuilderMetadataWorkItemPayloads<
+  TWorkflowBuilderMetadata extends WorkflowBuilderMetadata = WorkflowBuilderMetadata,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = SafeIntersect<
+  {
+    [K in keyof TWorkflowBuilderMetadata['tasks'] as `${[TParentPath] extends [
+      never
+    ]
+      ? ''
+      : `${TParentPath}.`}${K & string}.$${K & string}WorkItemId`]: {
+      type: 'workItem';
+      path: `${[TParentPath] extends [never] ? '' : `${TParentPath}.`}${K &
+        string}.$${K & string}WorkItemId`;
+      params: { [PK in TParentParams | `${K & string}WorkItemId`]: string };
+      metadata: TWorkflowBuilderMetadata['tasks'][K]['workItemMetadata'];
+    };
+  },
+  WorkflowBuilderMetadataCompositeTasksChildTasksWorkItemPayloads<
+    TWorkflowBuilderMetadata['compositeTasks'],
+    TParentPath,
+    TParentParams
+  >
+>;
+
+export type WorkflowBuilderMetadataCompositeTasksChildTasksWorkflowPayloads<
+  TCompositeTasks extends Record<string, WorkflowBuilderMetadataCompositeTask>,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = [TCompositeTasks] extends [never]
+  ? never
+  : UnionToIntersection<
+      {
+        [K in keyof TCompositeTasks]: WorkflowBuilderMetadataWorkflowPayloads<
+          TCompositeTasks[K]['workflowMetadata'],
+          `${[TParentPath] extends [never] ? '' : `${TParentPath}.`}${K &
+            string}.$${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`,
+          | TParentParams
+          | `${TCompositeTasks[K]['workflowMetadata']['name']}WorkflowId`
+        >;
+      }[keyof TCompositeTasks]
+    >;
+
+export type WorkflowBuilderMetadataWorkflowPayloads<
+  TWorkflowBuilderMetadata extends WorkflowBuilderMetadata = WorkflowBuilderMetadata,
+  TParentPath extends string = never,
+  TParentParams extends string = never
+> = SafeIntersect<
+  {
+    [K in keyof TWorkflowBuilderMetadata['compositeTasks'] as `${[
+      TParentPath
+    ] extends [never]
+      ? ''
+      : `${TParentPath}.`}${K &
+      string}.$${TWorkflowBuilderMetadata['compositeTasks'][K]['workflowMetadata']['name']}WorkflowId`]: {
+      type: 'workflow';
+      path: `${[TParentPath] extends [never] ? '' : `${TParentPath}.`}${K &
+        string}.$${TWorkflowBuilderMetadata['compositeTasks'][K]['workflowMetadata']['name']}WorkflowId`;
+      params: {
+        [PK in
+          | TParentParams
+          | `${TWorkflowBuilderMetadata['compositeTasks'][K]['workflowMetadata']['name']}WorkflowId`]: string;
+      };
+      metadata: Pick<
+        TWorkflowBuilderMetadata['compositeTasks'][K]['workflowMetadata'],
+        'name' | 'context' | 'onStart' | 'onComplete' | 'onCancel' | 'onFail'
+      >;
+    };
+  },
+  WorkflowBuilderMetadataCompositeTasksChildTasksWorkflowPayloads<
+    TWorkflowBuilderMetadata['compositeTasks'],
+    TParentPath,
+    TParentParams
+  >
+>;

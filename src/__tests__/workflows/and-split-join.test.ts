@@ -36,29 +36,29 @@ it('runs a net with "and" split and "and" join', ({ expect }) => {
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['scan_goods']));
 
-    yield* service.startTask('scan_goods');
+    yield* service.startTask('scan_goods', {});
     const state2 = yield* service.getState();
     expect(state2).toMatchSnapshot();
     expect(getEnabledTaskNames(state2)).toEqual(new Set(['pay']));
 
-    yield* service.startTask('pay');
+    yield* service.startTask('pay', {});
     const state3 = yield* service.getState();
     expect(state3).toMatchSnapshot();
     expect(getEnabledTaskNames(state3)).toEqual(
       new Set(['pack_goods', 'issue_receipt'])
     );
 
-    yield* service.startTask('pack_goods');
+    yield* service.startTask('pack_goods', {});
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set(['issue_receipt']));
 
-    yield* service.startTask('issue_receipt');
+    yield* service.startTask('issue_receipt', {});
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state5)).toEqual(new Set(['check_goods']));
 
-    yield* service.startTask('check_goods');
+    yield* service.startTask('check_goods', {});
     const state6 = yield* service.getState();
     expect(state6).toMatchSnapshot();
     expect(state6.workflows[0]?.state).toBe('completed');

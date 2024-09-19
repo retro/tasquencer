@@ -1,22 +1,19 @@
-import { Effect } from 'effect';
-import { Get, Simplify } from 'type-fest';
-
 import {
+  ReplaceProp,
+  UnknownAsUndefined,
   WorkItemActivities,
   WorkItemOnCancelPayload,
   WorkItemOnCompletePayload,
   WorkItemOnFailPayload,
   WorkItemOnStartPayload,
-  WorkItemPayloadSym,
 } from '../types.js';
 
-export type AnyWorkItemBuilder = WorkItemBuilder<
-  any,
-  any,
-  WorkItemActivities<any>
->;
+import { Effect } from 'effect';
+import { Get } from 'type-fest';
 
-export type WorkItemPayload<TWorkItemBuilder> =
+export type AnyWorkItemBuilder = WorkItemBuilder<any, any, any, any, any>;
+
+export type GetWorkItemPayload<TWorkItemBuilder> =
   TWorkItemBuilder extends WorkItemBuilder<
     infer TWorkItemPayload,
     any,
@@ -27,15 +24,15 @@ export type WorkItemPayload<TWorkItemBuilder> =
     ? TWorkItemPayload
     : never;
 
-export type WorkItemBuilderR<TWorkItemBuilder> =
+export type GetWorkItemBuilderR<TWorkItemBuilder> =
   TWorkItemBuilder extends WorkItemBuilder<any, any, any, infer R> ? R : never;
 
-export type WorkItemBuilderE<TWorkItemBuilder> =
+export type GetWorkItemBuilderE<TWorkItemBuilder> =
   TWorkItemBuilder extends WorkItemBuilder<any, any, any, any, infer E>
     ? E
     : never;
 
-export type WorkItemBuilderWorkItemMetadata<TWorkItemBuilder> =
+export type GetWorkItemBuilderWorkItemMetadata<TWorkItemBuilder> =
   TWorkItemBuilder extends WorkItemBuilder<
     any,
     any,
@@ -55,8 +52,16 @@ interface WorkItemActivityMetadata<TInput, TPayload, TReturn> {
   return: TReturn;
 }
 
+export interface WorkItemMetadata {
+  payload: unknown;
+  onStart: WorkItemActivityMetadata<unknown, unknown, unknown>;
+  onComplete: WorkItemActivityMetadata<unknown, unknown, unknown>;
+  onCancel: WorkItemActivityMetadata<unknown, unknown, unknown>;
+  onFail: WorkItemActivityMetadata<unknown, unknown, unknown>;
+}
+
 export interface DefaultWorkItemMetadata {
-  [WorkItemPayloadSym]: undefined;
+  payload: undefined;
   onStart: WorkItemActivityMetadata<undefined, undefined, undefined>;
   onComplete: WorkItemActivityMetadata<undefined, undefined, undefined>;
   onCancel: WorkItemActivityMetadata<undefined, undefined, undefined>;
@@ -64,7 +69,7 @@ export interface DefaultWorkItemMetadata {
 }
 
 export interface InitializedWorkItemMetadata<TPayload> {
-  [WorkItemPayloadSym]: TPayload;
+  payload: TPayload;
   onStart: WorkItemActivityMetadata<undefined, TPayload, undefined>;
   onComplete: WorkItemActivityMetadata<undefined, TPayload, undefined>;
   onCancel: WorkItemActivityMetadata<undefined, TPayload, undefined>;
@@ -72,16 +77,20 @@ export interface InitializedWorkItemMetadata<TPayload> {
 }
 
 export type InitializedWorkItemBuilder<TPayload> = WorkItemBuilder<
-  TPayload,
+  UnknownAsUndefined<TPayload>,
   WorkItemActivities<any>,
-  InitializedWorkItemMetadata<TPayload>
+  InitializedWorkItemMetadata<UnknownAsUndefined<TPayload>>
 >;
 
 export class WorkItemBuilder<
   TPayload,
   TWorkItemActivities extends WorkItemActivities<any>,
-  TWorkItemMetadata = {
-    [WorkItemPayloadSym]: TPayload;
+  TWorkItemMetadata extends WorkItemMetadata = {
+    payload: TPayload;
+    onStart: WorkItemActivityMetadata<unknown, unknown, unknown>;
+    onComplete: WorkItemActivityMetadata<unknown, unknown, unknown>;
+    onCancel: WorkItemActivityMetadata<unknown, unknown, unknown>;
+    onFail: WorkItemActivityMetadata<unknown, unknown, unknown>;
   },
   R = never,
   E = never
@@ -111,14 +120,14 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     TPayload,
     TWorkItemActivities,
-    Simplify<
-      Omit<TWorkItemMetadata, 'onStart'> & {
-        onStart: WorkItemActivityMetadata<
-          Parameters<TOnStartActivity>[1],
-          TPayload,
-          Effect.Effect.Success<ReturnType<TOnStartActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onStart',
+      TWorkItemMetadata,
+      WorkItemActivityMetadata<
+        Parameters<TOnStartActivity>[1],
+        TPayload,
+        Effect.Effect.Success<ReturnType<TOnStartActivity>>
+      >
     >,
     R | Effect.Effect.Context<ReturnType<TOnStartActivity>>,
     E | Effect.Effect.Error<ReturnType<TOnStartActivity>>
@@ -138,14 +147,14 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     TPayload,
     TWorkItemActivities,
-    Simplify<
-      Omit<TWorkItemMetadata, 'onComplete'> & {
-        onComplete: WorkItemActivityMetadata<
-          Parameters<TOnCompleteActivity>[1],
-          TPayload,
-          Effect.Effect.Success<ReturnType<TOnCompleteActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onComplete',
+      TWorkItemMetadata,
+      WorkItemActivityMetadata<
+        Parameters<TOnCompleteActivity>[1],
+        TPayload,
+        Effect.Effect.Success<ReturnType<TOnCompleteActivity>>
+      >
     >,
     R | Effect.Effect.Context<ReturnType<TOnCompleteActivity>>,
     E | Effect.Effect.Error<ReturnType<TOnCompleteActivity>>
@@ -158,21 +167,21 @@ export class WorkItemBuilder<
     TOnCancelActivityInput,
     TOnCancelActivity extends (
       payload: WorkItemOnCancelPayload<TPayload>,
-      input?: TOnCancelActivityInput
+      input: TOnCancelActivityInput
     ) => Effect.Effect<any, any, any>
   >(
     f: TOnCancelActivity
   ): WorkItemBuilder<
     TPayload,
     TWorkItemActivities,
-    Simplify<
-      Omit<TWorkItemMetadata, 'onCancel'> & {
-        onCancel: WorkItemActivityMetadata<
-          Parameters<TOnCancelActivity>[1],
-          TPayload,
-          Effect.Effect.Success<ReturnType<TOnCancelActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onCancel',
+      TWorkItemMetadata,
+      WorkItemActivityMetadata<
+        Parameters<TOnCancelActivity>[1],
+        TPayload,
+        Effect.Effect.Success<ReturnType<TOnCancelActivity>>
+      >
     >,
     R | Effect.Effect.Context<ReturnType<TOnCancelActivity>>,
     E | Effect.Effect.Error<ReturnType<TOnCancelActivity>>
@@ -192,14 +201,14 @@ export class WorkItemBuilder<
   ): WorkItemBuilder<
     TPayload,
     TWorkItemActivities,
-    Simplify<
-      Omit<TWorkItemMetadata, 'onFail'> & {
-        onFail: WorkItemActivityMetadata<
-          Parameters<TOnFailActivity>[1],
-          TPayload,
-          Effect.Effect.Success<ReturnType<TOnFailActivity>>
-        >;
-      }
+    ReplaceProp<
+      'onFail',
+      TWorkItemMetadata,
+      WorkItemActivityMetadata<
+        Parameters<TOnFailActivity>[1],
+        TPayload,
+        Effect.Effect.Success<ReturnType<TOnFailActivity>>
+      >
     >,
     R | Effect.Effect.Context<ReturnType<TOnFailActivity>>,
     E | Effect.Effect.Error<ReturnType<TOnFailActivity>>
@@ -215,7 +224,7 @@ export class WorkItemBuilder<
 
 export function workItem<TPayload>() {
   return new WorkItemBuilder<
-    TPayload,
-    WorkItemActivities<TPayload>
+    UnknownAsUndefined<TPayload>,
+    WorkItemActivities<UnknownAsUndefined<TPayload>>
   >().initialize();
 }

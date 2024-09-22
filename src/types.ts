@@ -715,8 +715,8 @@ export interface StateChangeItem<
   >;
 }
 
-export interface StateChangeLogger {
-  log: (item: StateChangeItem) => void;
+export interface StateChangeEmitter {
+  emit: (item: StateChangeItem) => void;
   drain: () => StateChangeItem[];
 }
 

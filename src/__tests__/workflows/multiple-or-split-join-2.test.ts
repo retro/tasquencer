@@ -37,7 +37,7 @@ it('runs a net with multiple "or" splits and "or" joins (1)', ({ expect }) => {
 
     expect(yield* service.getState()).toMatchSnapshot();
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state1 = yield* service.getState();
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['A']));
@@ -81,7 +81,7 @@ it('runs a net with multiple "or" splits and "or" joins (2)', ({ expect }) => {
 
     expect(yield* service.getState()).toMatchSnapshot();
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state1 = yield* service.getState();
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['A']));

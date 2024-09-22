@@ -35,7 +35,7 @@ it('handles workflow cancellation in nested workflows (1)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
@@ -73,7 +73,7 @@ it('handles workflow cancellation in nested workflows (1)', ({ expect }) => {
         subWorkflowId,
       },
     });
-    yield* service.cancel();
+    yield* service.cancelRootWorkflow();
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state5)).toEqual(new Set());
@@ -91,7 +91,7 @@ it('handles workflow failure in nested workflows (1)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
@@ -142,7 +142,7 @@ it('handles workflow failure in nested workflows (1)', ({ expect }) => {
       params: { t2WorkItemId },
     });
 
-    yield* service.cancel();
+    yield* service.cancelRootWorkflow();
 
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();

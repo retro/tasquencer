@@ -27,7 +27,7 @@ it('handles workflow cancellation in simple workflows (1)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
@@ -50,7 +50,7 @@ it('handles workflow cancellation in simple workflows (1)', ({ expect }) => {
     yield* service.completeWorkItem('t2.$t2WorkItemId', {
       params: { t2WorkItemId },
     });
-    yield* service.cancel();
+    yield* service.cancelRootWorkflow();
     const state4 = yield* service.getState();
     expect(state4).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set());
@@ -69,7 +69,7 @@ it('handles workflow failure in simple workflows (2)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));
@@ -99,7 +99,7 @@ it('handles workflow failure in simple workflows (2)', ({ expect }) => {
     yield* service.startWorkItem('t3.$t3WorkItemId', {
       params: { t3WorkItemId },
     });
-    yield* service.cancel();
+    yield* service.cancelRootWorkflow();
     const state5 = yield* service.getState();
     expect(state5).toMatchSnapshot();
     expect(getEnabledTaskNames(state4)).toEqual(new Set());

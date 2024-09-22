@@ -52,7 +52,7 @@ it('supports the interleaved routing pattern', ({ expect }) => {
 
     expect(yield* service.getState()).toMatchSnapshot();
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state1 = yield* service.getState();
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['initial_task']));

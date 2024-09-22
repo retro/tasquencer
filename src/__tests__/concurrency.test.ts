@@ -56,7 +56,7 @@ it('will start work items concurrently and emit state change on each work item s
       return Effect.succeed(logs.push(changes));
     });
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(logs).toMatchSnapshot();

@@ -151,7 +151,7 @@ it('runs activities (1)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
 
     yield* service.startTask('t1', {});
 
@@ -190,7 +190,7 @@ it('runs activities (2)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
 
     yield* service.startTask('t1', {});
 
@@ -240,7 +240,7 @@ it('runs activities (3)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
 
     yield* service.startTask('t1', {});
 
@@ -254,7 +254,7 @@ it('runs activities (3)', ({ expect }) => {
       params: { t1WorkItemId: id2 },
     });
 
-    yield* service.cancel();
+    yield* service.cancelRootWorkflow();
 
     expect(log).toEqual([
       'WORKFLOW ON START',
@@ -284,7 +284,7 @@ it('runs activities (4)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
 
     yield* service.startTask('t1', {});
 
@@ -332,7 +332,7 @@ it('runs activities (5)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
 
     yield* service.startTask('t1', {});
 

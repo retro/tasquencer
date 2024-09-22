@@ -16,7 +16,7 @@ import {
   ConditionInstance,
   ConditionName,
   IdGenerator,
-  StateChangeLogger,
+  StateChangeEmitter,
   Store,
   StorePersistableState,
   TaskInstance,
@@ -130,15 +130,15 @@ function makeGetState(store: Store) {
 export class StateImpl implements Context.Tag.Service<State> {
   private store: Store;
   private idGenerator: Context.Tag.Service<IdGenerator>;
-  private changeLogger: StateChangeLogger;
+  private changeEmitter: StateChangeEmitter;
 
   constructor(
     idGenerator: Context.Tag.Service<IdGenerator>,
-    changeLogger: StateChangeLogger,
+    changeEmitter: StateChangeEmitter,
     state?: StorePersistableState
   ) {
     this.idGenerator = idGenerator;
-    this.changeLogger = changeLogger;
+    this.changeEmitter = changeEmitter;
     if (state) {
       this.store = persistableStateToStore(state);
     } else {
@@ -192,20 +192,20 @@ export class StateImpl implements Context.Tag.Service<State> {
         context,
       };
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: { type: 'WORKFLOW_INITIALIZED', workflow },
         getState: makeGetState(self.store),
       });
 
       Object.values(workflowTasks).forEach((task) => {
-        self.changeLogger.log({
+        self.changeEmitter.emit({
           change: { type: 'TASK_INITIALIZED', task },
           getState: makeGetState(self.store),
         });
       });
 
       Object.values(workflowConditions).forEach((condition) => {
-        self.changeLogger.log({
+        self.changeEmitter.emit({
           change: { type: 'CONDITION_INITIALIZED', condition },
           getState: makeGetState(self.store),
         });
@@ -357,7 +357,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         draft[workflowId]!.workflow.state = workflowState;
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: {
           type: 'WORKFLOW_STATE_UPDATED',
           workflow: self.store[workflowId]!.workflow,
@@ -376,7 +376,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         draft[workflowId]!.workflow.context = context;
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: {
           type: 'WORKFLOW_CONTEXT_UPDATED',
           workflow: self.store[workflowId]!.workflow,
@@ -414,7 +414,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         }
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: {
           type: 'TASK_STATE_UPDATED',
           task: self.store[workflowId]!.tasks[taskName]!,
@@ -462,7 +462,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         draft[workflowId]!.conditions[conditionName] = f(condition);
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: {
           type: 'CONDITION_MARKING_UPDATED',
           condition: self.store[workflowId]!.conditions[conditionName]!,
@@ -525,7 +525,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         );
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: { type: 'WORK_ITEM_INITIALIZED', workItem },
         getState: makeGetState(self.store),
       });
@@ -573,7 +573,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         draft[workflowId]!.workItems[workItemId]!.payload = payload;
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: {
           type: 'WORK_ITEM_PAYLOAD_UPDATED',
           workItem: self.store[workflowId]!.workItems[workItemId]!,
@@ -614,7 +614,7 @@ export class StateImpl implements Context.Tag.Service<State> {
         draft[workflowId]!.workItems[workItemId]!.state = nextState;
       });
 
-      self.changeLogger.log({
+      self.changeEmitter.emit({
         change: {
           type: 'WORK_ITEM_STATE_UPDATED',
           workItem: self.store[workflowId]!.workItems[workItemId]!,

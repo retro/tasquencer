@@ -67,7 +67,7 @@ it('correctly propagates errors', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start().pipe(
+    yield* service.startRootWorkflow().pipe(
       Effect.catchAll((error) => {
         if (error instanceof Error) {
           errorHandlerCalled = true;

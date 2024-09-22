@@ -30,8 +30,8 @@ import {
   IdGenerator,
   NeverAsUndefined,
   OnStateChangeFn,
+  StateChangeEmitter,
   StateChangeItem,
-  StateChangeLogger,
   StorePersistableState,
   TaskName,
   WorkItemId,
@@ -77,7 +77,7 @@ export class Service<
     private workflow: Workflow,
     private state: Context.Tag.Service<State>,
     private queue: Queue.Queue<ExecutionContextQueueItem>,
-    private stateChangeLogger: StateChangeLogger
+    private stateChangeEmitter: StateChangeEmitter
   ) {}
 
   onStateChange(
@@ -87,7 +87,7 @@ export class Service<
       TElementTypes['task']
     >
   ) {
-    const changeLog = this.stateChangeLogger.drain();
+    const changeLog = this.stateChangeEmitter.drain();
     this.onStateChangeListener = fn;
     if (changeLog.length) {
       fn(changeLog);
@@ -191,7 +191,7 @@ export class Service<
     );
   }
 
-  start<I extends Get<TWorkflowMetadata, ['onStart', 'input']>>(
+  startRootWorkflow<I extends Get<TWorkflowMetadata, ['onStart', 'input']>>(
     ...input: undefined extends I ? [I?] : [I]
   ) {
     return this.unsafeStartWorkflow([], input).pipe(
@@ -255,7 +255,7 @@ export class Service<
     );
   }
 
-  cancel<I extends Get<TWorkflowMetadata, ['onCancel', 'input']>>(
+  cancelRootWorkflow<I extends Get<TWorkflowMetadata, ['onCancel', 'input']>>(
     ...input: undefined extends I ? [I?] : [I]
   ) {
     return this.unsafeCancelWorkflow([], input).pipe(
@@ -294,6 +294,75 @@ export class Service<
     return this.unsafeUpdateWorkflowContext(
       resolvePath(path, params ?? {}),
       context
+    );
+  }
+
+  updateRootWorkflowContext<
+    TPath extends keyof WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata> &
+      string
+  >(
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      context: Get<TWorkflowMetadata, ['metadata', 'context']>;
+    }>
+  ) {
+    const self = this;
+    return Effect.gen(function* () {
+      const executionPlan = yield* self.workflowPathToExecutionPlan(
+        pathAsArray(path)
+      );
+
+      yield* self.state.updateWorkflowContext(
+        executionPlan.workflow.id,
+        payload.context
+      );
+    }).pipe(Effect.provideService(State, this.state));
+  }
+
+  unsafeGetWorkflowState(path: readonly string[]) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      const executionPlan = yield* self.workflowPathToExecutionPlan(path);
+
+      return yield* self.state.getWorkflow(executionPlan.workflow.id);
+    }).pipe(Effect.provideService(State, this.state));
+  }
+
+  getWorkflowState<
+    TPath extends keyof WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkflowPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
+  >(
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+    }>
+  ) {
+    const self = this;
+    return Effect.gen(function* () {
+      return yield* self.unsafeGetWorkflowState(
+        resolvePath(path, payload.params ?? {})
+      );
+    }).pipe(
+      Effect.map(
+        (r) => r as WorkflowInstance<Get<TPayload, ['metadata', 'context']>>
+      )
+    );
+  }
+
+  getRootWorkflowState() {
+    const self = this;
+    return Effect.gen(function* () {
+      return yield* self.unsafeGetWorkflowState([]);
+    }).pipe(
+      Effect.map(
+        (r) =>
+          r as WorkflowInstance<Get<TWorkflowMetadata, ['metadata', 'context']>>
+      )
     );
   }
 
@@ -696,6 +765,45 @@ export class Service<
     );
   }
 
+  unsafeGetWorkItemState(path: readonly string[]) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      const executionPlan = yield* self.workItemPathToExecutionPlan(path);
+
+      return yield* self.state.getWorkItem(
+        executionPlan.workflow.id,
+        executionPlan.task.name,
+        executionPlan.workItemId
+      );
+    }).pipe(Effect.provideService(State, this.state));
+  }
+
+  getWorkItemState<
+    TPath extends keyof WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata> &
+      string,
+    TPayload = Get<
+      WorkflowBuilderMetadataWorkItemPayloads<TWorkflowMetadata>,
+      [TPath]
+    >
+  >(
+    path: TPath,
+    payload: PartialOnUndefinedDeep<{
+      params: Get<TPayload, ['params']>;
+    }>
+  ) {
+    const self = this;
+    return Effect.gen(function* () {
+      return yield* self.unsafeGetWorkItemState(
+        resolvePath(path, payload.params ?? {})
+      );
+    }).pipe(
+      Effect.map(
+        (r) => r as WorkItemInstance<Get<TPayload, ['metadata', 'payload']>>
+      )
+    );
+  }
+
   getState() {
     const self = this;
     return Effect.gen(function* () {
@@ -704,7 +812,7 @@ export class Service<
   }
 
   private emitStateChanges() {
-    const stateChanges = this.stateChangeLogger.drain();
+    const stateChanges = this.stateChangeEmitter.drain();
     if (stateChanges.length && this.onStateChangeListener) {
       return this.onStateChangeListener(stateChanges);
     } else {
@@ -1162,10 +1270,10 @@ export class Service<
   }
 }
 
-function makeStateChangeLogger(): StateChangeLogger {
+function makeStateChangeEmitter(): StateChangeEmitter {
   let stateChanges: StateChangeItem[] = [];
   return {
-    log: (item) => {
+    emit: (item) => {
       stateChanges.push(item);
     },
     drain: () => {
@@ -1214,7 +1322,7 @@ export function initialize<
       maybeIdGenerator,
       () => nanoidIdGenerator
     );
-    const stateChangeLogger = makeStateChangeLogger();
+    const stateChangeLogger = makeStateChangeEmitter();
 
     const state = new StateImpl.StateImpl(idGenerator, stateChangeLogger);
 
@@ -1255,11 +1363,11 @@ export function resume<
       () => nanoidIdGenerator
     );
 
-    const stateChangeLogger = makeStateChangeLogger();
+    const stateChangeEmitter = makeStateChangeEmitter();
 
     const state = new StateImpl.StateImpl(
       idGenerator,
-      stateChangeLogger,
+      stateChangeEmitter,
       resumableState
     );
     const rootWorkflows = resumableState.workflows.filter((w) => !w.parent);
@@ -1274,7 +1382,7 @@ export function resume<
       TWorkflowElementTypes,
       TWorkflowR,
       TWorkflowE
-    >(rootWorkflow.id, workflow, state, queue, stateChangeLogger);
+    >(rootWorkflow.id, workflow, state, queue, stateChangeEmitter);
 
     return interpreter;
   });

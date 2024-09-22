@@ -40,7 +40,7 @@ it('sends updates on state change', ({ expect }) => {
       Effect.succeed(changes.forEach((change) => log.push(change)))
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));

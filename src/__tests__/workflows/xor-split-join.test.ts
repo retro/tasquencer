@@ -34,7 +34,7 @@ it('runs a net with "xor" split and "xor" join', ({ expect }) => {
 
     expect(yield* service1.getState()).toMatchSnapshot();
 
-    yield* service1.start();
+    yield* service1.startRootWorkflow();
     const state1_1 = yield* service1.getState();
     expect(state1_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_1)).toEqual(new Set(['A']));
@@ -56,7 +56,7 @@ it('runs a net with "xor" split and "xor" join', ({ expect }) => {
 
     expect(yield* service2.getState()).toMatchSnapshot();
 
-    yield* service2.start();
+    yield* service2.startRootWorkflow();
     const state2_1 = yield* service2.getState();
     expect(state2_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state2_1)).toEqual(new Set(['A']));
@@ -80,7 +80,7 @@ it('runs a net with "xor" split and "xor" join', ({ expect }) => {
 
     expect(yield* service3.getState()).toMatchSnapshot();
 
-    yield* service3.start();
+    yield* service3.startRootWorkflow();
     const state3_1 = yield* service3.getState();
     expect(state3_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state3_1)).toEqual(new Set(['A']));

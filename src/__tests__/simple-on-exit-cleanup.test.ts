@@ -33,7 +33,7 @@ it('cleans up work items on exit', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set(['t1']));

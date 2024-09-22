@@ -40,7 +40,7 @@ it('runs a net with an "or" join, a loop and a cancellation region', ({
 
     expect(yield* service.getState()).toMatchSnapshot();
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state1 = yield* service.getState();
     expect(state1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1)).toEqual(new Set(['A']));

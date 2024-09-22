@@ -60,7 +60,7 @@ it('handles simple enqueueing (1)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());
@@ -79,7 +79,7 @@ it('handles simple enqueueing (2)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());
@@ -98,7 +98,7 @@ it('handles simple enqueueing (3)', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service.start();
+    yield* service.startRootWorkflow();
     const state = yield* service.getState();
     expect(state).toMatchSnapshot();
     expect(getEnabledTaskNames(state)).toEqual(new Set());

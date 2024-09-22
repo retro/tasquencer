@@ -1,15 +1,8 @@
-import {
-  AnyWorkItemActivities,
-  AnyWorkItemBuilder,
-  DefaultWorkItemMetadata,
-  GetWorkItemBuilderE,
-  GetWorkItemBuilderR,
-  GetWorkItemBuilderWorkItemMetadata,
-  GetWorkItemPayload,
-  InitializedWorkItemBuilder,
-  WorkItemBuilder,
-  workItem,
-} from './WorkItemBuilder.js';
+import { Effect } from 'effect';
+import { Get } from 'type-fest';
+
+import { Task } from '../elements/Task.js';
+import { Workflow } from '../elements/Workflow.js';
 import {
   JoinType,
   ReplaceProp,
@@ -26,11 +19,18 @@ import {
   UnknownAsUndefined,
   activeWorkItemInstanceStates,
 } from '../types.js';
-
-import { Effect } from 'effect';
-import { Get } from 'type-fest';
-import { Task } from '../elements/Task.js';
-import { Workflow } from '../elements/Workflow.js';
+import {
+  AnyWorkItemActivities,
+  AnyWorkItemBuilder,
+  DefaultWorkItemMetadata,
+  GetWorkItemBuilderE,
+  GetWorkItemBuilderR,
+  GetWorkItemBuilderWorkItemMetadata,
+  GetWorkItemPayload,
+  InitializedWorkItemBuilder,
+  WorkItemBuilder,
+  workItem,
+} from './WorkItemBuilder.js';
 
 export type GetTaskBuilderContext<TTaskBuilder> =
   TTaskBuilder extends TaskBuilder<infer TContext, any, any, any>

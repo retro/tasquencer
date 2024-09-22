@@ -1,7 +1,6 @@
 import { Effect } from 'effect';
 import { it } from 'vitest';
 
-import { GetWorkflowBuilderElementTypes } from '../builder/WorkflowBuilder.js';
 import { Builder, IdGenerator, Service } from '../index.js';
 import { getEnabledTaskNames, makeIdGenerator } from './shared.js';
 
@@ -36,7 +35,7 @@ it('resumes from persistable state', ({ expect }) => {
       Effect.provideService(IdGenerator, idGenerator)
     );
 
-    yield* service1.start();
+    yield* service1.startRootWorkflow();
     const state1_1 = yield* service1.getState();
     expect(state1_1).toMatchSnapshot();
     expect(getEnabledTaskNames(state1_1)).toEqual(new Set(['t1']));

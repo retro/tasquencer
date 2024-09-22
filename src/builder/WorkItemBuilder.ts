@@ -1,3 +1,6 @@
+import { Effect } from 'effect';
+import { Get } from 'type-fest';
+
 import {
   ReplaceProp,
   UnknownAsUndefined,
@@ -7,9 +10,6 @@ import {
   WorkItemOnFailPayload,
   WorkItemOnStartPayload,
 } from '../types.js';
-
-import { Effect } from 'effect';
-import { Get } from 'type-fest';
 
 export type AnyWorkItemBuilder = WorkItemBuilder<any, any, any, any, any>;
 

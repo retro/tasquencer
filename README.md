@@ -1,3 +1,5 @@
+This project is archived, [Tasquencer](https://github.com/tasquencer/tasquencer) is now a full stack process orchestration framework powered by Convex.dev
+
 # Tasquencer
 
 A BPM library for Node based on the concepts from https://yawlfoundation.github.io/.
